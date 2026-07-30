@@ -104,6 +104,7 @@ export interface PlanningEntry {
   slot: MealSlot;
   dish_id: string | null;
   is_restaurant: boolean;
+  is_cooked: boolean;
   dish?: Dish;
 }
 

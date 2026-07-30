@@ -1,12 +1,12 @@
-import React, { useCallback, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { Card, LoadingBlock, MiniButton, Screen } from '../../src/components/ui';
+import { Card, Checkbox, LoadingBlock, MiniButton, Screen } from '../../src/components/ui';
 import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso } from '../../src/lib/dates';
-import { listPlanningRange, removeMeal, setRestaurantMeal } from '../../src/data/planning';
+import { listPlanningRange, removeMeal, setCooked, setRestaurantMeal } from '../../src/data/planning';
 import { getProfile } from '../../src/data/profile';
 import { COURSE_TYPE_LABELS, CourseType, MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
 import { fonts, radii } from '../../src/theme/tokens';
@@ -33,6 +33,8 @@ export default function Planning() {
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
+  const { width: windowWidth } = useWindowDimensions();
+  const weekScrollRef = useRef<ScrollView>(null);
 
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [selectedDate, setSelectedDate] = useState(() => toIso(new Date()));
@@ -66,6 +68,17 @@ export default function Planning() {
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const selectedDateObj = days.find((d) => toIso(d) === selectedDate) ?? new Date(selectedDate);
+
+  const CARD_GAP = 8;
+  const columnWidth = Math.floor((windowWidth - 18 * 2 - CARD_GAP * 2) / 3);
+
+  useEffect(() => {
+    if (viewMode !== 'semaine') return;
+    const todayIdx = days.findIndex((d) => isToday(d));
+    const offset = todayIdx >= 0 ? todayIdx : 0;
+    weekScrollRef.current?.scrollTo({ x: offset * (columnWidth + CARD_GAP), animated: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, weekStart, columnWidth]);
 
   const slotEntries = (slot: MealSlot) =>
     entries.filter((e) => e.date === selectedDate && e.slot === slot);
@@ -103,6 +116,15 @@ export default function Planning() {
 
   const onSeeRecipe = (dishId: string) => {
     router.push({ pathname: '/(tabs)/plats/[id]', params: { id: dishId } });
+  };
+
+  const onAddFor = (date: string, slot: MealSlot) => {
+    router.push({ pathname: '/choisir-plat', params: { date, slot } });
+  };
+
+  const onToggleCooked = async (entryId: string, next: boolean) => {
+    setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, is_cooked: next } : e)));
+    await setCooked(entryId, next);
   };
 
   const goPrevWeek = () => setWeekStart(addDays(weekStart, -7));
@@ -302,53 +324,76 @@ export default function Planning() {
           )}
         </>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 18 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 30 }} />
-            {days.map((d) => {
-              const today = isToday(d);
-              return (
-                <Pressable key={toIso(d)} style={{ flex: 1, alignItems: 'center' }} onPress={() => goToDate(toIso(d))}>
-                  <Text style={{ fontSize: 8, textTransform: 'uppercase', color: colors.inkFaint, fontFamily: fonts.bodySemiBold }}>{dayLabel(d)}</Text>
-                  <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: today ? colors.forest : colors.ink }}>{d.getDate()}</Text>
-                </Pressable>
-              );
-            })}
+        <>
+          <View style={styles.weekNav}>
+            <ArrowBtn dir="prev" onPress={goPrevWeek} />
+            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(weekStart)}</Text>
+            <ArrowBtn dir="next" onPress={goNextWeek} />
           </View>
-          {MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s)).map((slot) => (
-            <View key={slot} style={{ flexDirection: 'row', alignItems: 'stretch', marginTop: 6 }}>
-              <View style={{ width: 30, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 14 }}>{MEAL_SLOT_EMOJI[slot]}</Text>
-              </View>
+
+          {loading ? (
+            <LoadingBlock />
+          ) : (
+            <ScrollView
+              ref={weekScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24, gap: CARD_GAP }}
+            >
               {days.map((d) => {
                 const iso = toIso(d);
-                const cellEntries = entries.filter((e) => e.date === iso && e.slot === slot);
+                const today = isToday(d);
                 return (
-                  <Pressable
-                    key={iso}
-                    onPress={() => goToDate(iso)}
-                    style={[styles.weekCell, { borderColor: colors.line, backgroundColor: colors.paper }]}
-                  >
-                    {cellEntries.length === 0 ? (
-                      <Text style={{ fontSize: 11, color: colors.inkFaint }}>·</Text>
-                    ) : cellEntries.some((e) => e.is_restaurant) ? (
-                      <Text style={{ fontSize: 13 }}>🍽️</Text>
-                    ) : (
-                      <>
-                        <Text numberOfLines={1} style={{ fontSize: 8, color: colors.ink, fontFamily: fonts.bodyMedium }}>
-                          {cellEntries[0].dish?.name}
-                        </Text>
-                        {cellEntries.length > 1 ? (
-                          <Text style={{ fontSize: 7.5, color: colors.inkFaint }}>+{cellEntries.length - 1}</Text>
-                        ) : null}
-                      </>
-                    )}
-                  </Pressable>
+                  <View key={iso} style={{ width: columnWidth }}>
+                    <Pressable onPress={() => goToDate(iso)} style={[styles.dayColHeader, { backgroundColor: today ? colors.forest : colors.paper, borderColor: today ? colors.forest : colors.beige }]}>
+                      <Text style={{ fontSize: 8.5, fontFamily: fonts.bodySemiBold, textTransform: 'uppercase', color: today ? colors.paper : colors.inkFaint }}>{dayLabel(d)}</Text>
+                      <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: today ? colors.paper : colors.ink }}>{d.getDate()}</Text>
+                    </Pressable>
+
+                    {MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s)).map((slot) => {
+                      const slotList = entries.filter((e) => e.date === iso && e.slot === slot);
+                      return (
+                        <View key={slot} style={[styles.dayColSlot, { borderColor: colors.line, backgroundColor: colors.paper }]}>
+                          <Text style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 0.4, color: colors.inkFaint, fontFamily: fonts.bodySemiBold, marginBottom: 4 }}>
+                            {MEAL_SLOT_EMOJI[slot]} {MEAL_SLOT_LABELS[slot]}
+                          </Text>
+                          {slotList.length === 0 ? (
+                            <Pressable onPress={() => onAddFor(iso, slot)}>
+                              <Text style={{ fontSize: 10, color: colors.honey, fontFamily: fonts.bodyMedium }}>+ New</Text>
+                            </Pressable>
+                          ) : (
+                            <>
+                              {slotList.map((entry) => (
+                                <View key={entry.id} style={{ marginBottom: 4 }}>
+                                  {entry.is_restaurant ? (
+                                    <Text style={{ fontSize: 10.5, fontStyle: 'italic', color: colors.ink }} numberOfLines={1}>🍽️ Au resto</Text>
+                                  ) : entry.dish ? (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                      <Checkbox checked={entry.is_cooked} onPress={() => onToggleCooked(entry.id, !entry.is_cooked)} />
+                                      <Text
+                                        style={{ flex: 1, fontSize: 10.5, color: colors.ink, fontFamily: fonts.bodyMedium, textDecorationLine: entry.is_cooked ? 'line-through' : 'none' }}
+                                        numberOfLines={1}
+                                      >
+                                        {entry.dish.name}
+                                      </Text>
+                                    </View>
+                                  ) : null}
+                                </View>
+                              ))}
+                              <Pressable onPress={() => onAddFor(iso, slot)}>
+                                <Text style={{ fontSize: 9.5, color: colors.honey, fontFamily: fonts.bodyMedium }}>+ New</Text>
+                              </Pressable>
+                            </>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
                 );
               })}
-            </View>
-          ))}
-        </ScrollView>
+            </ScrollView>
+          )}
+        </>
       )}
 
       <CalendarPicker
@@ -382,5 +427,7 @@ const styles = StyleSheet.create({
   slotLabel: { fontSize: 9.5, fontFamily: fonts.bodySemiBold, letterSpacing: 0.6, textTransform: 'uppercase' },
   removeBtn: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   dishName: { fontSize: 13.5, fontFamily: fonts.bodyMedium, marginBottom: 7 },
-  weekCell: { flex: 1, aspectRatio: 1, marginHorizontal: 1, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 2 },
+  weekNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 2, marginBottom: 12 },
+  dayColHeader: { alignItems: 'center', paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, marginBottom: 6 },
+  dayColSlot: { borderWidth: 1, borderRadius: 10, padding: 8, marginBottom: 6 },
 });

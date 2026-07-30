@@ -59,3 +59,8 @@ export async function removeMeal(userId: string, entryId: string): Promise<void>
   const { error } = await supabase.from('planning_entries').delete().eq('id', entryId);
   if (error) throw error;
 }
+
+export async function setCooked(entryId: string, cooked: boolean): Promise<void> {
+  const { error } = await supabase.from('planning_entries').update({ is_cooked: cooked }).eq('id', entryId);
+  if (error) throw error;
+}
