@@ -6,16 +6,19 @@ import { useTheme } from '../src/theme/ThemeProvider';
 import { Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../src/components/ui';
 import { listDishes } from '../src/data/dishes';
 import { replaceMeal, setMeal } from '../src/data/planning';
+import { replaceTemplateMeal, setTemplateMeal } from '../src/data/template';
 import { CATEGORY_LABELS, Category, COURSE_TYPE_LABELS, Dish, MEAL_SLOT_LABELS, MealSlot } from '../src/types/models';
 import { fonts } from '../src/theme/tokens';
 
 const CATEGORIES: Category[] = ['rapide', 'healthy', 'pates', 'vege', 'autre'];
+const WEEKDAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 export default function ChoisirPlat() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const router = useRouter();
-  const params = useLocalSearchParams<{ date: string; slot: MealSlot; entryId?: string }>();
+  const params = useLocalSearchParams<{ date?: string; slot: MealSlot; entryId?: string; mode?: string; weekday?: string }>();
+  const isTemplate = params.mode === 'template';
 
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,10 +37,16 @@ export default function ChoisirPlat() {
     setSaving(dish.id);
     try {
       const userId = session!.user.id;
-      if (params.entryId) {
+      if (isTemplate) {
+        if (params.entryId) {
+          await replaceTemplateMeal(params.entryId, dish);
+        } else {
+          await setTemplateMeal(userId, Number(params.weekday), params.slot, dish);
+        }
+      } else if (params.entryId) {
         await replaceMeal(userId, params.entryId, dish);
       } else {
-        await setMeal(userId, params.date, params.slot, dish);
+        await setMeal(userId, params.date!, params.slot, dish);
       }
       router.back();
     } finally {
@@ -49,7 +58,7 @@ export default function ChoisirPlat() {
     <Screen>
       <ScreenHeader
         title={`${params.entryId ? 'Remplacer' : 'Ajouter'} — ${MEAL_SLOT_LABELS[params.slot]}`}
-        subtitle={params.date}
+        subtitle={isTemplate ? WEEKDAY_NAMES[Number(params.weekday)] : params.date}
       />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, paddingVertical: 12 }} contentContainerStyle={{ paddingHorizontal: 18 }}>
         <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />

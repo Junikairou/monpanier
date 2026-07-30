@@ -108,6 +108,16 @@ export interface PlanningEntry {
   dish?: Dish;
 }
 
+export interface TemplateEntry {
+  id: string;
+  user_id: string;
+  weekday: number; // 0 = lundi ... 6 = dimanche
+  slot: MealSlot;
+  dish_id: string | null;
+  is_restaurant: boolean;
+  dish?: Dish;
+}
+
 export interface GroceryItem {
   id: string;
   user_id: string;

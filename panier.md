@@ -46,7 +46,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 ## Points d'attention techniques
 
-- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...009` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 009 en attente d'exécution** (ajoute `is_cooked` sur `planning_entries`) — à lancer dans Supabase SQL Editor.
+- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...010` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migrations 009 et 010 en attente d'exécution** (009 : `is_cooked` sur `planning_entries` ; 010 : table `planning_template_entries` pour le modèle de planning) — à lancer dans Supabase SQL Editor.
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.
@@ -68,7 +68,7 @@ Fait par étapes, push à chaque étape terminée :
 1. ✅ Petites retouches : indicateur équilibre par créneau (pas par jour) + désactivable dans Profil, jour actuel mis en avant dans Courses — fait, migration 008 exécutée.
 2. ✅ Refonte planning en cartes glissantes façon capture d'écran fournie (remplace la vue "Semaine" grille) — fait, **migration 009 à exécuter**.
 3. ✅ Copier-coller un planning (jour ou semaine) — appui long sur un jour (chip ou en-tête de colonne) ou sur le libellé "Semaine du..." ouvre un menu Copier/Coller ; si la cible a déjà des repas, demande Remplacer/Ajouter à chaque fois. Aucune migration nécessaire. **Non testé visuellement** (pas d'identifiants de connexion disponibles pour l'agent) — à vérifier par l'utilisateur.
-4. ⏳ Planning par défaut : modèle qui remplit automatiquement chaque nouvelle semaine, modifiable manuellement ensuite.
+4. ✅ Planning par défaut (modèle) : menu semaine (appui long sur "Semaine du...") → "Enregistrer comme modèle" (copie la semaine affichée), "Appliquer le modèle" (sur demande, conflit → Remplacer/Ajouter), "Modifier le modèle" (écran dédié `/modele-semaine`, 7 jours génériques sans dates). **Migration 010 à exécuter** (table `planning_template_entries`). **Non testé visuellement** (pas d'identifiants) — à vérifier par l'utilisateur.
 5. ⏳ Profil : champ téléphone (info seulement) + lien de récupération de mot de passe par e-mail (Supabase standard, pas de système maison).
 
 ## Décisions notables (avec date)

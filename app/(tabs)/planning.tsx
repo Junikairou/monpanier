@@ -8,6 +8,7 @@ import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
 import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked, setRestaurantMeal } from '../../src/data/planning';
+import { applyTemplateToWeek, saveTemplateFromWeek } from '../../src/data/template';
 import { getProfile } from '../../src/data/profile';
 import { COURSE_TYPE_LABELS, CourseType, MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
 import { fonts, radii } from '../../src/theme/tokens';
@@ -195,6 +196,20 @@ export default function Planning() {
     return actions;
   };
 
+  const applyTemplate = async () => {
+    const weekIso = toIso(weekStart);
+    const weekEnd = toIso(addDays(weekStart, 6));
+    const conflict = await hasEntriesInRange(userId, weekIso, weekEnd);
+    if (conflict) {
+      setConflictAction({
+        label: 'Appliquer le modèle — des repas existent déjà cette semaine',
+        run: (mode) => applyTemplateToWeek(userId, weekIso, mode).then(load),
+      });
+    } else {
+      await applyTemplateToWeek(userId, weekIso, 'add').then(load);
+    }
+  };
+
   const weekMenuActions = () => {
     const actions = [
       { label: '📋 Copier cette semaine', onPress: () => setClipboard({ type: 'week', weekStart: toIso(weekStart) }) },
@@ -202,6 +217,11 @@ export default function Planning() {
     if (clipboard?.type === 'week') {
       actions.push({ label: '📥 Coller ici', onPress: () => pasteWeek(toIso(weekStart)) });
     }
+    actions.push(
+      { label: '⭐ Enregistrer comme modèle par défaut', onPress: () => saveTemplateFromWeek(userId, toIso(weekStart)) },
+      { label: '✅ Appliquer le modèle par défaut', onPress: () => applyTemplate() },
+      { label: '✏️ Modifier le modèle par défaut', onPress: () => router.push('/modele-semaine') },
+    );
     return actions;
   };
 
