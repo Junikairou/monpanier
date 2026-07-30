@@ -1,11 +1,11 @@
-# Mijoté
+# Mon Panier
 
 App de planning repas (Expo — web pour l'instant, iOS/Android plus tard sans changer de code).
 
 ## Démarrer
 
 ```bash
-cd mijote
+cd monpanier
 npm run web
 ```
 
@@ -14,7 +14,7 @@ npm run web
 1. Crée un projet gratuit sur [supabase.com](https://supabase.com).
 2. Dans le projet : **SQL Editor > New query**, colle le contenu de [`supabase/schema.sql`](supabase/schema.sql) et lance-le. Ça crée les tables (plats, ingrédients, recettes, planning, courses, profils) avec la sécurité par utilisateur (RLS).
 3. Dans **Project settings > API**, récupère l'URL du projet et la clé `anon public`.
-4. Crée un fichier `.env` à la racine de `mijote/` (copie `.env.example`) :
+4. Crée un fichier `.env` à la racine de `monpanier/` (copie `.env.example`) :
    ```
    EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...

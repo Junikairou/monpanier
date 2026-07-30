@@ -42,8 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle: AuthContextValue['signInWithGoogle'] = async () => {
     const redirectTo =
       Platform.OS === 'web'
-        ? `${window.location.origin}${window.location.pathname.startsWith('/mijote') ? '/mijote/' : '/'}`
-        : 'mijote://';
+        ? `${window.location.origin}${window.location.pathname.startsWith('/monpanier') ? '/monpanier/' : '/'}`
+        : 'monpanier://';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },

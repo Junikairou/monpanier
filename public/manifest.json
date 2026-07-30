@@ -1,23 +1,23 @@
 {
-  "name": "Mijoté",
-  "short_name": "Mijoté",
+  "name": "Mon Panier",
+  "short_name": "Mon Panier",
   "description": "Planning de repas, plats et liste de courses",
   "lang": "fr",
-  "start_url": "/mijote/",
-  "scope": "/mijote/",
+  "start_url": "/monpanier/",
+  "scope": "/monpanier/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#7DAE8F",
   "background_color": "#F7F4EE",
   "icons": [
     {
-      "src": "/mijote/icon-512.png",
+      "src": "/monpanier/icon-512.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/mijote/icon-512.png",
+      "src": "/monpanier/icon-512.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "maskable"

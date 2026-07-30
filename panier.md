@@ -1,4 +1,4 @@
-# Panier — Suivi du projet Mijoté
+# Panier — Suivi du projet Mon Panier (ex-Mijoté)
 
 Document de référence pour reprendre ce projet dans une nouvelle conversation ou avec une autre IA. À tenir à jour à chaque changement important.
 
@@ -14,11 +14,11 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 ## Projet
 
-- **Mijoté** — app de planning de repas (planning semaine, inventaire de plats, liste de courses, profil).
+- **Mon Panier** (anciennement Mijoté, renommé le 2026-07-30) — app de planning de repas (planning semaine, inventaire de plats, liste de courses, profil).
 - Stack : Expo (React Native + web, Expo Router) — pensé pour devenir une app mobile native plus tard sans réécrire le code.
-- Dossier local : `C:\Users\daich\Downloads\APP\mijote`
-- Dépôt GitHub : **github.com/Junikairou/mijote** (public — nécessaire pour GitHub Pages gratuit)
-- App en ligne : **https://junikairou.github.io/mijote/** (déploiement automatique à chaque push sur `master` via GitHub Actions, voir `.github/workflows/deploy-pages.yml`)
+- Dossier local : `C:\Users\daich\Downloads\Mon Panier`
+- Dépôt GitHub : **github.com/Junikairou/monpanier** (renommé depuis `mijote` le 2026-07-30, public — nécessaire pour GitHub Pages gratuit)
+- App en ligne : **https://junikairou.github.io/monpanier/** (déploiement automatique à chaque push sur `master` via GitHub Actions, voir `.github/workflows/deploy-pages.yml`)
 - Backend : Supabase (projet `kjltmojlewrnwimzskgj`) — auth + base de données + RLS
 - Connexion : e-mail/mot de passe + Google OAuth
 - Design : polices DM Sans (texte) + Playfair Display (titres), palette sage/beige/crème — voir `src/theme/tokens.ts`
@@ -46,12 +46,14 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 - **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...004` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration.
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/mijote"` — nécessaire pour que les chemins fonctionnent sous `github.io/mijote`. Ne pas retirer.
-- Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/mijote/`) — voir la logique dans `src/lib/auth.tsx`.
+- Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.
+- **À vérifier dans le dashboard Supabase** (Authentication → URL Configuration) après le renommage : mettre à jour les Redirect URLs si `mijote://` ou `/mijote/` y étaient enregistrés en dur (sinon Google OAuth peut casser).
 - Outils installés sur la machine : `gh` (GitHub CLI, connecté), `vercel` CLI (plus utilisé mais toujours installé), Node.js, GitHub Pages CLI n/a.
 - Node/npm ne sont pas dans le PATH par défaut du terminal sandboxé — toujours rafraîchir le PATH avant les commandes (`$env:Path = ...`) ou utiliser les chemins complets.
 
 ## Décisions notables (avec date)
 
+- 2026-07-30 — Renommage complet **Mijoté → Mon Panier** : repo GitHub (`mijote`→`monpanier`), slug/scheme Expo, URL Pages (`/monpanier/`), manifest PWA, textes affichés dans l'app.
 - 2026-07-30 — Repo GitHub gardé **public** (choix utilisateur, nécessaire pour Pages gratuit ; aucune donnée secrète commitée).
 - 2026-07-30 — Vercel abandonné au profit de GitHub Pages (l'utilisateur voulait "juste GitHub").
 - 2026-07-30 — Liste de courses repensée : calcul en direct depuis planning + ingrédients à chaque affichage (pas stocké), seul l'état "coché" persiste (table `grocery_items`, colonne `merge_key`, index unique **non partiel** — un index partiel casse les `ON CONFLICT` de Supabase, piège à ne pas reproduire).

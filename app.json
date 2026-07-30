@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Mijoté",
-    "slug": "mijote",
+    "name": "Mon Panier",
+    "slug": "monpanier",
     "version": "1.0.0",
-    "scheme": "mijote",
+    "scheme": "monpanier",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -21,15 +21,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "Mijoté",
-      "shortName": "Mijoté",
+      "name": "Mon Panier",
+      "shortName": "Mon Panier",
       "description": "Planning de repas, plats et liste de courses",
       "lang": "fr",
       "themeColor": "#7DAE8F",
       "backgroundColor": "#F7F4EE",
       "display": "standalone",
       "orientation": "portrait",
-      "startUrl": "/mijote/"
+      "startUrl": "/monpanier/"
     },
     "plugins": [
       "expo-router",
@@ -40,7 +40,7 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "baseUrl": "/mijote"
+      "baseUrl": "/monpanier"
     }
   }
 }

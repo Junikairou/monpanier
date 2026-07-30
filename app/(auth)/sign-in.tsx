@@ -31,7 +31,7 @@ export default function SignIn() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.wrap}>
-        <Text style={[styles.brand, { color: colors.ink }]}>Mijoté</Text>
+        <Text style={[styles.brand, { color: colors.ink }]}>Mon Panier</Text>
         <Text style={[styles.title, { color: colors.ink }]}>Bon retour</Text>
         <Text style={[styles.subtitle, { color: colors.inkSoft }]}>
           Connectez-vous pour retrouver votre planning

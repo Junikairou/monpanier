@@ -61,7 +61,7 @@ function WebFrame({ children, onLayout }: { children: React.ReactNode; onLayout:
     // Expo's static web export strips some <head> tags added in +html.tsx
     // (manifest link, apple PWA meta) — inject them at runtime instead so
     // the app is still installable as a PWA.
-    const base = window.location.pathname.startsWith('/mijote') ? '/mijote/' : '/';
+    const base = window.location.pathname.startsWith('/monpanier') ? '/monpanier/' : '/';
     const addTag = (tag: string, attrs: Record<string, string>) => {
       const el = document.createElement(tag);
       Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
