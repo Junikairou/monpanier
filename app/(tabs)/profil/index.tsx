@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
@@ -15,16 +15,22 @@ const LANGUAGES: { code: string; label: string }[] = [
 
 export default function Profil() {
   const { colors, preference, setPreference } = useTheme();
-  const { session, signOut } = useAuth();
+  const { session, signOut, resetPassword } = useAuth();
   const userId = session!.user.id;
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [phoneDraft, setPhoneDraft] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
     getProfile(userId)
-      .then(setProfile)
+      .then((p) => {
+        setProfile(p);
+        setPhoneDraft(p.phone ?? '');
+      })
       .finally(() => setLoading(false));
   }, [userId]);
 
@@ -64,6 +70,38 @@ export default function Profil() {
             </Text>
             <Text style={{ fontSize: 11.5, color: colors.inkSoft }}>{session!.user.email}</Text>
           </View>
+        </View>
+
+        <SectionLabel text="Compte" />
+        <Row label="Téléphone" hint="Information seulement, non utilisée pour la connexion">
+          <TextInput
+            value={phoneDraft}
+            onChangeText={setPhoneDraft}
+            onBlur={() => {
+              if (phoneDraft !== (profile.phone ?? '')) patch({ phone: phoneDraft || null });
+            }}
+            placeholder="Ajouter"
+            placeholderTextColor={colors.inkFaint}
+            keyboardType="phone-pad"
+            style={{ fontSize: 13.5, color: colors.ink, textAlign: 'right', minWidth: 120 }}
+          />
+        </Row>
+        <View style={{ paddingVertical: 11 }}>
+          <Pill
+            label={resetSent ? '✓ Lien envoyé par e-mail' : 'Réinitialiser le mot de passe'}
+            variant="ghost"
+            onPress={async () => {
+              const err = await resetPassword(session!.user.email!);
+              if (err) setResetError(err);
+              else {
+                setResetError(null);
+                setResetSent(true);
+              }
+            }}
+          />
+          {resetError ? (
+            <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 6 }}>{resetError}</Text>
+          ) : null}
         </View>
 
         <SectionLabel text="Foyer" />

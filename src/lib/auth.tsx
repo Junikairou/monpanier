@@ -10,6 +10,7 @@ type AuthContextValue = {
   signUp: (email: string, password: string) => Promise<string | null>;
   signInWithGoogle: () => Promise<string | null>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<string | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -55,8 +56,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const resetPassword: AuthContextValue['resetPassword'] = async (email) => {
+    const redirectTo =
+      Platform.OS === 'web'
+        ? `${window.location.origin}${window.location.pathname.startsWith('/monpanier') ? '/monpanier/' : '/'}`
+        : 'monpanier://';
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    return error ? mapAuthError(error.message) : null;
+  };
+
   return (
-    <AuthContext.Provider value={{ session, initializing, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ session, initializing, signIn, signUp, signInWithGoogle, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
