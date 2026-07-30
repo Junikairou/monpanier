@@ -16,6 +16,7 @@ export default function Onboarding() {
   const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -37,6 +38,7 @@ export default function Onboarding() {
 
   const finish = async () => {
     setSaving(true);
+    setError(null);
     try {
       await updateProfile(session.user.id, {
         household_size: householdSize,
@@ -44,6 +46,12 @@ export default function Onboarding() {
         onboarded: true,
       });
       router.replace('/(tabs)/planning');
+    } catch (e: any) {
+      setError(
+        e?.message?.includes('column')
+          ? "La base de données n'est pas à jour (migration manquante). Contacte le développeur."
+          : "Une erreur est survenue, réessaie.",
+      );
     } finally {
       setSaving(false);
     }
@@ -89,6 +97,8 @@ export default function Onboarding() {
             </Pressable>
           );
         })}
+
+        {error ? <Text style={{ color: colors.danger, fontSize: 12.5, textAlign: 'center', marginTop: 14 }}>{error}</Text> : null}
 
         <View style={{ marginTop: 26 }}>
           <Pill label={saving ? 'Enregistrement…' : "C'est parti"} variant="primary" onPress={finish} disabled={saving} />
