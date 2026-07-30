@@ -6,7 +6,7 @@ import { useTheme } from '../src/theme/ThemeProvider';
 import { Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../src/components/ui';
 import { listDishes } from '../src/data/dishes';
 import { replaceMeal, setMeal } from '../src/data/planning';
-import { CATEGORY_LABELS, Category, Dish, MEAL_SLOT_LABELS, MealSlot } from '../src/types/models';
+import { CATEGORY_LABELS, Category, COURSE_TYPE_LABELS, Dish, MEAL_SLOT_LABELS, MealSlot } from '../src/types/models';
 import { fonts } from '../src/theme/tokens';
 
 const CATEGORIES: Category[] = ['rapide', 'healthy', 'pates', 'vege', 'autre'];
@@ -78,9 +78,12 @@ export default function ChoisirPlat() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                  {CATEGORY_LABELS[item.category]}
+                  {COURSE_TYPE_LABELS[item.course_type]} · {CATEGORY_LABELS[item.category]}
                 </Text>
                 <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
+                {item.calories != null ? (
+                  <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 1 }}>🔥 {item.calories} kcal</Text>
+                ) : null}
               </View>
               <Pill label={saving === item.id ? '…' : 'Choisir'} variant="primary" onPress={() => choose(item)} />
             </Pressable>

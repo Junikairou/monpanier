@@ -8,6 +8,20 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   autre: 'Autre',
 };
 
+export type CourseType = 'entree' | 'plat' | 'accompagnement' | 'dessert' | 'fruit' | 'boisson' | 'autre';
+
+export const COURSE_TYPE_LABELS: Record<CourseType, string> = {
+  entree: 'Entrée',
+  plat: 'Plat',
+  accompagnement: 'Accompagnement',
+  dessert: 'Dessert',
+  fruit: 'Fruit',
+  boisson: 'Boisson',
+  autre: 'Autre',
+};
+
+export const COURSE_TYPE_ORDER: CourseType[] = ['entree', 'plat', 'accompagnement', 'fruit', 'dessert', 'boisson', 'autre'];
+
 export type MealSlot = 'petit_dej' | 'dejeuner' | 'gouter' | 'diner' | 'collation';
 
 export const MEAL_SLOT_LABELS: Record<MealSlot, string> = {
@@ -23,6 +37,7 @@ export const MEAL_SLOT_ORDER: MealSlot[] = ['petit_dej', 'dejeuner', 'gouter', '
 export type GroceryCategory =
   | 'fruits_legumes'
   | 'viandes_poissons'
+  | 'feculents'
   | 'epicerie'
   | 'epicerie_salee'
   | 'produits_laitiers'
@@ -33,6 +48,7 @@ export type GroceryCategory =
 export const GROCERY_CATEGORY_LABELS: Record<GroceryCategory, string> = {
   fruits_legumes: 'Fruits & légumes',
   viandes_poissons: 'Viandes & poissons',
+  feculents: 'Féculents',
   epicerie: 'Épicerie',
   epicerie_salee: 'Épicerie salée',
   produits_laitiers: 'Produits laitiers',
@@ -41,11 +57,25 @@ export const GROCERY_CATEGORY_LABELS: Record<GroceryCategory, string> = {
   autre: 'Autre',
 };
 
+export const GROCERY_CATEGORY_ICONS: Record<GroceryCategory, string> = {
+  fruits_legumes: '🥦',
+  viandes_poissons: '🍗',
+  feculents: '🍞',
+  epicerie: '🛒',
+  epicerie_salee: '🥫',
+  produits_laitiers: '🧀',
+  surgeles: '🧊',
+  boissons: '🥤',
+  autre: '📦',
+};
+
 export interface Dish {
   id: string;
   user_id: string;
   name: string;
   category: Category;
+  course_type: CourseType;
+  calories: number | null;
   image_emoji: string | null;
   image_url: string | null;
   created_at: string;

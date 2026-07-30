@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Category, Dish, Ingredient, RecipeStep } from '../types/models';
+import type { Category, CourseType, Dish, Ingredient, RecipeStep } from '../types/models';
 
 export async function listDishes(): Promise<Dish[]> {
   const { data, error } = await supabase.from('dishes').select('*').order('name');
@@ -36,6 +36,8 @@ export async function listRecipeSteps(dishId: string): Promise<RecipeStep[]> {
 export interface NewDishInput {
   name: string;
   category: Category;
+  course_type: CourseType;
+  calories: number | null;
   image_emoji: string;
   ingredients: { name: string; quantity: number; unit: string; grocery_category: string }[];
   steps: string[];
@@ -48,6 +50,8 @@ export async function createDish(userId: string, input: NewDishInput): Promise<D
       user_id: userId,
       name: input.name,
       category: input.category,
+      course_type: input.course_type,
+      calories: input.calories,
       image_emoji: input.image_emoji || '🍽️',
     })
     .select()
@@ -84,6 +88,8 @@ const DEMO_DISHES: NewDishInput[] = [
   {
     name: 'Curry de pois chiches',
     category: 'healthy',
+    course_type: 'plat',
+    calories: 520,
     image_emoji: '🍛',
     ingredients: [
       { name: 'Pois chiches cuits', quantity: 400, unit: 'g', grocery_category: 'epicerie_salee' },
@@ -104,6 +110,8 @@ const DEMO_DISHES: NewDishInput[] = [
   {
     name: 'Bowl lentilles & feta',
     category: 'healthy',
+    course_type: 'plat',
+    calories: 480,
     image_emoji: '🥗',
     ingredients: [
       { name: 'Riz basmati', quantity: 200, unit: 'g', grocery_category: 'epicerie' },
@@ -120,6 +128,8 @@ const DEMO_DISHES: NewDishInput[] = [
   {
     name: 'Pâtes au pesto maison',
     category: 'pates',
+    course_type: 'plat',
+    calories: 610,
     image_emoji: '🍝',
     ingredients: [
       { name: 'Pâtes', quantity: 300, unit: 'g', grocery_category: 'epicerie' },
@@ -136,6 +146,8 @@ const DEMO_DISHES: NewDishInput[] = [
   {
     name: 'Ratatouille au four',
     category: 'vege',
+    course_type: 'accompagnement',
+    calories: 180,
     image_emoji: '🥘',
     ingredients: [
       { name: 'Oignon', quantity: 1, unit: '', grocery_category: 'fruits_legumes' },
@@ -153,6 +165,8 @@ const DEMO_DISHES: NewDishInput[] = [
   {
     name: 'Porridge pomme-cannelle',
     category: 'rapide',
+    course_type: 'plat',
+    calories: 320,
     image_emoji: '🥣',
     ingredients: [
       { name: 'Flocons d\'avoine', quantity: 60, unit: 'g', grocery_category: 'epicerie' },

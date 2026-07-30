@@ -5,11 +5,19 @@ import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Chip, Field, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { createDish } from '../../../src/data/dishes';
-import { CATEGORY_LABELS, Category, GROCERY_CATEGORY_LABELS, GroceryCategory } from '../../../src/types/models';
+import {
+  CATEGORY_LABELS,
+  Category,
+  COURSE_TYPE_LABELS,
+  COURSE_TYPE_ORDER,
+  CourseType,
+  GROCERY_CATEGORY_LABELS,
+  GroceryCategory,
+} from '../../../src/types/models';
 
 const CATEGORIES: Category[] = ['rapide', 'healthy', 'pates', 'vege', 'autre'];
 const GROCERY_CATEGORIES: GroceryCategory[] = [
-  'fruits_legumes', 'viandes_poissons', 'epicerie', 'epicerie_salee', 'produits_laitiers', 'surgeles', 'boissons', 'autre',
+  'fruits_legumes', 'viandes_poissons', 'feculents', 'epicerie', 'epicerie_salee', 'produits_laitiers', 'surgeles', 'boissons', 'autre',
 ];
 
 type IngredientDraft = { name: string; quantity: string; unit: string; grocery_category: GroceryCategory };
@@ -22,6 +30,8 @@ export default function NewDish() {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🍽️');
   const [category, setCategory] = useState<Category>('rapide');
+  const [courseType, setCourseType] = useState<CourseType>('plat');
+  const [calories, setCalories] = useState('');
   const [ingredients, setIngredients] = useState<IngredientDraft[]>([
     { name: '', quantity: '', unit: '', grocery_category: 'autre' },
   ]);
@@ -44,6 +54,8 @@ export default function NewDish() {
       await createDish(session!.user.id, {
         name: name.trim(),
         category,
+        course_type: courseType,
+        calories: calories.trim() ? Number(calories.replace(',', '.')) || null : null,
         image_emoji: emoji.trim() || '🍽️',
         ingredients: ingredients
           .filter((i) => i.name.trim())
@@ -74,6 +86,21 @@ export default function NewDish() {
             <Chip key={c} label={CATEGORY_LABELS[c]} active={category === c} onPress={() => setCategory(c)} />
           ))}
         </ScrollView>
+
+        <Text style={[styles.label, { color: colors.inkSoft }]}>Type de plat</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+          {COURSE_TYPE_ORDER.map((c) => (
+            <Chip key={c} label={COURSE_TYPE_LABELS[c]} active={courseType === c} onPress={() => setCourseType(c)} />
+          ))}
+        </ScrollView>
+
+        <Field
+          label="Calories (optionnel, pour indiquer le total du repas)"
+          value={calories}
+          onChangeText={setCalories}
+          keyboardType="numeric"
+          placeholder="Ex. 550"
+        />
 
         <Text style={[styles.section, { color: colors.ink }]}>Ingrédients</Text>
         {ingredients.map((ing, i) => (

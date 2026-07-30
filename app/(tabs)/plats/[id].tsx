@@ -8,6 +8,7 @@ import { deleteDish, getDish, listIngredients, listRecipeSteps } from '../../../
 import { setMeal } from '../../../src/data/planning';
 import {
   CATEGORY_LABELS,
+  COURSE_TYPE_LABELS,
   Dish,
   GROCERY_CATEGORY_LABELS,
   Ingredient,
@@ -90,11 +91,16 @@ export default function DishDetail() {
 
   return (
     <Screen>
-      <ScreenHeader title={dish.name} subtitle={CATEGORY_LABELS[dish.category]} />
+      <ScreenHeader title={dish.name} subtitle={`${COURSE_TYPE_LABELS[dish.course_type]} · ${CATEGORY_LABELS[dish.category]}`} />
       <ScrollView contentContainerStyle={{ padding: 18 }}>
         <View style={[styles.hero, { backgroundColor: colors.sagePale }]}>
           <Text style={{ fontSize: 46 }}>{dish.image_emoji ?? '🍽️'}</Text>
         </View>
+        {dish.calories != null ? (
+          <Text style={{ textAlign: 'center', fontSize: 12.5, color: colors.inkSoft, marginBottom: 10 }}>
+            🔥 {dish.calories} kcal
+          </Text>
+        ) : null}
 
         <View style={[styles.tabStrip, { borderColor: colors.line }]}>
           <Pressable onPress={() => setTab('ingredients')}>
