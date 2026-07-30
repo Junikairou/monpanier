@@ -9,5 +9,4 @@ update grocery_items
   where manual = false and merge_key is null;
 
 create unique index if not exists grocery_items_user_merge_key_uidx
-  on grocery_items(user_id, merge_key)
-  where manual = false;
+  on grocery_items(user_id, merge_key);
