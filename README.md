@@ -1,38 +1,25 @@
-# Mon Panier
+# Mon Panier — Planning de repas
 
-App de planning repas (Expo — web pour l'instant, iOS/Android plus tard sans changer de code).
+Une application de planning de repas : on organise sa semaine, on gère ses plats (recettes, ingrédients) et la liste de courses se génère toute seule à partir du planning.
 
-## Démarrer
+**Site en ligne :** https://junikairou.github.io/monpanier/
+**Dépôt :** https://github.com/Junikairou/monpanier
 
-```bash
-cd monpanier
-npm run web
-```
+---
 
-## Connecter Supabase (comptes + données)
+## Aperçu rapide
 
-1. Crée un projet gratuit sur [supabase.com](https://supabase.com).
-2. Dans le projet : **SQL Editor > New query**, colle le contenu de [`supabase/schema.sql`](supabase/schema.sql) et lance-le. Ça crée les tables (plats, ingrédients, recettes, planning, courses, profils) avec la sécurité par utilisateur (RLS).
-3. Dans **Project settings > API**, récupère l'URL du projet et la clé `anon public`.
-4. Crée un fichier `.env` à la racine de `monpanier/` (copie `.env.example`) :
-   ```
-   EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-   EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
-   ```
-5. Relance `npm run web`.
+- **Planning de la semaine** — navigation semaine par semaine, ajout/changement/suppression de repas.
+- **Plats** — création de fiches recette (ingrédients + étapes), consultables et modifiables.
+- **Liste de courses automatique** — générée depuis le planning, vue « par catégorie » ou « par plat », coché qui reste en mémoire.
+- **Profil personnalisable** — thème clair/sombre/auto, langue, unités, taille du foyer, repas à planifier.
+- **Connexion** e-mail/mot de passe ou Google.
+- **Installable comme une app** (PWA) — pensée pour devenir une vraie app mobile (iOS/Android) plus tard, sans réécrire le code.
 
-Tant que ce fichier n'existe pas, l'app tourne quand même et affiche un avertissement — utile pour voir l'interface, mais la connexion ne fonctionnera pas.
+## Stack technique
 
-## Ce qui est fait
+Expo (React Native + web) + Supabase (comptes et base de données).
 
-- Auth (connexion / inscription par e-mail)
-- Planning de la semaine, navigation vers les semaines suivantes
-- Inventaire des plats (création, ingrédients, étapes de recette)
-- Liste de courses générée automatiquement depuis le planning, avec fusion des quantités identiques, vue par rayon et vue par plat
-- Profil : thème clair/sombre/auto, langue (préférence enregistrée), unités, taille du foyer
+## Licence & mentions
 
-## Pas encore fait
-
-- Communauté (partage de recettes entre utilisateurs)
-- Traduction complète de l'interface en anglais
-- Build natif iOS/Android (le code est déjà compatible Expo — `npx eas build` le moment venu)
+Projet personnel. Les données de chaque compte sont privées et isolées (sécurité gérée côté base de données).
