@@ -57,6 +57,28 @@ function WebFrame({ children, onLayout }: { children: React.ReactNode; onLayout:
     const style = document.createElement('style');
     style.innerHTML = 'html, body, #root { height: 100%; margin: 0; }';
     document.head.appendChild(style);
+
+    // Expo's static web export strips some <head> tags added in +html.tsx
+    // (manifest link, apple PWA meta) — inject them at runtime instead so
+    // the app is still installable as a PWA.
+    const base = window.location.pathname.startsWith('/mijote') ? '/mijote/' : '/';
+    const addTag = (tag: string, attrs: Record<string, string>) => {
+      const el = document.createElement(tag);
+      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+      document.head.appendChild(el);
+    };
+    if (!document.querySelector('link[rel="manifest"]')) {
+      addTag('link', { rel: 'manifest', href: `${base}manifest.json` });
+    }
+    if (!document.querySelector('link[rel="apple-touch-icon"]')) {
+      addTag('link', { rel: 'apple-touch-icon', href: `${base}icon-512.png` });
+    }
+    if (!document.querySelector('meta[name="apple-mobile-web-app-capable"]')) {
+      addTag('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+      addTag('meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'default' });
+      addTag('meta', { name: 'apple-mobile-web-app-title', content: 'Mijoté' });
+    }
+
     return () => {
       document.head.removeChild(style);
     };
