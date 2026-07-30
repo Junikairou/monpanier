@@ -26,6 +26,25 @@ export function addDays(date: Date, n: number): Date {
   return d;
 }
 
+export function startOfMonth(date: Date): Date {
+  const d = new Date(date);
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function addMonths(date: Date, n: number): Date {
+  const d = new Date(date);
+  d.setDate(1);
+  d.setMonth(d.getMonth() + n);
+  return d;
+}
+
+export function formatMonthYear(date: Date): string {
+  const label = `${MONTH_LABELS[date.getMonth()]} ${date.getFullYear()}`;
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export function dayLabel(date: Date): string {
   return DAY_LABELS[(date.getDay() + 6) % 7];
 }

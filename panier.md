@@ -27,6 +27,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 - Auth : connexion/inscription e-mail (avec confirmation du mot de passe), connexion Google, questionnaire d'onboarding (taille du foyer, repas à planifier)
 - Planning de la semaine : navigation semaine par semaine, ajout/changement/suppression de repas, ne montre que les repas activés dans le profil ; **un créneau peut contenir plusieurs plats** (entrée + plat + dessert...) ; total calories du jour et indicateur "repas équilibré" (règle simple : présence d'un plat + accompagnement + fruit dans la journée)
+- Planning : bouton retour à aujourd'hui (⟲), calendrier mois/année pour sauter à une date (📅), jour actuel mis en avant dans la frise (bordure + agrandi), repas "au resto" (créneau marqué complété sans choisir de plat, exclu de la liste de courses), vue "Semaine" en grille d'ensemble (tape une case pour ouvrir ce jour)
 - Plats : création (ingrédients + étapes de recette), **type de plat** (entrée/plat/accompagnement/dessert/fruit/boisson/autre), **calories en saisie manuelle** (optionnel), fiche détail, ajout au planning
 - Liste de courses : vue "Par catégorie" (une carte par ingrédient, indique le/les plat(s) d'origine) et vue "Par plat" (bloc compact par plat, se replie si tout est coché) — filtre Jour/Semaine avec navigation, état coché persistant (indépendant de la fenêtre affichée)
 - Profil : thème clair/sombre/auto, langue (préférence enregistrée, pas de traduction complète), unités, taille du foyer, repas à planifier
@@ -43,7 +44,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 ## Points d'attention techniques
 
-- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...005` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 005 en attente d'exécution** (ajoute `course_type`/`calories` sur `dishes`, ajoute `feculents` aux rayons de courses) — à lancer dans Supabase SQL Editor.
+- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...006` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 006 en attente d'exécution** (ajoute `is_restaurant` sur `planning_entries`, pour les repas "au resto") — à lancer dans Supabase SQL Editor.
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.
@@ -54,8 +55,8 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 ## Chantier en cours (demande du 2026-07-30, gros lot de features)
 
 Fait par étapes, push à chaque étape terminée :
-1. ✅ Structure repas multi-plats (entrée/plat/dessert/accompagnement/fruit/boisson) + calories manuelles + indicateur équilibre — **fait, migration 005 à exécuter dans Supabase**.
-2. ⏳ Planning : retour à aujourd'hui, calendrier (choix mois/année), repas "au resto", mise en avant du jour actuel, vue hebdomadaire d'ensemble.
+1. ✅ Structure repas multi-plats (entrée/plat/dessert/accompagnement/fruit/boisson) + calories manuelles + indicateur équilibre — fait, migration 005 exécutée.
+2. ✅ Planning : retour à aujourd'hui, calendrier (choix mois/année), repas "au resto", mise en avant du jour actuel, vue hebdomadaire d'ensemble — **fait, migration 006 à exécuter dans Supabase**.
 3. ⏳ Courses : icônes par catégorie, sélecteur de plage de dates (plusieurs jours) pour les utilisateurs qui font les courses tous les 2-3 jours.
 4. ⏳ Thèmes rose et bleu (palettes complètes en plus de clair/sombre/auto).
 

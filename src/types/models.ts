@@ -103,6 +103,7 @@ export interface PlanningEntry {
   date: string; // ISO date, e.g. 2026-07-30
   slot: MealSlot;
   dish_id: string | null;
+  is_restaurant: boolean;
   dish?: Dish;
 }
 
