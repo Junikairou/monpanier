@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import type { MealSlot } from '../types/models';
 
 export interface Profile {
   id: string;
@@ -7,6 +8,8 @@ export interface Profile {
   language: string;
   units: 'metric' | 'imperial';
   diet: string | null;
+  active_slots: MealSlot[];
+  onboarded: boolean;
 }
 
 export async function getProfile(userId: string): Promise<Profile> {

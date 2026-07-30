@@ -1,15 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { getProfile } from '../../src/data/profile';
 
 export default function TabsLayout() {
   const { session, initializing } = useAuth();
   const { colors } = useTheme();
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+    getProfile(session.user.id)
+      .then((p) => setOnboarded(p.onboarded))
+      .catch(() => setOnboarded(true));
+  }, [session]);
 
   if (initializing) return null;
   if (!session) return <Redirect href="/(auth)/sign-in" />;
+  if (onboarded === null) return null;
+  if (!onboarded) return <Redirect href="/(auth)/onboarding" />;
 
   return (
     <Tabs

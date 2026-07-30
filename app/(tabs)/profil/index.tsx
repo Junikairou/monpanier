@@ -5,6 +5,7 @@ import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { getProfile, Profile, updateProfile } from '../../../src/data/profile';
+import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot } from '../../../src/types/models';
 
 const LANGUAGES: { code: string; label: string }[] = [
   { code: 'fr', label: 'Français' },
@@ -76,6 +77,26 @@ export default function Profil() {
             </Pressable>
           </View>
         </Row>
+
+        <SectionLabel text="Repas à planifier" />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+          {MEAL_SLOT_ORDER.map((slot: MealSlot) => {
+            const active = profile.active_slots?.includes(slot);
+            return (
+              <Pill
+                key={slot}
+                label={MEAL_SLOT_LABELS[slot]}
+                variant={active ? 'primary' : 'default'}
+                onPress={() => {
+                  const next = active
+                    ? profile.active_slots.filter((s) => s !== slot)
+                    : [...(profile.active_slots ?? []), slot];
+                  patch({ active_slots: next.length ? next : [slot] });
+                }}
+              />
+            );
+          })}
+        </View>
 
         <SectionLabel text="Apparence" />
         <Row label="Thème">

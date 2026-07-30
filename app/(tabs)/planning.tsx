@@ -6,6 +6,7 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { Card, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../src/components/ui';
 import { addDays, dayLabel, formatWeekRange, isToday, startOfWeek, toIso } from '../../src/lib/dates';
 import { listPlanningRange, removeMeal } from '../../src/data/planning';
+import { getProfile } from '../../src/data/profile';
 import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
 
 export default function Planning() {
@@ -18,12 +19,17 @@ export default function Planning() {
   const [selectedDate, setSelectedDate] = useState(() => toIso(new Date()));
   const [entries, setEntries] = useState<PlanningEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listPlanningRange(userId, toIso(weekStart), toIso(addDays(weekStart, 6)));
+      const [data, profile] = await Promise.all([
+        listPlanningRange(userId, toIso(weekStart), toIso(addDays(weekStart, 6))),
+        getProfile(userId),
+      ]);
       setEntries(data);
+      setActiveSlots(profile.active_slots?.length ? profile.active_slots : [...MEAL_SLOT_ORDER]);
     } finally {
       setLoading(false);
     }
@@ -102,7 +108,7 @@ export default function Planning() {
         <LoadingBlock />
       ) : (
         <FlatList
-          data={MEAL_SLOT_ORDER}
+          data={MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s))}
           keyExtractor={(s) => s}
           contentContainerStyle={{ padding: 18, paddingTop: 14, gap: 12 }}
           renderItem={({ item: slot }) => {

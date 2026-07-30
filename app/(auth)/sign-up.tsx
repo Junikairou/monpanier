@@ -7,9 +7,10 @@ import { Field, Pill } from '../../src/components/ui';
 
 export default function SignUp() {
   const { colors } = useTheme();
-  const { session, signUp } = useAuth();
+  const { session, signUp, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,14 @@ export default function SignUp() {
   const onSubmit = async () => {
     setError(null);
     setNotice(null);
+    if (password.length < 6) {
+      setError('Le mot de passe doit contenir au moins 6 caractères.');
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setError('Les deux mots de passe ne correspondent pas.');
+      return;
+    }
     setLoading(true);
     const err = await signUp(email.trim(), password);
     setLoading(false);
@@ -52,11 +61,21 @@ export default function SignUp() {
           secureTextEntry
           placeholder="Au moins 6 caractères"
         />
+        <Field
+          label="Confirmer le mot de passe"
+          value={passwordConfirm}
+          onChangeText={setPasswordConfirm}
+          secureTextEntry
+          placeholder="Retape le même mot de passe"
+        />
 
         {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
         {notice ? <Text style={[styles.error, { color: colors.forest }]}>{notice}</Text> : null}
 
         <Pill label={loading ? 'Création…' : 'Créer mon profil'} variant="primary" onPress={onSubmit} disabled={loading} />
+
+        <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 14 }}>ou</Text>
+        <Pill label="Continuer avec Google" onPress={() => signInWithGoogle().then((e) => e && setError(e))} />
 
         <Link href="/(auth)/sign-in" style={[styles.link, { color: colors.forest }]}>
           Déjà un compte ? Se connecter

@@ -84,6 +84,8 @@ create table if not exists profiles (
   language text not null default 'fr',
   units text not null default 'metric' check (units in ('metric','imperial')),
   diet text,
+  active_slots text[] not null default array['petit_dej','dejeuner','gouter','diner','collation'],
+  onboarded boolean not null default false,
   updated_at timestamptz not null default now()
 );
 

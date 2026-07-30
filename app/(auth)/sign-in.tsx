@@ -8,7 +8,7 @@ import { Field, Pill } from '../../src/components/ui';
 
 export default function SignIn() {
   const { colors } = useTheme();
-  const { session, signIn } = useAuth();
+  const { session, signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +65,9 @@ export default function SignIn() {
         {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
 
         <Pill label={loading ? 'Connexion…' : 'Se connecter'} variant="primary" onPress={onSubmit} disabled={loading} />
+
+        <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 14 }}>ou</Text>
+        <Pill label="Continuer avec Google" onPress={() => signInWithGoogle().then((e) => e && setError(e))} />
 
         <Link href="/(auth)/sign-up" style={[styles.link, { color: colors.forest }]}>
           Pas de compte ? Créer un profil
