@@ -16,7 +16,7 @@ import { listIngredients } from '../../../src/data/dishes';
 import { listPlanningRange } from '../../../src/data/planning';
 import { GROCERY_CATEGORY_ICONS, GROCERY_CATEGORY_LABELS, GroceryCategory, GroceryItem, Ingredient, MealSlot, PlanningEntry } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
-import { addDays, dayLabel, formatWeekOf, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
+import { addDays, dayLabel, formatWeekOf, isToday, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
 
 const GROCERY_CATEGORIES: GroceryCategory[] = [
@@ -230,11 +230,20 @@ export default function Courses() {
           <View style={styles.weekStrip}>
             {Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i)).map((d) => {
               const selected = toIso(d) === toIso(anchor);
+              const today = isToday(d);
               return (
                 <Pressable
                   key={toIso(d)}
                   onPress={() => setAnchor(d)}
-                  style={[styles.dayChip, { backgroundColor: selected ? colors.forest : colors.paper, borderColor: selected ? colors.forest : colors.beige }]}
+                  style={[
+                    styles.dayChip,
+                    {
+                      backgroundColor: selected ? colors.forest : colors.paper,
+                      borderColor: selected ? colors.forest : today ? colors.forest : colors.beige,
+                      borderWidth: today && !selected ? 2 : 1.5,
+                      transform: today ? [{ scale: 1.08 }] : undefined,
+                    },
+                  ]}
                 >
                   <Text style={{ fontSize: 8.5, fontFamily: fonts.bodySemiBold, textTransform: 'uppercase', opacity: selected ? 1 : 0.7, color: selected ? colors.paper : colors.ink }}>{dayLabel(d)}</Text>
                   <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.ink, marginTop: 1 }}>{d.getDate()}</Text>

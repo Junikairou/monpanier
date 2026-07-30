@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
@@ -98,6 +98,15 @@ export default function Profil() {
             );
           })}
         </View>
+
+        <SectionLabel text="Planning" />
+        <Row label="Indicateur repas équilibré" hint="Avertit quand un repas n'a pas d'accompagnement/fruit">
+          <Switch
+            value={profile.show_balance_hint}
+            onValueChange={(v) => patch({ show_balance_hint: v })}
+            trackColor={{ true: colors.forest }}
+          />
+        </Row>
 
         <SectionLabel text="Apparence" />
         <Row label="Thème">

@@ -10,6 +10,7 @@ export interface Profile {
   diet: string | null;
   active_slots: MealSlot[];
   onboarded: boolean;
+  show_balance_hint: boolean;
 }
 
 export async function getProfile(userId: string): Promise<Profile> {

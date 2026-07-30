@@ -39,6 +39,7 @@ export default function Planning() {
   const [entries, setEntries] = useState<PlanningEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
+  const [showBalanceHint, setShowBalanceHint] = useState(true);
   const [viewMode, setViewMode] = useState<'jour' | 'semaine'>('jour');
   const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -51,6 +52,7 @@ export default function Planning() {
       ]);
       setEntries(data);
       setActiveSlots(profile.active_slots?.length ? profile.active_slots : [...MEAL_SLOT_ORDER]);
+      setShowBalanceHint(profile.show_balance_hint);
     } finally {
       setLoading(false);
     }
@@ -71,10 +73,15 @@ export default function Planning() {
   const dayEntries = entries.filter((e) => e.date === selectedDate && e.dish_id);
   const totalCalories = dayEntries.reduce((sum, e) => sum + (e.dish?.calories ?? 0), 0);
   const hasCalorieData = dayEntries.some((e) => e.dish?.calories != null);
+
   const BALANCE_TYPES: CourseType[] = ['plat', 'accompagnement', 'fruit'];
-  const presentTypes = new Set(dayEntries.map((e) => e.dish?.course_type).filter(Boolean));
-  const missingTypes = BALANCE_TYPES.filter((t) => !presentTypes.has(t));
-  const isBalanced = dayEntries.length > 0 && missingTypes.length === 0;
+  const slotBalance = (slot: MealSlot) => {
+    const list = slotEntries(slot).filter((e) => e.dish_id && e.dish);
+    if (list.length === 0) return null;
+    const present = new Set(list.map((e) => e.dish!.course_type));
+    const missing = BALANCE_TYPES.filter((t) => !present.has(t));
+    return { missing, balanced: missing.length === 0 };
+  };
 
   const onAdd = (slot: MealSlot) => {
     router.push({ pathname: '/choisir-plat', params: { date: selectedDate, slot } });
@@ -200,15 +207,10 @@ export default function Planning() {
             {formatDayCaption(selectedDateObj)}
           </Text>
 
-          {dayEntries.length > 0 ? (
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-              {hasCalorieData ? (
-                <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium }}>🔥 {totalCalories} kcal</Text>
-              ) : null}
-              <Text style={{ fontSize: 10.5, color: isBalanced ? colors.forest : colors.inkFaint, fontFamily: fonts.bodyMedium }}>
-                {isBalanced ? '✅ Repas équilibré' : `⚠️ Il manque : ${missingTypes.map((t) => COURSE_TYPE_LABELS[t]).join(', ')}`}
-              </Text>
-            </View>
+          {hasCalorieData ? (
+            <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: 8 }}>
+              🔥 {totalCalories} kcal sur la journée
+            </Text>
           ) : null}
 
           {loading ? (
@@ -220,6 +222,7 @@ export default function Planning() {
               contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10 }}
               renderItem={({ item: slot }) => {
                 const slotList = slotEntries(slot);
+                const balance = showBalanceHint ? slotBalance(slot) : null;
                 return (
                   <Card style={slotList.length === 0 ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.beigeDark, shadowOpacity: 0 } : undefined}>
                     <View style={styles.slotHeader}>
@@ -281,7 +284,12 @@ export default function Planning() {
                             ) : null}
                           </View>
                         ))}
-                        <View style={{ marginTop: 10, flexDirection: 'row', gap: 5 }}>
+                        {balance ? (
+                          <Text style={{ fontSize: 10, color: balance.balanced ? colors.forest : colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: 8 }}>
+                            {balance.balanced ? '✅ Équilibré' : `⚠️ Il manque : ${balance.missing.map((t) => COURSE_TYPE_LABELS[t]).join(', ')}`}
+                          </Text>
+                        ) : null}
+                        <View style={{ flexDirection: 'row', gap: 5 }}>
                           <MiniButton label="+ Ajouter un autre plat" variant="outline" onPress={() => onAdd(slot)} />
                           <MiniButton label="🍽️ Au resto" variant="outline" onPress={() => onMarkResto(slot)} />
                         </View>

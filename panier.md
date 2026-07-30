@@ -28,8 +28,9 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 - Auth : connexion/inscription e-mail (avec confirmation du mot de passe), connexion Google, questionnaire d'onboarding (taille du foyer, repas à planifier)
 - Planning de la semaine : navigation semaine par semaine, ajout/changement/suppression de repas, ne montre que les repas activés dans le profil ; **un créneau peut contenir plusieurs plats** (entrée + plat + dessert...) ; total calories du jour et indicateur "repas équilibré" (règle simple : présence d'un plat + accompagnement + fruit dans la journée)
 - Planning : bouton retour à aujourd'hui (⟲), calendrier mois/année pour sauter à une date (📅), jour actuel mis en avant dans la frise (bordure + agrandi), repas "au resto" (créneau marqué complété sans choisir de plat, exclu de la liste de courses), vue "Semaine" en grille d'ensemble (tape une case pour ouvrir ce jour)
+- Indicateur "repas équilibré" calculé **par créneau** (petit-déj/déjeuner/dîner...) et non plus par jour ; désactivable dans Profil → Planning
 - Plats : création (ingrédients + étapes de recette), **type de plat** (entrée/plat/accompagnement/dessert/fruit/boisson/autre), **calories en saisie manuelle** (optionnel), fiche détail, ajout au planning
-- Liste de courses : vue "Par catégorie" (icône + une carte par ingrédient, indique le/les plat(s) d'origine) et vue "Par plat" (bloc compact par plat, se replie si tout est coché) — filtre Jour/Semaine/**Plage** (sélection libre de deux dates via calendrier, pour les courses tous les 2-3 jours), état coché persistant (indépendant de la fenêtre affichée)
+- Liste de courses : vue "Par catégorie" (icône + une carte par ingrédient, indique le/les plat(s) d'origine) et vue "Par plat" (bloc compact par plat, se replie si tout est coché) — filtre Jour/Semaine/**Plage** (sélection libre de deux dates via calendrier, pour les courses tous les 2-3 jours), état coché persistant (indépendant de la fenêtre affichée), jour actuel mis en avant dans le filtre "Jour"
 - Profil : thème clair/sombre/auto/**rose/bleu**, langue (préférence enregistrée, pas de traduction complète), unités, taille du foyer, repas à planifier
 - PWA installable (manifest + icônes — icône encore générique Expo, pas personnalisée)
 
@@ -44,7 +45,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 ## Points d'attention techniques
 
-- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...007` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 007 en attente d'exécution** (élargit la contrainte `theme_preference`, sans effet fonctionnel actuellement — voir plus bas) — à lancer dans Supabase SQL Editor.
+- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...008` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 008 en attente d'exécution** (ajoute `show_balance_hint` sur `profiles`) — à lancer dans Supabase SQL Editor.
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.
@@ -53,13 +54,21 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 - Outils installés sur la machine : `gh` (GitHub CLI, connecté), `vercel` CLI (plus utilisé mais toujours installé), Node.js, GitHub Pages CLI n/a.
 - Node/npm ne sont pas dans le PATH par défaut du terminal sandboxé — toujours rafraîchir le PATH avant les commandes (`$env:Path = ...`) ou utiliser les chemins complets.
 
-## Chantier en cours (demande du 2026-07-30, gros lot de features)
+## Chantier terminé (demande du 2026-07-30, gros lot de features)
+
+1. ✅ Structure repas multi-plats + calories manuelles + indicateur équilibre — migration 005 exécutée.
+2. ✅ Planning : retour à aujourd'hui, calendrier, repas "au resto", mise en avant du jour actuel, vue hebdomadaire d'ensemble — migration 006 exécutée.
+3. ✅ Courses : icônes par catégorie, sélecteur de plage de dates — aucune migration nécessaire.
+4. ✅ Thèmes rose et bleu — migration 007 exécutée (sans effet fonctionnel, cf. plus bas).
+
+## Chantier en cours (demande du 2026-07-30 v2, 2e gros lot)
 
 Fait par étapes, push à chaque étape terminée :
-1. ✅ Structure repas multi-plats (entrée/plat/dessert/accompagnement/fruit/boisson) + calories manuelles + indicateur équilibre — fait, migration 005 exécutée.
-2. ✅ Planning : retour à aujourd'hui, calendrier (choix mois/année), repas "au resto", mise en avant du jour actuel, vue hebdomadaire d'ensemble — fait, migration 006 exécutée.
-3. ✅ Courses : icônes par catégorie, sélecteur de plage de dates (calendrier libre "Du/Au") — fait, aucune migration nécessaire.
-4. ✅ Thèmes rose et bleu (palettes complètes en plus de clair/sombre/auto) — fait. **Chantier terminé.**
+1. ✅ Petites retouches : indicateur équilibre par créneau (pas par jour) + désactivable dans Profil, jour actuel mis en avant dans Courses — fait, **migration 008 à exécuter**.
+2. ⏳ Refonte planning en cartes glissantes façon capture d'écran fournie (remplace la vue "Semaine" grille ; aujourd'hui + 2 jours visibles, glisser pour voir la suite, case à cocher "Cuisiné", navigation semaines avant/après).
+3. ⏳ Copier-coller un planning (jour ou semaine) vers un autre jour/semaine.
+4. ⏳ Planning par défaut : modèle qui remplit automatiquement chaque nouvelle semaine, modifiable manuellement ensuite.
+5. ⏳ Profil : champ téléphone (info seulement) + lien de récupération de mot de passe par e-mail (Supabase standard, pas de système maison).
 
 ## Décisions notables (avec date)
 
