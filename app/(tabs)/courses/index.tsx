@@ -30,6 +30,15 @@ const SLOT_SHORT: Record<MealSlot, string> = {
   collation: 'Collation',
 };
 
+function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onPress} hitSlop={8} style={[styles.arrowBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}>
+      <Text style={{ color: colors.inkSoft, fontSize: 11 }}>{dir === 'prev' ? '‹' : '›'}</Text>
+    </Pressable>
+  );
+}
+
 export default function Courses() {
   const { colors } = useTheme();
   const { session } = useAuth();
@@ -81,6 +90,7 @@ export default function Courses() {
 
   const itemByKey = useMemo(() => new Map(list.auto.map((i) => [i.key, i])), [list.auto]);
   const totalCount = list.auto.length + list.manual.length;
+  const checkedCount = list.auto.filter((i) => i.checked).length + list.manual.filter((i) => i.checked).length;
 
   const onToggleAuto = async (item: ComputedGroceryItem) => {
     const next = !item.checked;
@@ -121,6 +131,12 @@ export default function Courses() {
     }));
   }, [planningEntries, dishIngredients]);
 
+  const qtyTag = (qty: string) => (
+    <View style={[styles.qtyTag, { backgroundColor: colors.beige }]}>
+      <Text style={{ fontSize: 10.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{qty}</Text>
+    </View>
+  );
+
   const renderRow = (
     keyId: string,
     checked: boolean,
@@ -132,66 +148,62 @@ export default function Courses() {
     <View key={keyId} style={[styles.itemRow, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: checked ? 0.5 : 1 }]}>
       <Checkbox checked={checked} onPress={onToggle} />
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 13.5, color: colors.ink, textDecorationLine: checked ? 'line-through' : 'none' }}>{name}</Text>
-        {badge}
+        <Text style={{ fontSize: 12.5, fontFamily: fonts.bodyMedium, color: colors.ink, textDecorationLine: checked ? 'line-through' : 'none' }}>{name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>
+          {qtyTag(qty)}
+          {badge}
+        </View>
       </View>
-      <Text style={{ fontSize: 12, color: colors.inkSoft }}>{qty}</Text>
     </View>
   );
 
   return (
     <Screen>
-      <ScreenHeader title="Liste de courses" subtitle={`${totalCount} article${totalCount > 1 ? 's' : ''}`} />
+      <ScreenHeader title="Liste de courses" subtitle={`${totalCount} article${totalCount > 1 ? 's' : ''} · ${checkedCount} coché${checkedCount > 1 ? 's' : ''}`} />
 
-      <View style={[styles.switchWrap, { backgroundColor: colors.sagePale }]}>
+      <View style={[styles.switchWrap, { backgroundColor: colors.beige }]}>
         <Pressable style={[styles.switchOpt, view === 'rayon' && { backgroundColor: colors.paper }]} onPress={() => setView('rayon')}>
-          <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: view === 'rayon' ? colors.forest : colors.inkSoft }}>Par rayon</Text>
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: view === 'rayon' ? colors.ink : colors.inkSoft }}>🏷 Par catégorie</Text>
         </Pressable>
         <Pressable style={[styles.switchOpt, view === 'plat' && { backgroundColor: colors.paper }]} onPress={() => setView('plat')}>
-          <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: view === 'plat' ? colors.forest : colors.inkSoft }}>Par plat</Text>
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: view === 'plat' ? colors.ink : colors.inkSoft }}>🍽 Par plat</Text>
         </Pressable>
       </View>
 
-      <View style={[styles.switchWrap, { backgroundColor: colors.sagePale, marginTop: 8 }]}>
+      <View style={[styles.switchWrap, { backgroundColor: colors.beige, marginTop: 8 }]}>
         <Pressable style={[styles.switchOpt, period === 'jour' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('jour')}>
-          <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: period === 'jour' ? colors.forest : colors.inkSoft }}>Jour</Text>
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'jour' ? colors.ink : colors.inkSoft }}>Jour</Text>
         </Pressable>
         <Pressable style={[styles.switchOpt, period === 'semaine' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('semaine')}>
-          <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: period === 'semaine' ? colors.forest : colors.inkSoft }}>Semaine</Text>
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'semaine' ? colors.ink : colors.inkSoft }}>Semaine</Text>
         </Pressable>
       </View>
 
       {period === 'jour' ? (
-        <View style={[styles.stripWrap, { backgroundColor: colors.paper, borderColor: colors.beigeDark }]}>
-          <Pressable onPress={() => setAnchor(addDays(anchor, -1))} hitSlop={8} style={styles.stripArrow}>
-            <Text style={{ color: colors.inkSoft, fontSize: 13 }}>‹</Text>
-          </Pressable>
-          {Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i)).map((d) => {
-            const selected = toIso(d) === toIso(anchor);
-            return (
-              <Pressable
-                key={toIso(d)}
-                onPress={() => setAnchor(d)}
-                style={[styles.dayChip, { backgroundColor: selected ? colors.forest : 'transparent' }]}
-              >
-                <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.inkFaint }}>{dayLabel(d)}</Text>
-                <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.ink, marginTop: 1 }}>{d.getDate()}</Text>
-              </Pressable>
-            );
-          })}
-          <Pressable onPress={() => setAnchor(addDays(anchor, 1))} hitSlop={8} style={styles.stripArrow}>
-            <Text style={{ color: colors.inkSoft, fontSize: 13 }}>›</Text>
-          </Pressable>
+        <View style={styles.stripWrap}>
+          <ArrowBtn dir="prev" onPress={() => setAnchor(addDays(anchor, -1))} />
+          <View style={styles.weekStrip}>
+            {Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i)).map((d) => {
+              const selected = toIso(d) === toIso(anchor);
+              return (
+                <Pressable
+                  key={toIso(d)}
+                  onPress={() => setAnchor(d)}
+                  style={[styles.dayChip, { backgroundColor: selected ? colors.forest : colors.paper, borderColor: selected ? colors.forest : colors.beige }]}
+                >
+                  <Text style={{ fontSize: 8.5, fontFamily: fonts.bodySemiBold, textTransform: 'uppercase', opacity: selected ? 1 : 0.7, color: selected ? colors.paper : colors.ink }}>{dayLabel(d)}</Text>
+                  <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.ink, marginTop: 1 }}>{d.getDate()}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 1))} />
         </View>
       ) : (
-        <View style={[styles.weekNav, { borderColor: colors.beigeDark }]}>
-          <Pressable onPress={() => setAnchor(addDays(anchor, -7))} hitSlop={8}>
-            <Text style={{ color: colors.forest, fontSize: 16 }}>‹</Text>
-          </Pressable>
-          <Text style={{ fontSize: 12, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{formatWeekOf(startOfWeek(anchor))}</Text>
-          <Pressable onPress={() => setAnchor(addDays(anchor, 7))} hitSlop={8}>
-            <Text style={{ color: colors.forest, fontSize: 16 }}>›</Text>
-          </Pressable>
+        <View style={styles.weekNav}>
+          <ArrowBtn dir="prev" onPress={() => setAnchor(addDays(anchor, -7))} />
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(startOfWeek(anchor))}</Text>
+          <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 7))} />
         </View>
       )}
 
@@ -200,158 +212,172 @@ export default function Courses() {
       ) : totalCount === 0 ? (
         <EmptyState text="Rien de planifié sur cette période. Ajoute des plats à ton planning pour générer la liste." />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 10 }}>
-          {view === 'rayon' ? (
-            <>
-              {GROCERY_CATEGORIES.map((cat) => {
-                const catItems = list.auto.filter((i) => i.grocery_category === cat);
-                if (catItems.length === 0) return null;
-                return (
-                  <View key={cat}>
-                    <Text style={[styles.catLabel, { color: colors.forest }]}>{GROCERY_CATEGORY_LABELS[cat]}</Text>
-                    {catItems.map((item) =>
-                      renderRow(
-                        item.key,
-                        item.checked,
-                        () => onToggleAuto(item),
-                        item.name,
-                        `${item.quantity} ${item.unit}`,
-                        item.source_dish_ids.length > 1 ? (
-                          <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale, marginTop: 3 }]}>
-                            <Text style={{ fontSize: 9.5, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
-                              🔗 dans {item.source_dish_ids.length} plats
-                            </Text>
-                          </View>
-                        ) : undefined,
-                      ),
+        <View style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 10, paddingBottom: 80 }}>
+            {view === 'rayon' ? (
+              <>
+                {GROCERY_CATEGORIES.map((cat) => {
+                  const catItems = list.auto.filter((i) => i.grocery_category === cat);
+                  if (catItems.length === 0) return null;
+                  return (
+                    <View key={cat}>
+                      <Text style={[styles.catLabel, { color: colors.inkFaint }]}>{GROCERY_CATEGORY_LABELS[cat]}</Text>
+                      {catItems.map((item) =>
+                        renderRow(
+                          item.key,
+                          item.checked,
+                          () => onToggleAuto(item),
+                          item.name,
+                          `${item.quantity} ${item.unit}`,
+                          item.source_dish_ids.length > 1 ? (
+                            <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
+                              <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
+                                🔗 dans {item.source_dish_ids.length} plats
+                              </Text>
+                            </View>
+                          ) : undefined,
+                        ),
+                      )}
+                    </View>
+                  );
+                })}
+                {list.manual.length > 0 ? (
+                  <View>
+                    <Text style={[styles.catLabel, { color: colors.inkFaint }]}>Ajoutés manuellement</Text>
+                    {list.manual.map((item) =>
+                      renderRow(item.id, item.checked, () => onToggleManual(item), item.name, `${item.quantity} ${item.unit}`),
                     )}
                   </View>
-                );
-              })}
-              {list.manual.length > 0 ? (
-                <View>
-                  <Text style={[styles.catLabel, { color: colors.forest }]}>Ajoutés manuellement</Text>
-                  {list.manual.map((item) =>
-                    renderRow(item.id, item.checked, () => onToggleManual(item), item.name, `${item.quantity} ${item.unit}`),
-                  )}
-                </View>
-              ) : null}
-            </>
-          ) : (
-            dishGroups.map(({ dishId, dish, occurrences, ingredients }) => {
-              const rows = ingredients.map((ing) => itemByKey.get(`${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`));
-              const allChecked = rows.length > 0 && rows.every((r) => r?.checked);
-              const collapsed = allChecked && !expandedOverride.has(dishId);
-              const badgeText =
-                occurrences.length > 1
-                  ? `×${occurrences.length}`
-                  : `${shortDayLabel(new Date(occurrences[0].date))} · ${SLOT_SHORT[occurrences[0].slot]}`;
+                ) : null}
+              </>
+            ) : (
+              dishGroups.map(({ dishId, dish, occurrences, ingredients }) => {
+                const rows = ingredients.map((ing) => itemByKey.get(`${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`));
+                const allChecked = rows.length > 0 && rows.every((r) => r?.checked);
+                const collapsed = allChecked && !expandedOverride.has(dishId);
+                const badgeText =
+                  occurrences.length > 1
+                    ? `×${occurrences.length}`
+                    : `${shortDayLabel(new Date(occurrences[0].date))} · ${SLOT_SHORT[occurrences[0].slot]}`;
 
-              return (
-                <Pressable
-                  key={dishId}
-                  onPress={() => {
-                    if (!allChecked) return;
-                    setExpandedOverride((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(dishId)) next.delete(dishId);
-                      else next.add(dishId);
-                      return next;
-                    });
-                  }}
-                  style={[styles.dishGroup, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: allChecked ? 0.6 : 1 }]}
-                >
-                  <View style={styles.dishGroupHeader}>
-                    <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: colors.ink }}>
-                      {dish.image_emoji} {dish.name} {allChecked ? '✓' : ''}
-                    </Text>
-                    <View style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
-                      <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{badgeText}</Text>
+                return (
+                  <Pressable
+                    key={dishId}
+                    onPress={() => {
+                      if (!allChecked) return;
+                      setExpandedOverride((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(dishId)) next.delete(dishId);
+                        else next.add(dishId);
+                        return next;
+                      });
+                    }}
+                    style={[styles.dishSection, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: allChecked ? 0.6 : 1 }]}
+                  >
+                    <View style={[styles.dishSectionHeader, { borderColor: colors.beige }]}>
+                      <Text style={{ fontSize: 16 }}>{dish.image_emoji}</Text>
+                      <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: colors.ink, flex: 1 }}>
+                        {dish.name} {allChecked ? '✓' : ''}
+                      </Text>
+                      <View style={[styles.dayTag, { backgroundColor: colors.beige }]}>
+                        <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{badgeText}</Text>
+                      </View>
                     </View>
+                    {collapsed
+                      ? null
+                      : ingredients.map((ing, idx) => {
+                          const key = `${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`;
+                          const computed = itemByKey.get(key);
+                          if (!computed) return null;
+                          return (
+                            <View
+                              key={ing.id}
+                              style={[
+                                styles.dishIngRow,
+                                { borderColor: colors.beige, borderBottomWidth: idx === ingredients.length - 1 ? 0 : 1 },
+                              ]}
+                            >
+                              <Checkbox checked={computed.checked} onPress={() => onToggleAuto(computed)} />
+                              <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 11.5, color: colors.ink, textDecorationLine: computed.checked ? 'line-through' : 'none' }}>
+                                  {ing.name}
+                                </Text>
+                                {computed.source_dish_ids.length > 1 ? (
+                                  <Text style={{ fontSize: 9, color: colors.honey, marginTop: 2 }}>
+                                    🔗 aussi dans {computed.source_dish_ids.length - 1} autre(s) plat(s)
+                                  </Text>
+                                ) : null}
+                              </View>
+                              <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>
+                                {ing.quantity * occurrences.length} {ing.unit}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                  </Pressable>
+                );
+              })
+            )}
+
+            {manualOpen ? (
+              <View style={[styles.manualPanel, { borderColor: colors.beige, backgroundColor: colors.paper }]}>
+                <Field label="Nom" value={mName} onChangeText={setMName} placeholder="Papier essuie-tout" />
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <Field label="Quantité" value={mQty} onChangeText={setMQty} keyboardType="numeric" placeholder="1" />
                   </View>
-                  {collapsed ? null : (
-                    <View style={{ gap: 8, marginTop: 4 }}>
-                      {ingredients.map((ing) => {
-                        const key = `${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`;
-                        const computed = itemByKey.get(key);
-                        if (!computed) return null;
-                        return renderRow(
-                          ing.id,
-                          computed.checked,
-                          () => onToggleAuto(computed),
-                          ing.name,
-                          `${ing.quantity * occurrences.length} ${ing.unit}`,
-                          computed.source_dish_ids.length > 1 ? (
-                            <Text style={{ fontSize: 9.5, color: colors.honey, marginTop: 2 }}>🔗 aussi dans {computed.source_dish_ids.length - 1} autre(s) plat(s)</Text>
-                          ) : undefined,
-                        );
-                      })}
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })
-          )}
+                  <View style={{ flex: 1 }}>
+                    <Field label="Unité" value={mUnit} onChangeText={setMUnit} placeholder="paquet" />
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Pill label="Ajouter" variant="primary" onPress={addManual} />
+                  <Pill label="Annuler" variant="ghost" onPress={() => setManualOpen(false)} />
+                </View>
+              </View>
+            ) : null}
+          </ScrollView>
 
           {!manualOpen ? (
-            <Pressable onPress={() => setManualOpen(true)} style={[styles.addManual, { borderColor: colors.sage }]}>
-              <Text style={{ color: colors.forest, fontSize: 12.5, fontFamily: fonts.bodySemiBold }}>✎ Ajouter un ingrédient manuellement</Text>
+            <Pressable onPress={() => setManualOpen(true)} style={[styles.fab, { backgroundColor: colors.forest, shadowColor: colors.forest }]}>
+              <Text style={{ color: '#FFF', fontSize: 20, marginTop: -2 }}>＋</Text>
             </Pressable>
-          ) : (
-            <View style={[styles.manualPanel, { borderColor: colors.line, backgroundColor: colors.paper }]}>
-              <Field label="Nom" value={mName} onChangeText={setMName} placeholder="Papier essuie-tout" />
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <View style={{ flex: 1 }}>
-                  <Field label="Quantité" value={mQty} onChangeText={setMQty} keyboardType="numeric" placeholder="1" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Field label="Unité" value={mUnit} onChangeText={setMUnit} placeholder="paquet" />
-                </View>
-              </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Pill label="Ajouter" variant="primary" onPress={addManual} />
-                <Pill label="Annuler" variant="ghost" onPress={() => setManualOpen(false)} />
-              </View>
-            </View>
-          )}
-        </ScrollView>
+          ) : null}
+        </View>
       )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  switchWrap: { flexDirection: 'row', marginHorizontal: 18, marginTop: 12, borderRadius: 12, padding: 3 },
-  switchOpt: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 9 },
-  stripWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 18,
-    marginTop: 10,
-    padding: 4,
-    borderRadius: 14,
-    borderWidth: 1,
-    justifyContent: 'space-between',
-  },
-  stripArrow: { width: 18, alignItems: 'center' },
-  dayChip: { flex: 1, paddingVertical: 5, borderRadius: 10, alignItems: 'center' },
-  weekNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: 18,
-    marginTop: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  catLabel: { fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
-  itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 10, borderRadius: radii.md, marginBottom: 8 },
-  dishGroup: { borderRadius: radii.lg, padding: 12, marginBottom: 10 },
-  dishGroupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  addManual: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radii.lg, padding: 12, alignItems: 'center', marginTop: 10 },
+  switchWrap: { flexDirection: 'row', marginHorizontal: 18, marginTop: 12, borderRadius: radii.sm, padding: 3, gap: 2 },
+  switchOpt: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 6 },
+  stripWrap: { flexDirection: 'row', alignItems: 'center', gap: 4, marginHorizontal: 18, marginTop: 10 },
+  weekStrip: { flex: 1, flexDirection: 'row', gap: 4 },
+  arrowBtn: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  dayChip: { flex: 1, minWidth: 30, paddingVertical: 5, paddingHorizontal: 2, borderRadius: radii.tag, borderWidth: 1.5, alignItems: 'center' },
+  weekNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginHorizontal: 18, marginTop: 10 },
+  catLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
+  itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 9, borderRadius: radii.sm, marginBottom: 8 },
+  qtyTag: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.tag },
+  dishSection: { borderRadius: radii.sm, marginBottom: 10, overflow: 'hidden' },
+  dishSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderBottomWidth: 1 },
+  dayTag: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.tag },
+  dishIngRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10 },
   manualPanel: { borderWidth: 1, borderRadius: radii.lg, padding: 14, marginTop: 10, gap: 4 },
-  sharedBadge: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: radii.pill, alignSelf: 'flex-start' },
-  dishPill: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: radii.pill },
+  sharedBadge: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.pill },
+  fab: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
 });

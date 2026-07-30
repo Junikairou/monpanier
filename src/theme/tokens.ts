@@ -37,6 +37,8 @@ export const darkColors = {
 export type ThemeColors = typeof lightColors;
 
 export const radii = {
+  tag: 4,
+  btn: 6,
   sm: 8,
   md: 8,
   lg: 14,

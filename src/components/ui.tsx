@@ -57,6 +57,33 @@ export function Pill({
   );
 }
 
+export function MiniButton({
+  label,
+  variant = 'sage',
+  onPress,
+}: {
+  label: string;
+  variant?: 'sage' | 'outline';
+  onPress?: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.miniBtn,
+        variant === 'sage'
+          ? { backgroundColor: colors.sagePale, borderColor: 'transparent' }
+          : { backgroundColor: 'transparent', borderColor: colors.beigeDark, borderWidth: 1.2 },
+      ]}
+    >
+      <Text style={{ fontSize: 10, fontFamily: fonts.bodyMedium, color: variant === 'sage' ? colors.forestDark : colors.inkSoft }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function Chip({
   label,
   active,
@@ -165,5 +192,6 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: 10.5, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: fonts.bodySemiBold },
   input: { borderWidth: 1.5, borderRadius: radii.sm, paddingVertical: 10, paddingHorizontal: 12, fontSize: 14, fontFamily: fonts.body },
   empty: { paddingVertical: 30, alignItems: 'center' },
-  checkbox: { width: 18, height: 18, borderRadius: 5, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  checkbox: { width: 16, height: 16, borderRadius: radii.tag, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  miniBtn: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: radii.btn, alignItems: 'center' },
 });

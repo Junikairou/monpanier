@@ -3,12 +3,12 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { Card, LoadingBlock, Pill, Screen } from '../../src/components/ui';
+import { Card, LoadingBlock, MiniButton, Pill, Screen } from '../../src/components/ui';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, startOfWeek, toIso } from '../../src/lib/dates';
 import { listPlanningRange, removeMeal } from '../../src/data/planning';
 import { getProfile } from '../../src/data/profile';
 import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
-import { fonts } from '../../src/theme/tokens';
+import { fonts, radii } from '../../src/theme/tokens';
 
 const MEAL_SLOT_EMOJI: Record<MealSlot, string> = {
   petit_dej: '🍳',
@@ -17,6 +17,15 @@ const MEAL_SLOT_EMOJI: Record<MealSlot, string> = {
   diner: '🌙',
   collation: '🌰',
 };
+
+function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onPress} hitSlop={8} style={[styles.arrowBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}>
+      <Text style={{ color: colors.inkSoft, fontSize: 11 }}>{dir === 'prev' ? '‹' : '›'}</Text>
+    </Pressable>
+  );
+}
 
 export default function Planning() {
   const { colors } = useTheme();
@@ -81,57 +90,58 @@ export default function Planning() {
       <View style={[styles.header, { backgroundColor: colors.cream, borderColor: colors.line }]}>
         <View>
           <Text style={[styles.title, { color: colors.ink }]}>Ma semaine</Text>
-          <Text style={{ fontSize: 11.5, color: colors.forestDark, fontFamily: fonts.bodyMedium, marginTop: 2 }}>
+          <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.body, marginTop: 2 }}>
             {formatWeekOf(weekStart)}
           </Text>
         </View>
         <Pressable
           onPress={() => router.push('/(tabs)/courses')}
-          style={[styles.iconBtn, { backgroundColor: colors.paper, borderColor: colors.beigeDark }]}
+          style={[styles.iconBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}
         >
-          <Text style={{ fontSize: 15 }}>🛒</Text>
+          <Text style={{ fontSize: 13 }}>🛒</Text>
         </Pressable>
       </View>
 
-      <View style={[styles.stripWrap, { backgroundColor: colors.paper, borderColor: colors.beigeDark }]}>
-        <Pressable onPress={goPrevWeek} hitSlop={8} style={styles.stripArrow}>
-          <Text style={{ color: colors.inkSoft, fontSize: 13 }}>‹</Text>
-        </Pressable>
-        {days.map((d) => {
-          const iso = toIso(d);
-          const selected = iso === selectedDate;
-          const hasMeal = entries.some((e) => e.date === iso && e.dish_id);
-          return (
-            <Pressable
-              key={iso}
-              onPress={() => setSelectedDate(iso)}
-              style={[
-                styles.dayChip,
-                { backgroundColor: selected ? colors.forest : 'transparent' },
-              ]}
-            >
-              <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.inkFaint }}>{dayLabel(d)}</Text>
-              <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.ink, marginTop: 1 }}>
-                {d.getDate()}
-              </Text>
-              <View
-                style={{
-                  width: 4,
-                  height: 4,
-                  borderRadius: 2,
-                  marginTop: 2,
-                  backgroundColor: hasMeal ? (selected ? 'rgba(255,255,255,.7)' : colors.forest) : 'transparent',
-                }}
-              />
-            </Pressable>
-          );
-        })}
-        <Pressable onPress={goNextWeek} hitSlop={8} style={styles.stripArrow}>
-          <Text style={{ color: colors.inkSoft, fontSize: 13 }}>›</Text>
-        </Pressable>
+      <View style={styles.stripWrap}>
+        <ArrowBtn dir="prev" onPress={goPrevWeek} />
+        <View style={styles.weekStrip}>
+          {days.map((d) => {
+            const iso = toIso(d);
+            const selected = iso === selectedDate;
+            const hasMeal = entries.some((e) => e.date === iso && e.dish_id);
+            return (
+              <Pressable
+                key={iso}
+                onPress={() => setSelectedDate(iso)}
+                style={[
+                  styles.dayChip,
+                  {
+                    backgroundColor: selected ? colors.forest : colors.paper,
+                    borderColor: selected ? colors.forest : colors.beige,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 8.5, fontFamily: fonts.bodySemiBold, letterSpacing: 0.3, textTransform: 'uppercase', opacity: selected ? 1 : 0.7, color: selected ? colors.paper : colors.ink }}>{dayLabel(d)}</Text>
+                <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.ink, marginTop: 1 }}>
+                  {d.getDate()}
+                </Text>
+                <View
+                  style={{
+                    width: 4,
+                    height: 4,
+                    borderRadius: 2,
+                    marginTop: 2,
+                    backgroundColor: hasMeal ? (selected ? 'rgba(255,255,255,.7)' : colors.forest) : 'transparent',
+                  }}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+        <ArrowBtn dir="next" onPress={goNextWeek} />
       </View>
 
-      <Text style={{ textAlign: 'center', fontSize: 11.5, color: colors.forestDark, fontFamily: fonts.bodyMedium, marginTop: 8, marginBottom: 4 }}>
+      <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginTop: 2, marginBottom: 8 }}>
         {formatDayCaption(selectedDateObj)}
       </Text>
 
@@ -141,18 +151,18 @@ export default function Planning() {
         <FlatList
           data={MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s))}
           keyExtractor={(s) => s}
-          contentContainerStyle={{ padding: 18, paddingTop: 10, gap: 12 }}
+          contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10 }}
           renderItem={({ item: slot }) => {
             const entry = slotEntry(slot);
             return (
-              <Card>
+              <Card style={!entry ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.beigeDark, shadowOpacity: 0 } : undefined}>
                 <View style={styles.slotHeader}>
                   <Text style={[styles.slotLabel, { color: colors.inkFaint }]}>{MEAL_SLOT_EMOJI[slot]} {MEAL_SLOT_LABELS[slot]}</Text>
                   {entry ? (
                     <Pressable
                       onPress={() => onRemove(entry.id)}
                       hitSlop={8}
-                      style={[styles.removeBtn, { backgroundColor: colors.cream, borderColor: colors.beigeDark }]}
+                      style={[styles.removeBtn, { backgroundColor: colors.cream, borderColor: colors.beige }]}
                     >
                       <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕</Text>
                     </Pressable>
@@ -161,17 +171,17 @@ export default function Planning() {
                 {entry?.dish ? (
                   <>
                     <Text style={[styles.dishName, { color: colors.ink }]}>{entry.dish.name}</Text>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <Pill label="Voir recette" onPress={() => onSeeRecipe(entry.dish!.id)} />
-                      <Pill label="Changer le plat" variant="ghost" onPress={() => onChange(slot, entry.id)} />
+                    <View style={{ flexDirection: 'row', gap: 5 }}>
+                      <MiniButton label="📖 Voir recette" variant="sage" onPress={() => onSeeRecipe(entry.dish!.id)} />
+                      <MiniButton label="🔄 Changer" variant="outline" onPress={() => onChange(slot, entry.id)} />
                     </View>
                   </>
                 ) : (
                   <>
-                    <Text style={{ color: colors.inkSoft, fontStyle: 'italic', fontSize: 12.5, marginBottom: 10 }}>
-                      Aucun repas prévu
+                    <Text style={{ color: colors.inkFaint, fontStyle: 'italic', fontSize: 12, marginBottom: 7, fontFamily: fonts.body }}>
+                      Aucun plat prévu
                     </Text>
-                    <Pill label="+ Ajouter un repas" variant="primary" onPress={() => onAdd(slot)} />
+                    <MiniButton label="+ Planifier un plat" variant="sage" onPress={() => onAdd(slot)} />
                   </>
                 )}
               </Card>
@@ -189,26 +199,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingTop: 56,
-    paddingBottom: 14,
+    paddingBottom: 12,
     paddingHorizontal: 18,
-    borderBottomWidth: 1,
   },
-  title: { fontSize: 21, fontFamily: fonts.display },
-  iconBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  stripWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 18,
-    marginTop: 12,
-    padding: 4,
-    borderRadius: 14,
-    borderWidth: 1,
-    justifyContent: 'space-between',
-  },
-  stripArrow: { width: 20, alignItems: 'center' },
-  dayChip: { flex: 1, paddingVertical: 6, borderRadius: 10, alignItems: 'center' },
-  slotHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  slotLabel: { fontSize: 10, fontFamily: fonts.bodySemiBold, letterSpacing: 0.6, textTransform: 'uppercase' },
-  removeBtn: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  dishName: { fontSize: 15.5, fontFamily: fonts.bodySemiBold, marginBottom: 10 },
+  title: { fontSize: 19, fontFamily: fonts.display },
+  iconBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  stripWrap: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 18 },
+  weekStrip: { flex: 1, flexDirection: 'row', gap: 4 },
+  arrowBtn: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  dayChip: { flex: 1, minWidth: 30, paddingVertical: 5, paddingHorizontal: 2, borderRadius: radii.tag, borderWidth: 1.5, alignItems: 'center' },
+  slotHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  slotLabel: { fontSize: 9.5, fontFamily: fonts.bodySemiBold, letterSpacing: 0.6, textTransform: 'uppercase' },
+  removeBtn: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  dishName: { fontSize: 13.5, fontFamily: fonts.bodyMedium, marginBottom: 7 },
 });
