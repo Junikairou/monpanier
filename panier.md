@@ -67,7 +67,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 Fait par étapes, push à chaque étape terminée :
 1. ✅ Petites retouches : indicateur équilibre par créneau (pas par jour) + désactivable dans Profil, jour actuel mis en avant dans Courses — fait, migration 008 exécutée.
 2. ✅ Refonte planning en cartes glissantes façon capture d'écran fournie (remplace la vue "Semaine" grille) — fait, **migration 009 à exécuter**.
-3. ⏳ Copier-coller un planning (jour ou semaine) vers un autre jour/semaine.
+3. ✅ Copier-coller un planning (jour ou semaine) — appui long sur un jour (chip ou en-tête de colonne) ou sur le libellé "Semaine du..." ouvre un menu Copier/Coller ; si la cible a déjà des repas, demande Remplacer/Ajouter à chaque fois. Aucune migration nécessaire. **Non testé visuellement** (pas d'identifiants de connexion disponibles pour l'agent) — à vérifier par l'utilisateur.
 4. ⏳ Planning par défaut : modèle qui remplit automatiquement chaque nouvelle semaine, modifiable manuellement ensuite.
 5. ⏳ Profil : champ téléphone (info seulement) + lien de récupération de mot de passe par e-mail (Supabase standard, pas de système maison).
 

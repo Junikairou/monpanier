@@ -5,8 +5,9 @@ import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Card, Checkbox, LoadingBlock, MiniButton, Screen } from '../../src/components/ui';
 import { CalendarPicker } from '../../src/components/CalendarPicker';
-import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso } from '../../src/lib/dates';
-import { listPlanningRange, removeMeal, setCooked, setRestaurantMeal } from '../../src/data/planning';
+import { ActionSheet } from '../../src/components/ActionSheet';
+import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
+import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked, setRestaurantMeal } from '../../src/data/planning';
 import { getProfile } from '../../src/data/profile';
 import { COURSE_TYPE_LABELS, CourseType, MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
 import { fonts, radii } from '../../src/theme/tokens';
@@ -44,6 +45,10 @@ export default function Planning() {
   const [showBalanceHint, setShowBalanceHint] = useState(true);
   const [viewMode, setViewMode] = useState<'jour' | 'semaine'>('jour');
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [clipboard, setClipboard] = useState<{ type: 'day'; date: string } | { type: 'week'; weekStart: string } | null>(null);
+  const [dayMenuFor, setDayMenuFor] = useState<string | null>(null);
+  const [weekMenuOpen, setWeekMenuOpen] = useState(false);
+  const [conflictAction, setConflictAction] = useState<{ label: string; run: (mode: 'replace' | 'add') => Promise<void> } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -141,15 +146,74 @@ export default function Planning() {
     setViewMode('jour');
   };
 
+  const copyDayThen = (fromIso: string, toDateIso: string, mode: 'replace' | 'add') =>
+    copyDay(userId, fromIso, toDateIso, mode).then(load);
+
+  const copyWeekThen = (fromWeekIso: string, toWeekIso: string, mode: 'replace' | 'add') =>
+    copyWeek(userId, fromWeekIso, toWeekIso, mode).then(load);
+
+  const pasteDay = async (targetIso: string) => {
+    if (clipboard?.type !== 'day') return;
+    const fromIso = clipboard.date;
+    const conflict = await hasEntriesInRange(userId, targetIso, targetIso);
+    if (conflict) {
+      setConflictAction({
+        label: `Coller le ${weekdayFull(new Date(targetIso))} — des repas existent déjà`,
+        run: (mode) => copyDayThen(fromIso, targetIso, mode),
+      });
+    } else {
+      await copyDayThen(fromIso, targetIso, 'add');
+    }
+  };
+
+  const pasteWeek = async (targetWeekIso: string) => {
+    if (clipboard?.type !== 'week') return;
+    const fromWeekIso = clipboard.weekStart;
+    const targetEnd = toIso(addDays(new Date(targetWeekIso), 6));
+    const conflict = await hasEntriesInRange(userId, targetWeekIso, targetEnd);
+    if (conflict) {
+      setConflictAction({
+        label: `Coller cette semaine — des repas existent déjà`,
+        run: (mode) => copyWeekThen(fromWeekIso, targetWeekIso, mode),
+      });
+    } else {
+      await copyWeekThen(fromWeekIso, targetWeekIso, 'add');
+    }
+  };
+
+  const openDayMenu = (iso: string) => setDayMenuFor(iso);
+
+  const dayMenuActions = () => {
+    if (!dayMenuFor) return [];
+    const iso = dayMenuFor;
+    const actions = [
+      { label: '📋 Copier ce jour', onPress: () => setClipboard({ type: 'day', date: iso }) },
+    ];
+    if (clipboard?.type === 'day') {
+      actions.push({ label: '📥 Coller ici', onPress: () => pasteDay(iso) });
+    }
+    return actions;
+  };
+
+  const weekMenuActions = () => {
+    const actions = [
+      { label: '📋 Copier cette semaine', onPress: () => setClipboard({ type: 'week', weekStart: toIso(weekStart) }) },
+    ];
+    if (clipboard?.type === 'week') {
+      actions.push({ label: '📥 Coller ici', onPress: () => pasteWeek(toIso(weekStart)) });
+    }
+    return actions;
+  };
+
   return (
     <Screen>
       <View style={[styles.header, { backgroundColor: colors.cream, borderColor: colors.line }]}>
-        <View>
+        <Pressable onLongPress={() => setWeekMenuOpen(true)}>
           <Text style={[styles.title, { color: colors.ink }]}>Ma semaine</Text>
           <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.body, marginTop: 2 }}>
             {formatWeekOf(weekStart)}
           </Text>
-        </View>
+        </Pressable>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <Pressable
             onPress={goToday}
@@ -195,6 +259,7 @@ export default function Planning() {
                   <Pressable
                     key={iso}
                     onPress={() => setSelectedDate(iso)}
+                    onLongPress={() => openDayMenu(iso)}
                     style={[
                       styles.dayChip,
                       {
@@ -327,7 +392,9 @@ export default function Planning() {
         <>
           <View style={styles.weekNav}>
             <ArrowBtn dir="prev" onPress={goPrevWeek} />
-            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(weekStart)}</Text>
+            <Pressable onLongPress={() => setWeekMenuOpen(true)}>
+              <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(weekStart)}</Text>
+            </Pressable>
             <ArrowBtn dir="next" onPress={goNextWeek} />
           </View>
 
@@ -345,7 +412,7 @@ export default function Planning() {
                 const today = isToday(d);
                 return (
                   <View key={iso} style={{ width: columnWidth }}>
-                    <Pressable onPress={() => goToDate(iso)} style={[styles.dayColHeader, { backgroundColor: today ? colors.forest : colors.paper, borderColor: today ? colors.forest : colors.beige }]}>
+                    <Pressable onPress={() => goToDate(iso)} onLongPress={() => openDayMenu(iso)} style={[styles.dayColHeader, { backgroundColor: today ? colors.forest : colors.paper, borderColor: today ? colors.forest : colors.beige }]}>
                       <Text style={{ fontSize: 8.5, fontFamily: fonts.bodySemiBold, textTransform: 'uppercase', color: today ? colors.paper : colors.inkFaint }}>{dayLabel(d)}</Text>
                       <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: today ? colors.paper : colors.ink }}>{d.getDate()}</Text>
                     </Pressable>
@@ -401,6 +468,34 @@ export default function Planning() {
         selectedDate={selectedDate}
         onClose={() => setCalendarOpen(false)}
         onSelect={(iso) => goToDate(iso)}
+      />
+
+      <ActionSheet
+        visible={!!dayMenuFor}
+        title={dayMenuFor ? formatDayCaption(new Date(dayMenuFor)) : undefined}
+        actions={dayMenuActions()}
+        onClose={() => setDayMenuFor(null)}
+      />
+
+      <ActionSheet
+        visible={weekMenuOpen}
+        title={formatWeekOf(weekStart)}
+        actions={weekMenuActions()}
+        onClose={() => setWeekMenuOpen(false)}
+      />
+
+      <ActionSheet
+        visible={!!conflictAction}
+        title={conflictAction?.label}
+        actions={
+          conflictAction
+            ? [
+                { label: '🔁 Remplacer', onPress: () => conflictAction.run('replace') },
+                { label: '➕ Ajouter aux repas existants', onPress: () => conflictAction.run('add') },
+              ]
+            : []
+        }
+        onClose={() => setConflictAction(null)}
       />
     </Screen>
   );
