@@ -34,6 +34,42 @@ export const darkColors = {
   danger: '#E4998C',
 };
 
+export const roseColors = {
+  cream: '#FBF1EF',
+  paper: '#FFFFFF',
+  forest: '#D98A9C',
+  forestDark: '#B95F75',
+  sage: '#F3D6DC',
+  sagePale: '#FBEEF1',
+  beige: '#F0DCD9',
+  beigeDark: '#DCB9B5',
+  honey: '#C67A00',
+  honeyPale: '#FFF3E0',
+  ink: '#3A2A2E',
+  inkSoft: '#7A5F64',
+  inkFaint: '#B49A9E',
+  line: '#F0DCD9',
+  danger: '#E07A6A',
+};
+
+export const bleuColors = {
+  cream: '#EFF4F8',
+  paper: '#FFFFFF',
+  forest: '#6FA0C7',
+  forestDark: '#4A7CA3',
+  sage: '#D3E4F0',
+  sagePale: '#EAF3FA',
+  beige: '#DEE7EE',
+  beigeDark: '#B9C9D6',
+  honey: '#C67A00',
+  honeyPale: '#FFF3E0',
+  ink: '#22303D',
+  inkSoft: '#5C6E7D',
+  inkFaint: '#9BABB8',
+  line: '#DEE7EE',
+  danger: '#E07A6A',
+};
+
 export type ThemeColors = typeof lightColors;
 
 export const radii = {

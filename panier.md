@@ -30,7 +30,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 - Planning : bouton retour à aujourd'hui (⟲), calendrier mois/année pour sauter à une date (📅), jour actuel mis en avant dans la frise (bordure + agrandi), repas "au resto" (créneau marqué complété sans choisir de plat, exclu de la liste de courses), vue "Semaine" en grille d'ensemble (tape une case pour ouvrir ce jour)
 - Plats : création (ingrédients + étapes de recette), **type de plat** (entrée/plat/accompagnement/dessert/fruit/boisson/autre), **calories en saisie manuelle** (optionnel), fiche détail, ajout au planning
 - Liste de courses : vue "Par catégorie" (icône + une carte par ingrédient, indique le/les plat(s) d'origine) et vue "Par plat" (bloc compact par plat, se replie si tout est coché) — filtre Jour/Semaine/**Plage** (sélection libre de deux dates via calendrier, pour les courses tous les 2-3 jours), état coché persistant (indépendant de la fenêtre affichée)
-- Profil : thème clair/sombre/auto, langue (préférence enregistrée, pas de traduction complète), unités, taille du foyer, repas à planifier
+- Profil : thème clair/sombre/auto/**rose/bleu**, langue (préférence enregistrée, pas de traduction complète), unités, taille du foyer, repas à planifier
 - PWA installable (manifest + icônes — icône encore générique Expo, pas personnalisée)
 
 ## Pas fait / en attente
@@ -44,10 +44,11 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 ## Points d'attention techniques
 
-- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...006` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 006 en attente d'exécution** (ajoute `is_restaurant` sur `planning_entries`, pour les repas "au resto") — à lancer dans Supabase SQL Editor.
+- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...007` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 007 en attente d'exécution** (élargit la contrainte `theme_preference`, sans effet fonctionnel actuellement — voir plus bas) — à lancer dans Supabase SQL Editor.
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.
+- Le thème (clair/sombre/auto/rose/bleu) est stocké **localement sur l'appareil uniquement** (AsyncStorage) — la colonne `profiles.theme_preference` en base existe mais n'est pas lue/écrite par l'app (pas de synchro multi-appareil du thème pour l'instant).
 - **À vérifier dans le dashboard Supabase** (Authentication → URL Configuration) après le renommage : mettre à jour les Redirect URLs si `mijote://` ou `/mijote/` y étaient enregistrés en dur (sinon Google OAuth peut casser).
 - Outils installés sur la machine : `gh` (GitHub CLI, connecté), `vercel` CLI (plus utilisé mais toujours installé), Node.js, GitHub Pages CLI n/a.
 - Node/npm ne sont pas dans le PATH par défaut du terminal sandboxé — toujours rafraîchir le PATH avant les commandes (`$env:Path = ...`) ou utiliser les chemins complets.
@@ -58,7 +59,7 @@ Fait par étapes, push à chaque étape terminée :
 1. ✅ Structure repas multi-plats (entrée/plat/dessert/accompagnement/fruit/boisson) + calories manuelles + indicateur équilibre — fait, migration 005 exécutée.
 2. ✅ Planning : retour à aujourd'hui, calendrier (choix mois/année), repas "au resto", mise en avant du jour actuel, vue hebdomadaire d'ensemble — fait, migration 006 exécutée.
 3. ✅ Courses : icônes par catégorie, sélecteur de plage de dates (calendrier libre "Du/Au") — fait, aucune migration nécessaire.
-4. ⏳ Thèmes rose et bleu (palettes complètes en plus de clair/sombre/auto).
+4. ✅ Thèmes rose et bleu (palettes complètes en plus de clair/sombre/auto) — fait. **Chantier terminé.**
 
 ## Décisions notables (avec date)
 

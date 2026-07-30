@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { darkColors, lightColors, ThemeColors } from './tokens';
+import { bleuColors, darkColors, lightColors, roseColors, ThemeColors } from './tokens';
 
-type ThemePreference = 'light' | 'dark' | 'auto';
+type ThemePreference = 'light' | 'dark' | 'auto' | 'rose' | 'bleu';
 
 type ThemeContextValue = {
   colors: ThemeColors;
@@ -22,7 +22,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored === 'light' || stored === 'dark' || stored === 'auto') {
+      if (stored === 'light' || stored === 'dark' || stored === 'auto' || stored === 'rose' || stored === 'bleu') {
         setPreferenceState(stored);
       }
     });
@@ -33,10 +33,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY, pref);
   };
 
-  const scheme: 'light' | 'dark' =
-    preference === 'auto' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
+  const isDark = preference === 'auto' ? systemScheme === 'dark' : preference === 'dark';
+  const scheme: 'light' | 'dark' = isDark ? 'dark' : 'light';
 
-  const colors = scheme === 'dark' ? darkColors : lightColors;
+  const colors = isDark
+    ? darkColors
+    : preference === 'rose'
+      ? roseColors
+      : preference === 'bleu'
+        ? bleuColors
+        : lightColors;
 
   const value = useMemo(
     () => ({ colors, scheme, preference, setPreference }),

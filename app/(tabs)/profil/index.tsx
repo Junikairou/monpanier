@@ -101,8 +101,8 @@ export default function Profil() {
 
         <SectionLabel text="Apparence" />
         <Row label="Thème">
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {(['light', 'dark', 'auto'] as const).map((t) => (
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {(['light', 'dark', 'auto', 'rose', 'bleu'] as const).map((t) => (
               <Pressable
                 key={t}
                 onPress={() => setPreference(t)}
@@ -110,7 +110,12 @@ export default function Profil() {
                   styles.themeSwatch,
                   {
                     borderColor: preference === t ? colors.forest : colors.line,
-                    backgroundColor: t === 'light' ? '#FAF7EF' : t === 'dark' ? '#1C2019' : colors.honey,
+                    backgroundColor:
+                      t === 'light' ? '#FAF7EF'
+                      : t === 'dark' ? '#1C2019'
+                      : t === 'rose' ? '#D98A9C'
+                      : t === 'bleu' ? '#6FA0C7'
+                      : colors.honey,
                   },
                 ]}
               >
