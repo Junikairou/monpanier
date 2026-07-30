@@ -4,6 +4,7 @@ import { Link, Redirect } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Field, Pill } from '../../src/components/ui';
+import { fonts } from '../../src/theme/tokens';
 
 export default function SignUp() {
   const { colors } = useTheme();
@@ -87,8 +88,8 @@ export default function SignUp() {
 
 const styles = StyleSheet.create({
   wrap: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 60 },
-  title: { fontSize: 26, fontStyle: 'italic', textAlign: 'center', marginBottom: 6 },
+  title: { fontSize: 27, fontFamily: fonts.display, textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 13, textAlign: 'center', marginBottom: 26 },
   error: { fontSize: 12.5, marginBottom: 10, textAlign: 'center' },
-  link: { fontSize: 12.5, textAlign: 'center', marginTop: 18, fontWeight: '600' },
+  link: { fontSize: 12.5, textAlign: 'center', marginTop: 18, fontFamily: fonts.bodySemiBold },
 });

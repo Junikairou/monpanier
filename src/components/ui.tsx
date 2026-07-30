@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
-import { radii, spacing } from '../theme/tokens';
+import { cardShadow, fonts, radii, spacing } from '../theme/tokens';
 
 export function Screen({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
@@ -19,9 +19,9 @@ export function Screen({ children }: { children: React.ReactNode }) {
 export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.header, { borderColor: colors.line, backgroundColor: colors.paper }]}>
+    <View style={[styles.header, { borderColor: colors.line, backgroundColor: colors.cream }]}>
       <Text style={[styles.headerTitle, { color: colors.ink }]}>{title}</Text>
-      {subtitle ? <Text style={[styles.headerSub, { color: colors.inkSoft }]}>{subtitle}</Text> : null}
+      {subtitle ? <Text style={[styles.headerSub, { color: colors.inkFaint }]}>{subtitle}</Text> : null}
     </View>
   );
 }
@@ -39,10 +39,10 @@ export function Pill({
 }) {
   const { colors } = useTheme();
   const bg =
-    variant === 'primary' ? colors.forest : variant === 'ghost' ? 'transparent' : colors.paper;
-  const border = variant === 'primary' ? colors.forest : colors.line;
+    variant === 'primary' ? colors.forest : variant === 'ghost' ? 'transparent' : colors.sagePale;
+  const border = variant === 'primary' ? colors.forest : variant === 'ghost' ? colors.beigeDark : 'transparent';
   const textColor =
-    variant === 'primary' ? colors.paper : variant === 'ghost' ? colors.inkSoft : colors.ink;
+    variant === 'primary' ? '#FFFFFF' : variant === 'ghost' ? colors.inkSoft : colors.forestDark;
   return (
     <Pressable
       onPress={onPress}
@@ -72,10 +72,10 @@ export function Chip({
       onPress={onPress}
       style={[
         styles.chip,
-        { backgroundColor: active ? colors.forest : colors.sagePale },
+        { backgroundColor: active ? colors.forest : colors.paper, borderColor: active ? colors.forest : colors.beigeDark },
       ]}
     >
-      <Text style={{ color: active ? colors.paper : colors.inkSoft, fontSize: 12, fontWeight: active ? '700' : '500' }}>
+      <Text style={{ color: active ? '#FFFFFF' : colors.inkSoft, fontSize: 11.5, fontFamily: active ? fonts.bodySemiBold : fonts.bodyMedium }}>
         {label}
       </Text>
     </Pressable>
@@ -85,7 +85,7 @@ export function Chip({
 export function Card({ children, style }: { children: React.ReactNode; style?: any }) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.paper, borderColor: colors.line }, style]}>
+    <View style={[styles.card, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }, style]}>
       {children}
     </View>
   );
@@ -98,12 +98,12 @@ export function Field({
   const { colors } = useTheme();
   return (
     <View style={{ marginBottom: spacing(3) }}>
-      <Text style={[styles.fieldLabel, { color: colors.inkSoft }]}>{label}</Text>
+      <Text style={[styles.fieldLabel, { color: colors.inkFaint }]}>{label}</Text>
       <TextInput
-        placeholderTextColor={colors.inkSoft}
+        placeholderTextColor={colors.inkFaint}
         style={[
           styles.input,
-          { borderColor: colors.line, color: colors.ink, backgroundColor: colors.paper },
+          { borderColor: colors.beigeDark, color: colors.ink, backgroundColor: colors.paper },
         ]}
         {...props}
       />
@@ -115,7 +115,7 @@ export function EmptyState({ text }: { text: string }) {
   const { colors } = useTheme();
   return (
     <View style={styles.empty}>
-      <Text style={{ color: colors.inkSoft, fontStyle: 'italic', fontSize: 13 }}>{text}</Text>
+      <Text style={{ color: colors.inkFaint, fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13 }}>{text}</Text>
     </View>
   );
 }
@@ -137,12 +137,12 @@ export function Checkbox({ checked, onPress }: { checked: boolean; onPress: () =
       style={[
         styles.checkbox,
         {
-          borderColor: checked ? colors.forest : colors.sage,
+          borderColor: checked ? colors.forest : colors.beigeDark,
           backgroundColor: checked ? colors.forest : 'transparent',
         },
       ]}
     >
-      {checked ? <Text style={{ color: colors.paper, fontSize: 12, fontWeight: '700' }}>✓</Text> : null}
+      {checked ? <Text style={{ color: '#FFFFFF', fontSize: 11 }}>✓</Text> : null}
     </Pressable>
   );
 }
@@ -150,20 +150,20 @@ export function Checkbox({ checked, onPress }: { checked: boolean; onPress: () =
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: { paddingTop: 56, paddingBottom: 14, paddingHorizontal: 18, borderBottomWidth: 1 },
-  headerTitle: { fontSize: 22, fontWeight: '600', fontStyle: 'italic' },
-  headerSub: { fontSize: 12, marginTop: 2 },
+  headerTitle: { fontSize: 21, fontFamily: fonts.display },
+  headerSub: { fontSize: 11.5, marginTop: 2, fontFamily: fonts.body },
   pill: {
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 14,
     borderRadius: radii.pill,
     borderWidth: 1,
     alignItems: 'center',
   },
-  pillText: { fontSize: 12, fontWeight: '600' },
-  chip: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: radii.pill, marginRight: 7 },
-  card: { borderRadius: radii.md, borderWidth: 1, padding: 13 },
-  fieldLabel: { fontSize: 11, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { borderWidth: 1, borderRadius: radii.sm, paddingVertical: 10, paddingHorizontal: 12, fontSize: 14 },
+  pillText: { fontSize: 12, fontFamily: fonts.bodySemiBold },
+  chip: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: radii.sm, marginRight: 7, borderWidth: 1.5 },
+  card: { borderRadius: radii.md, padding: 13 },
+  fieldLabel: { fontSize: 10.5, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: fonts.bodySemiBold },
+  input: { borderWidth: 1.5, borderRadius: radii.sm, paddingVertical: 10, paddingHorizontal: 12, fontSize: 14, fontFamily: fonts.body },
   empty: { paddingVertical: 30, alignItems: 'center' },
-  checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  checkbox: { width: 18, height: 18, borderRadius: 5, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

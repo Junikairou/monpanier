@@ -1,42 +1,63 @@
 export const lightColors = {
-  cream: '#F6EEDC',
-  paper: '#FFFBF2',
-  forest: '#6E7F42',
-  forestDark: '#4E5C2C',
-  sage: '#C9B98A',
-  sagePale: '#F0E4C6',
-  beige: '#EDE0C2',
-  beigeDark: '#DEC89C',
-  honey: '#C6873A',
-  ink: '#302A1C',
-  inkSoft: '#7C7057',
-  line: '#E2D0A8',
-  danger: '#B4523F',
+  cream: '#F7F4EE',
+  paper: '#FFFFFF',
+  forest: '#7DAE8F',
+  forestDark: '#5C8E70',
+  sage: '#C8DFD0',
+  sagePale: '#EAF3ED',
+  beige: '#E8E0D0',
+  beigeDark: '#C9BEA8',
+  honey: '#C67A00',
+  honeyPale: '#FFF3E0',
+  ink: '#2D2D2D',
+  inkSoft: '#5C5C5C',
+  inkFaint: '#9B9B9B',
+  line: '#E8E0D0',
+  danger: '#E07A6A',
 };
 
 export const darkColors = {
-  cream: '#221C13',
-  paper: '#2C2418',
-  forest: '#A6B87C',
-  forestDark: '#C6D69C',
-  sage: '#59502F',
-  sagePale: '#3A3120',
-  beige: '#3A3120',
-  beigeDark: '#4C4126',
-  honey: '#DDAA5B',
-  ink: '#F2E9D8',
-  inkSoft: '#BFAF8C',
-  line: '#4A3F26',
-  danger: '#E08A78',
+  cream: '#20211D',
+  paper: '#2A2B25',
+  forest: '#8FC0A2',
+  forestDark: '#AAD6BB',
+  sage: '#3E4A40',
+  sagePale: '#2F3A32',
+  beige: '#33322A',
+  beigeDark: '#454337',
+  honey: '#E0A855',
+  honeyPale: '#3A331F',
+  ink: '#EFEDE6',
+  inkSoft: '#B7B3A6',
+  inkFaint: '#8B8779',
+  line: '#3A3A32',
+  danger: '#E4998C',
 };
 
 export type ThemeColors = typeof lightColors;
 
 export const radii = {
-  sm: 10,
-  md: 14,
-  lg: 18,
+  sm: 8,
+  md: 8,
+  lg: 14,
   pill: 100,
 };
 
 export const spacing = (n: number) => n * 4;
+
+export const fonts = {
+  display: 'PlayfairDisplay_600SemiBold',
+  displayMedium: 'PlayfairDisplay_500Medium',
+  body: 'DMSans_400Regular',
+  bodyMedium: 'DMSans_500Medium',
+  bodySemiBold: 'DMSans_600SemiBold',
+  bodyLight: 'DMSans_300Light',
+};
+
+export const cardShadow = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.05,
+  shadowRadius: 6,
+  elevation: 2,
+};

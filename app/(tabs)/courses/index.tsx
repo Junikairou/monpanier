@@ -8,6 +8,7 @@ import { addManualItem, deleteGroceryItem, listGroceries, toggleChecked } from '
 import { listDishes } from '../../../src/data/dishes';
 import { listIngredients } from '../../../src/data/dishes';
 import { Dish, GROCERY_CATEGORY_LABELS, GroceryCategory, GroceryItem, Ingredient } from '../../../src/types/models';
+import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
 
 const GROCERY_CATEGORIES: GroceryCategory[] = [
   'fruits_legumes', 'viandes_poissons', 'epicerie', 'epicerie_salee', 'produits_laitiers', 'surgeles', 'boissons', 'autre',
@@ -83,10 +84,10 @@ export default function Courses() {
 
       <View style={[styles.switchWrap, { backgroundColor: colors.sagePale }]}>
         <Pressable style={[styles.switchOpt, view === 'rayon' && { backgroundColor: colors.paper }]} onPress={() => setView('rayon')}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: view === 'rayon' ? colors.forest : colors.inkSoft }}>Par rayon</Text>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: view === 'rayon' ? colors.forest : colors.inkSoft }}>Par rayon</Text>
         </Pressable>
         <Pressable style={[styles.switchOpt, view === 'plat' && { backgroundColor: colors.paper }]} onPress={() => setView('plat')}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: view === 'plat' ? colors.forest : colors.inkSoft }}>Par plat</Text>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: view === 'plat' ? colors.forest : colors.inkSoft }}>Par plat</Text>
         </Pressable>
       </View>
 
@@ -104,23 +105,34 @@ export default function Courses() {
                   <View key={cat}>
                     <Text style={[styles.catLabel, { color: colors.forest }]}>{GROCERY_CATEGORY_LABELS[cat]}</Text>
                     {catItems.map((item) => (
-                      <View key={item.id} style={[styles.itemRow, { borderColor: colors.line }]}>
+                      <View key={item.id} style={[styles.itemRow, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}>
                         <Checkbox checked={item.checked} onPress={() => onToggle(item)} />
                         <View style={{ flex: 1 }}>
                           <Text style={{ fontSize: 13.5, color: colors.ink, textDecorationLine: item.checked ? 'line-through' : 'none' }}>
                             {item.name}
                           </Text>
-                          {item.source_dish_ids.length > 0 ? (
-                            <Text style={{ fontSize: 10.5, color: colors.inkSoft, marginTop: 2 }}>
-                              Dans{' '}
-                              {item.source_dish_ids.length > 1
-                                ? `${item.source_dish_ids.length} plats`
-                                : ''}
-                              {item.source_dish_ids.length > 1 ? ' — ' : ''}
-                              {item.source_dish_ids.map((id) => dishById[id]?.name).filter(Boolean).join(', ')}
-                            </Text>
+                          {item.source_dish_ids.length > 1 ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+                              <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
+                                <Text style={{ fontSize: 9.5, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
+                                  🔗 dans {item.source_dish_ids.length} plats
+                                </Text>
+                              </View>
+                              {item.source_dish_ids.map((id) => (
+                                <View key={id} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+                                  <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[id]?.name}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          ) : item.source_dish_ids.length === 1 ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                              <Text style={{ fontSize: 10, color: colors.inkFaint }}>dans :</Text>
+                              <View style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+                                <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[item.source_dish_ids[0]]?.name}</Text>
+                              </View>
+                            </View>
                           ) : (
-                            <Text style={{ fontSize: 10.5, color: colors.inkSoft, marginTop: 2 }}>Ajouté manuellement</Text>
+                            <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>Ajouté manuellement</Text>
                           )}
                         </View>
                         <Text style={{ fontSize: 12, color: colors.inkSoft }}>
@@ -139,9 +151,9 @@ export default function Courses() {
                 const ings = dishIngredients[dishId] ?? [];
                 if (!dish) return null;
                 return (
-                  <View key={dishId} style={[styles.dishGroup, { borderColor: colors.line, backgroundColor: colors.paper }]}>
+                  <View key={dishId} style={[styles.dishGroup, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}>
                     <View style={styles.dishGroupHeader}>
-                      <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.ink }}>
+                      <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: colors.ink }}>
                         {dish.image_emoji} {dish.name}
                       </Text>
                       <Text style={{ fontSize: 11, color: colors.inkSoft }}>{ings.length} ingr.</Text>
@@ -169,7 +181,7 @@ export default function Courses() {
 
           {!manualOpen ? (
             <Pressable onPress={() => setManualOpen(true)} style={[styles.addManual, { borderColor: colors.sage }]}>
-              <Text style={{ color: colors.forest, fontSize: 12.5, fontWeight: '600' }}>✎ Ajouter un ingrédient manuellement</Text>
+              <Text style={{ color: colors.forest, fontSize: 12.5, fontFamily: fonts.bodySemiBold }}>✎ Ajouter un ingrédient manuellement</Text>
             </Pressable>
           ) : (
             <View style={[styles.manualPanel, { borderColor: colors.line, backgroundColor: colors.paper }]}>
@@ -197,11 +209,13 @@ export default function Courses() {
 const styles = StyleSheet.create({
   switchWrap: { flexDirection: 'row', marginHorizontal: 18, marginTop: 12, borderRadius: 12, padding: 3 },
   switchOpt: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 9 },
-  catLabel: { fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: '700', marginTop: 16, marginBottom: 6 },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1 },
-  dishGroup: { borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 10 },
+  catLabel: { fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
+  itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 10, borderRadius: radii.md, marginBottom: 8 },
+  dishGroup: { borderRadius: radii.lg, padding: 12, marginBottom: 10 },
   dishGroupHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   dishIngRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
-  addManual: { borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, padding: 12, alignItems: 'center', marginTop: 10 },
-  manualPanel: { borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 10, gap: 4 },
+  addManual: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radii.lg, padding: 12, alignItems: 'center', marginTop: 10 },
+  manualPanel: { borderWidth: 1, borderRadius: radii.lg, padding: 14, marginTop: 10, gap: 4 },
+  sharedBadge: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: radii.pill },
+  dishPill: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: radii.pill },
 });

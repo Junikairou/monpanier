@@ -17,6 +17,7 @@ import {
   RecipeStep,
 } from '../../../src/types/models';
 import { addDays, dayLabel, toIso } from '../../../src/lib/dates';
+import { fonts } from '../../../src/theme/tokens';
 
 export default function DishDetail() {
   const { colors } = useTheme();
@@ -130,7 +131,7 @@ export default function DishDetail() {
           steps.map((s) => (
             <View key={s.id} style={styles.step}>
               <View style={[styles.stepNum, { backgroundColor: colors.sagePale }]}>
-                <Text style={{ color: colors.forest, fontSize: 11, fontWeight: '700' }}>{s.position}</Text>
+                <Text style={{ color: colors.forest, fontSize: 11, fontFamily: fonts.bodySemiBold }}>{s.position}</Text>
               </View>
               <Text style={{ flex: 1, fontSize: 12.5, lineHeight: 19, color: colors.ink }}>{s.instruction}</Text>
             </View>

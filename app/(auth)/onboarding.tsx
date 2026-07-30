@@ -4,6 +4,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Pill, Screen } from '../../src/components/ui';
+import { fonts } from '../../src/theme/tokens';
 import { getProfile, updateProfile } from '../../src/data/profile';
 import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot } from '../../src/types/models';
 
@@ -72,7 +73,7 @@ export default function Onboarding() {
           <Pressable onPress={() => setHouseholdSize((n) => Math.max(1, n - 1))} style={[styles.stepBtn, { borderColor: colors.line }]}>
             <Text style={{ fontSize: 20, color: colors.forest }}>–</Text>
           </Pressable>
-          <Text style={{ fontSize: 22, fontStyle: 'italic', color: colors.ink, minWidth: 36, textAlign: 'center' }}>{householdSize}</Text>
+          <Text style={{ fontSize: 22, fontFamily: fonts.display, color: colors.ink, minWidth: 36, textAlign: 'center' }}>{householdSize}</Text>
           <Pressable onPress={() => setHouseholdSize((n) => n + 1)} style={[styles.stepBtn, { borderColor: colors.line }]}>
             <Text style={{ fontSize: 20, color: colors.forest }}>+</Text>
           </Pressable>
@@ -110,9 +111,9 @@ export default function Onboarding() {
 
 const styles = StyleSheet.create({
   wrap: { padding: 28, paddingTop: 70 },
-  title: { fontSize: 24, fontStyle: 'italic', marginBottom: 6, textAlign: 'center' },
+  title: { fontSize: 25, fontFamily: fonts.display, marginBottom: 6, textAlign: 'center' },
   subtitle: { fontSize: 12.5, textAlign: 'center', lineHeight: 18 },
-  section: { fontSize: 15, fontWeight: '600', marginTop: 10, marginBottom: 12, textAlign: 'center' },
+  section: { fontSize: 15, fontFamily: fonts.bodySemiBold, marginTop: 10, marginBottom: 12, textAlign: 'center' },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 22 },
   stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   slotRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 13, borderWidth: 1, borderRadius: 14, marginBottom: 8 },

@@ -6,6 +6,7 @@ import { useTheme } from '../../../src/theme/ThemeProvider';
 import { LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { getProfile, Profile, updateProfile } from '../../../src/data/profile';
 import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot } from '../../../src/types/models';
+import { fonts } from '../../../src/theme/tokens';
 
 const LANGUAGES: { code: string; label: string }[] = [
   { code: 'fr', label: 'Français' },
@@ -55,10 +56,10 @@ export default function Profil() {
       <ScrollView contentContainerStyle={{ padding: 18 }}>
         <View style={[styles.avatarRow, { borderColor: colors.line }]}>
           <View style={[styles.avatar, { backgroundColor: colors.sage }]}>
-            <Text style={{ fontSize: 20, fontStyle: 'italic', color: colors.forestDark }}>{initial}</Text>
+            <Text style={{ fontSize: 20, fontFamily: fonts.display, color: colors.forestDark }}>{initial}</Text>
           </View>
           <View>
-            <Text style={{ fontSize: 16, color: colors.ink, fontStyle: 'italic' }}>
+            <Text style={{ fontSize: 16, color: colors.ink, fontFamily: fonts.display }}>
               {profile.display_name || 'Mon profil'}
             </Text>
             <Text style={{ fontSize: 11.5, color: colors.inkSoft }}>{session!.user.email}</Text>

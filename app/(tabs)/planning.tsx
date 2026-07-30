@@ -8,6 +8,15 @@ import { addDays, dayLabel, formatWeekRange, isToday, startOfWeek, toIso } from 
 import { listPlanningRange, removeMeal } from '../../src/data/planning';
 import { getProfile } from '../../src/data/profile';
 import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
+import { fonts } from '../../src/theme/tokens';
+
+const MEAL_SLOT_EMOJI: Record<MealSlot, string> = {
+  petit_dej: '🍳',
+  dejeuner: '🌞',
+  gouter: '🍪',
+  diner: '🌙',
+  collation: '🌰',
+};
 
 export default function Planning() {
   const { colors } = useTheme();
@@ -82,6 +91,7 @@ export default function Planning() {
         {days.map((d) => {
           const iso = toIso(d);
           const selected = iso === selectedDate;
+          const hasMeal = entries.some((e) => e.date === iso && e.dish_id);
           return (
             <Pressable
               key={iso}
@@ -89,16 +99,20 @@ export default function Planning() {
               style={[
                 styles.dayChip,
                 {
-                  backgroundColor: selected ? colors.forest : colors.sagePale,
-                  borderColor: isToday(d) && !selected ? colors.forest : 'transparent',
-                  borderWidth: isToday(d) && !selected ? 1 : 0,
+                  backgroundColor: selected ? colors.forest : colors.paper,
+                  borderColor: selected ? colors.forest : colors.beigeDark,
                 },
               ]}
             >
-              <Text style={{ fontSize: 10, color: selected ? colors.paper : colors.inkSoft }}>{dayLabel(d)}</Text>
-              <Text style={{ fontSize: 16, fontStyle: 'italic', color: selected ? colors.paper : colors.ink, marginTop: 2 }}>
+              <Text style={{ fontSize: 9.5, fontFamily: fonts.bodySemiBold, letterSpacing: 0.3, color: selected ? colors.paper : colors.inkFaint }}>{dayLabel(d)}</Text>
+              <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.ink, marginTop: 2 }}>
                 {d.getDate()}
               </Text>
+              {hasMeal ? (
+                <View style={{ width: 4, height: 4, borderRadius: 2, marginTop: 3, backgroundColor: selected ? 'rgba(255,255,255,.7)' : colors.forest }} />
+              ) : (
+                <View style={{ width: 4, height: 4, marginTop: 3 }} />
+              )}
             </Pressable>
           );
         })}
@@ -116,10 +130,10 @@ export default function Planning() {
             return (
               <Card>
                 <View style={styles.slotHeader}>
-                  <Text style={[styles.slotLabel, { color: colors.forest }]}>{MEAL_SLOT_LABELS[slot]}</Text>
+                  <Text style={[styles.slotLabel, { color: colors.inkFaint }]}>{MEAL_SLOT_EMOJI[slot]} {MEAL_SLOT_LABELS[slot]}</Text>
                   {entry ? (
                     <Pressable onPress={() => onChange(slot, entry.id)}>
-                      <Text style={{ color: colors.honey, fontSize: 11.5, fontWeight: '600' }}>✎ modifier</Text>
+                      <Text style={{ color: colors.honey, fontSize: 11.5, fontFamily: fonts.bodySemiBold }}>✎ modifier</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -161,6 +175,6 @@ const styles = StyleSheet.create({
   dayStrip: { flexGrow: 0, paddingVertical: 12 },
   dayChip: { width: 44, paddingVertical: 8, borderRadius: 12, alignItems: 'center' },
   slotHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  slotLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
-  dishName: { fontSize: 17, fontStyle: 'italic', marginBottom: 10 },
+  slotLabel: { fontSize: 10, fontFamily: fonts.bodySemiBold, letterSpacing: 0.6, textTransform: 'uppercase' },
+  dishName: { fontSize: 15.5, fontFamily: fonts.bodySemiBold, marginBottom: 10 },
 });

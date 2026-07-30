@@ -5,6 +5,7 @@ import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { isSupabaseConfigured } from '../../src/lib/supabase';
 import { Field, Pill } from '../../src/components/ui';
+import { fonts } from '../../src/theme/tokens';
 
 export default function SignIn() {
   const { colors } = useTheme();
@@ -79,10 +80,10 @@ export default function SignIn() {
 
 const styles = StyleSheet.create({
   wrap: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 60 },
-  brand: { fontSize: 15, fontWeight: '700', letterSpacing: 1, textAlign: 'center', marginBottom: 40, textTransform: 'uppercase' },
-  title: { fontSize: 26, fontStyle: 'italic', textAlign: 'center', marginBottom: 6 },
+  brand: { fontSize: 14, fontFamily: fonts.bodySemiBold, letterSpacing: 2, textAlign: 'center', marginBottom: 40, textTransform: 'uppercase' },
+  title: { fontSize: 27, fontFamily: fonts.display, textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 13, textAlign: 'center', marginBottom: 26 },
   warning: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 18 },
   error: { fontSize: 12.5, marginBottom: 10, textAlign: 'center' },
-  link: { fontSize: 12.5, textAlign: 'center', marginTop: 18, fontWeight: '600' },
+  link: { fontSize: 12.5, textAlign: 'center', marginTop: 18, fontFamily: fonts.bodySemiBold },
 });

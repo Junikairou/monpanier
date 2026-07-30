@@ -6,6 +6,7 @@ import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { listDishes, seedDemoDishes } from '../../../src/data/dishes';
 import { CATEGORY_LABELS, Category, Dish } from '../../../src/types/models';
+import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
 
 const CATEGORIES: Category[] = ['rapide', 'healthy', 'pates', 'vege', 'autre'];
 
@@ -75,16 +76,16 @@ export default function PlatsIndex() {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push({ pathname: '/(tabs)/plats/[id]', params: { id: item.id } })}
-              style={[styles.row, { backgroundColor: colors.paper, borderColor: colors.line }]}
+              style={[styles.row, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}
             >
               <View style={[styles.thumb, { backgroundColor: colors.sagePale }]}>
                 <Text style={{ fontSize: 22 }}>{item.image_emoji ?? '🍽️'}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontWeight: '700' }}>
+                <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
                   {CATEGORY_LABELS[item.category]}
                 </Text>
-                <Text style={{ fontSize: 15.5, fontStyle: 'italic', color: colors.ink, marginTop: 2 }}>{item.name}</Text>
+                <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
               </View>
               <Text style={{ color: colors.inkSoft, fontSize: 16 }}>›</Text>
             </Pressable>
@@ -104,6 +105,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 10,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 10, borderRadius: 16, borderWidth: 1 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 10, borderRadius: radii.md },
   thumb: { width: 56, height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

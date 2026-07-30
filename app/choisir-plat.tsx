@@ -7,6 +7,7 @@ import { Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../s
 import { listDishes } from '../src/data/dishes';
 import { replaceMeal, setMeal } from '../src/data/planning';
 import { CATEGORY_LABELS, Category, Dish, MEAL_SLOT_LABELS, MealSlot } from '../src/types/models';
+import { fonts } from '../src/theme/tokens';
 
 const CATEGORIES: Category[] = ['rapide', 'healthy', 'pates', 'vege', 'autre'];
 
@@ -76,10 +77,10 @@ export default function ChoisirPlat() {
                 <Text style={{ fontSize: 22 }}>{item.image_emoji ?? '🍽️'}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontWeight: '700' }}>
+                <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
                   {CATEGORY_LABELS[item.category]}
                 </Text>
-                <Text style={{ fontSize: 15.5, fontStyle: 'italic', color: colors.ink, marginTop: 2 }}>{item.name}</Text>
+                <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
               </View>
               <Pill label={saving === item.id ? '…' : 'Choisir'} variant="primary" onPress={() => choose(item)} />
             </Pressable>
