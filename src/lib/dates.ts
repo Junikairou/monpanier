@@ -1,4 +1,5 @@
-const DAY_LABELS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
+const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const WEEKDAY_FULL = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 const MONTH_LABELS = [
   'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
   'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
@@ -29,6 +30,11 @@ export function dayLabel(date: Date): string {
   return DAY_LABELS[(date.getDay() + 6) % 7];
 }
 
+const DAY_LABELS_SHORT = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+export function shortDayLabel(date: Date): string {
+  return DAY_LABELS_SHORT[(date.getDay() + 6) % 7];
+}
+
 export function isToday(date: Date): boolean {
   return toIso(date) === toIso(new Date());
 }
@@ -41,4 +47,17 @@ export function formatWeekRange(start: Date): string {
   const monthStart = MONTH_LABELS[start.getMonth()];
   const monthEnd = MONTH_LABELS[end.getMonth()];
   return sameMonth ? `${sd} – ${ed} ${monthStart}` : `${sd} ${monthStart} – ${ed} ${monthEnd}`;
+}
+
+export function formatWeekOf(start: Date): string {
+  return `Semaine du ${start.getDate()} ${MONTH_LABELS[start.getMonth()]}`;
+}
+
+export function weekdayFull(date: Date): string {
+  return WEEKDAY_FULL[(date.getDay() + 6) % 7];
+}
+
+export function formatDayCaption(date: Date): string {
+  const label = `${weekdayFull(date)} ${date.getDate()} ${MONTH_LABELS[date.getMonth()]}`;
+  return isToday(date) ? `Aujourd'hui — ${label.charAt(0).toUpperCase()}${label.slice(1)}` : label.charAt(0).toUpperCase() + label.slice(1);
 }

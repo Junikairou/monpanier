@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase';
 import type { Dish, MealSlot, PlanningEntry } from '../types/models';
-import { regenerateGroceriesFromPlanning } from './groceries';
 
 export async function listPlanningRange(
   userId: string,
@@ -31,7 +30,6 @@ export async function setMeal(
     dish_id: dish.id,
   });
   if (error) throw error;
-  await regenerateGroceriesFromPlanning(userId);
 }
 
 export async function replaceMeal(
@@ -44,11 +42,9 @@ export async function replaceMeal(
     .update({ dish_id: dish.id })
     .eq('id', entryId);
   if (error) throw error;
-  await regenerateGroceriesFromPlanning(userId);
 }
 
 export async function removeMeal(userId: string, entryId: string): Promise<void> {
   const { error } = await supabase.from('planning_entries').delete().eq('id', entryId);
   if (error) throw error;
-  await regenerateGroceriesFromPlanning(userId);
 }

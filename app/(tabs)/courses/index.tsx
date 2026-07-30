@@ -4,45 +4,74 @@ import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Checkbox, EmptyState, Field, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
-import { addManualItem, deleteGroceryItem, listGroceries, toggleChecked } from '../../../src/data/groceries';
-import { listDishes } from '../../../src/data/dishes';
+import {
+  addManualItem,
+  ComputedGroceryItem,
+  getGroceryListForRange,
+  GroceryList,
+  toggleAutoChecked,
+  toggleManualChecked,
+} from '../../../src/data/groceries';
 import { listIngredients } from '../../../src/data/dishes';
-import { Dish, GROCERY_CATEGORY_LABELS, GroceryCategory, GroceryItem, Ingredient } from '../../../src/types/models';
+import { listPlanningRange } from '../../../src/data/planning';
+import { GROCERY_CATEGORY_LABELS, GroceryCategory, GroceryItem, Ingredient, MealSlot, PlanningEntry } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
+import { addDays, dayLabel, formatWeekOf, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
 
 const GROCERY_CATEGORIES: GroceryCategory[] = [
   'fruits_legumes', 'viandes_poissons', 'epicerie', 'epicerie_salee', 'produits_laitiers', 'surgeles', 'boissons', 'autre',
 ];
+
+const SLOT_SHORT: Record<MealSlot, string> = {
+  petit_dej: 'P-déj',
+  dejeuner: 'Déj.',
+  gouter: 'Goûter',
+  diner: 'Dîner',
+  collation: 'Collation',
+};
 
 export default function Courses() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const userId = session!.user.id;
 
-  const [items, setItems] = useState<GroceryItem[]>([]);
-  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [period, setPeriod] = useState<'jour' | 'semaine'>('semaine');
+  const [anchor, setAnchor] = useState(() => new Date());
+  const [view, setView] = useState<'rayon' | 'plat'>('rayon');
+
+  const [list, setList] = useState<GroceryList>({ auto: [], manual: [] });
+  const [planningEntries, setPlanningEntries] = useState<PlanningEntry[]>([]);
   const [dishIngredients, setDishIngredients] = useState<Record<string, Ingredient[]>>({});
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'rayon' | 'plat'>('rayon');
+  const [expandedOverride, setExpandedOverride] = useState<Set<string>>(new Set());
   const [manualOpen, setManualOpen] = useState(false);
   const [mName, setMName] = useState('');
   const [mQty, setMQty] = useState('');
   const [mUnit, setMUnit] = useState('');
 
+  const rangeStart = period === 'jour' ? anchor : startOfWeek(anchor);
+  const rangeEnd = period === 'jour' ? anchor : addDays(startOfWeek(anchor), 6);
+  const startIso = toIso(rangeStart);
+  const endIso = toIso(rangeEnd);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [grocery, allDishes] = await Promise.all([listGroceries(userId), listDishes()]);
-      setItems(grocery);
-      setDishes(allDishes);
+      const [entries, groceryList] = await Promise.all([
+        listPlanningRange(userId, startIso, endIso),
+        getGroceryListForRange(userId, startIso, endIso),
+      ]);
+      setPlanningEntries(entries);
+      setList(groceryList);
 
-      const dishIdsInList = Array.from(new Set(grocery.flatMap((g) => g.source_dish_ids)));
-      const entries = await Promise.all(dishIdsInList.map(async (id) => [id, await listIngredients(id)] as const));
-      setDishIngredients(Object.fromEntries(entries));
+      const dishIds = Array.from(new Set(entries.map((e) => e.dish_id).filter(Boolean) as string[]));
+      const pairs = await Promise.all(dishIds.map(async (id) => [id, await listIngredients(id)] as const));
+      setDishIngredients(Object.fromEntries(pairs));
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, startIso, endIso]);
 
   useFocusEffect(
     useCallback(() => {
@@ -50,20 +79,19 @@ export default function Courses() {
     }, [load]),
   );
 
-  const dishById = useMemo(() => Object.fromEntries(dishes.map((d) => [d.id, d])), [dishes]);
-  const itemByKey = useMemo(
-    () => Object.fromEntries(items.map((i) => [`${i.name.trim().toLowerCase()}::${i.unit.trim().toLowerCase()}`, i])),
-    [items],
-  );
+  const itemByKey = useMemo(() => new Map(list.auto.map((i) => [i.key, i])), [list.auto]);
+  const totalCount = list.auto.length + list.manual.length;
 
-  const onToggle = async (item: GroceryItem) => {
-    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)));
-    await toggleChecked(item.id, !item.checked);
+  const onToggleAuto = async (item: ComputedGroceryItem) => {
+    const next = !item.checked;
+    setList((prev) => ({ ...prev, auto: prev.auto.map((i) => (i.key === item.key ? { ...i, checked: next } : i)) }));
+    await toggleAutoChecked(userId, item, next);
   };
 
-  const onDelete = async (item: GroceryItem) => {
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-    await deleteGroceryItem(item.id);
+  const onToggleManual = async (item: GroceryItem) => {
+    const next = !item.checked;
+    setList((prev) => ({ ...prev, manual: prev.manual.map((i) => (i.id === item.id ? { ...i, checked: next } : i)) }));
+    await toggleManualChecked(item.id, next);
   };
 
   const addManual = async () => {
@@ -76,11 +104,44 @@ export default function Courses() {
     load();
   };
 
-  const dishIdsWithItems = Array.from(new Set(items.flatMap((i) => i.source_dish_ids)));
+  // group planning entries by dish for the "par plat" view
+  const dishGroups = useMemo(() => {
+    const byDish = new Map<string, PlanningEntry[]>();
+    for (const e of planningEntries) {
+      if (!e.dish_id || !e.dish) continue;
+      const arr = byDish.get(e.dish_id) ?? [];
+      arr.push(e);
+      byDish.set(e.dish_id, arr);
+    }
+    return Array.from(byDish.entries()).map(([dishId, occs]) => ({
+      dishId,
+      dish: occs[0].dish!,
+      occurrences: occs,
+      ingredients: dishIngredients[dishId] ?? [],
+    }));
+  }, [planningEntries, dishIngredients]);
+
+  const renderRow = (
+    keyId: string,
+    checked: boolean,
+    onToggle: () => void,
+    name: string,
+    qty: string,
+    badge?: React.ReactNode,
+  ) => (
+    <View key={keyId} style={[styles.itemRow, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: checked ? 0.5 : 1 }]}>
+      <Checkbox checked={checked} onPress={onToggle} />
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 13.5, color: colors.ink, textDecorationLine: checked ? 'line-through' : 'none' }}>{name}</Text>
+        {badge}
+      </View>
+      <Text style={{ fontSize: 12, color: colors.inkSoft }}>{qty}</Text>
+    </View>
+  );
 
   return (
     <Screen>
-      <ScreenHeader title="Liste de courses" subtitle={`${items.length} article${items.length > 1 ? 's' : ''} · générés depuis le planning`} />
+      <ScreenHeader title="Liste de courses" subtitle={`${totalCount} article${totalCount > 1 ? 's' : ''}`} />
 
       <View style={[styles.switchWrap, { backgroundColor: colors.sagePale }]}>
         <Pressable style={[styles.switchOpt, view === 'rayon' && { backgroundColor: colors.paper }]} onPress={() => setView('rayon')}>
@@ -91,93 +152,146 @@ export default function Courses() {
         </Pressable>
       </View>
 
+      <View style={[styles.switchWrap, { backgroundColor: colors.sagePale, marginTop: 8 }]}>
+        <Pressable style={[styles.switchOpt, period === 'jour' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('jour')}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: period === 'jour' ? colors.forest : colors.inkSoft }}>Jour</Text>
+        </Pressable>
+        <Pressable style={[styles.switchOpt, period === 'semaine' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('semaine')}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: period === 'semaine' ? colors.forest : colors.inkSoft }}>Semaine</Text>
+        </Pressable>
+      </View>
+
+      {period === 'jour' ? (
+        <View style={[styles.stripWrap, { backgroundColor: colors.paper, borderColor: colors.beigeDark }]}>
+          <Pressable onPress={() => setAnchor(addDays(anchor, -1))} hitSlop={8} style={styles.stripArrow}>
+            <Text style={{ color: colors.inkSoft, fontSize: 13 }}>‹</Text>
+          </Pressable>
+          {Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i)).map((d) => {
+            const selected = toIso(d) === toIso(anchor);
+            return (
+              <Pressable
+                key={toIso(d)}
+                onPress={() => setAnchor(d)}
+                style={[styles.dayChip, { backgroundColor: selected ? colors.forest : 'transparent' }]}
+              >
+                <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.inkFaint }}>{dayLabel(d)}</Text>
+                <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: selected ? colors.paper : colors.ink, marginTop: 1 }}>{d.getDate()}</Text>
+              </Pressable>
+            );
+          })}
+          <Pressable onPress={() => setAnchor(addDays(anchor, 1))} hitSlop={8} style={styles.stripArrow}>
+            <Text style={{ color: colors.inkSoft, fontSize: 13 }}>›</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={[styles.weekNav, { borderColor: colors.beigeDark }]}>
+          <Pressable onPress={() => setAnchor(addDays(anchor, -7))} hitSlop={8}>
+            <Text style={{ color: colors.forest, fontSize: 16 }}>‹</Text>
+          </Pressable>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{formatWeekOf(startOfWeek(anchor))}</Text>
+          <Pressable onPress={() => setAnchor(addDays(anchor, 7))} hitSlop={8}>
+            <Text style={{ color: colors.forest, fontSize: 16 }}>›</Text>
+          </Pressable>
+        </View>
+      )}
+
       {loading ? (
         <LoadingBlock />
-      ) : items.length === 0 ? (
-        <EmptyState text="Ta liste est vide. Ajoute des plats à ton planning pour la générer automatiquement." />
+      ) : totalCount === 0 ? (
+        <EmptyState text="Rien de planifié sur cette période. Ajoute des plats à ton planning pour générer la liste." />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 6 }}>
-          {view === 'rayon'
-            ? GROCERY_CATEGORIES.map((cat) => {
-                const catItems = items.filter((i) => i.grocery_category === cat);
+        <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 10 }}>
+          {view === 'rayon' ? (
+            <>
+              {GROCERY_CATEGORIES.map((cat) => {
+                const catItems = list.auto.filter((i) => i.grocery_category === cat);
                 if (catItems.length === 0) return null;
                 return (
                   <View key={cat}>
                     <Text style={[styles.catLabel, { color: colors.forest }]}>{GROCERY_CATEGORY_LABELS[cat]}</Text>
-                    {catItems.map((item) => (
-                      <View key={item.id} style={[styles.itemRow, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}>
-                        <Checkbox checked={item.checked} onPress={() => onToggle(item)} />
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 13.5, color: colors.ink, textDecorationLine: item.checked ? 'line-through' : 'none' }}>
-                            {item.name}
-                          </Text>
-                          {item.source_dish_ids.length > 1 ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
-                              <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
-                                <Text style={{ fontSize: 9.5, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
-                                  🔗 dans {item.source_dish_ids.length} plats
-                                </Text>
-                              </View>
-                              {item.source_dish_ids.map((id) => (
-                                <View key={id} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
-                                  <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[id]?.name}</Text>
-                                </View>
-                              ))}
-                            </View>
-                          ) : item.source_dish_ids.length === 1 ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
-                              <Text style={{ fontSize: 10, color: colors.inkFaint }}>dans :</Text>
-                              <View style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
-                                <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[item.source_dish_ids[0]]?.name}</Text>
-                              </View>
-                            </View>
-                          ) : (
-                            <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>Ajouté manuellement</Text>
-                          )}
-                        </View>
-                        <Text style={{ fontSize: 12, color: colors.inkSoft }}>
-                          {item.quantity} {item.unit}
-                        </Text>
-                        <Pressable onPress={() => onDelete(item)} hitSlop={8} style={{ marginLeft: 8 }}>
-                          <Text style={{ color: colors.inkSoft, fontSize: 14 }}>✕</Text>
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
-                );
-              })
-            : dishIdsWithItems.map((dishId) => {
-                const dish = dishById[dishId];
-                const ings = dishIngredients[dishId] ?? [];
-                if (!dish) return null;
-                return (
-                  <View key={dishId} style={[styles.dishGroup, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}>
-                    <View style={styles.dishGroupHeader}>
-                      <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: colors.ink }}>
-                        {dish.image_emoji} {dish.name}
-                      </Text>
-                      <Text style={{ fontSize: 11, color: colors.inkSoft }}>{ings.length} ingr.</Text>
-                    </View>
-                    {ings.map((ing) => {
-                      const key = `${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`;
-                      const groceryItem = itemByKey[key];
-                      return (
-                        <View key={ing.id} style={styles.dishIngRow}>
-                          {groceryItem ? (
-                            <Checkbox checked={groceryItem.checked} onPress={() => onToggle(groceryItem)} />
-                          ) : (
-                            <View style={{ width: 20 }} />
-                          )}
-                          <Text style={{ flex: 1, fontSize: 12.5, color: colors.ink }}>{ing.name}</Text>
-                          <Text style={{ fontSize: 11.5, color: colors.inkSoft }}>
-                            {ing.quantity} {ing.unit}
-                          </Text>
-                        </View>
-                      );
-                    })}
+                    {catItems.map((item) =>
+                      renderRow(
+                        item.key,
+                        item.checked,
+                        () => onToggleAuto(item),
+                        item.name,
+                        `${item.quantity} ${item.unit}`,
+                        item.source_dish_ids.length > 1 ? (
+                          <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale, marginTop: 3 }]}>
+                            <Text style={{ fontSize: 9.5, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
+                              🔗 dans {item.source_dish_ids.length} plats
+                            </Text>
+                          </View>
+                        ) : undefined,
+                      ),
+                    )}
                   </View>
                 );
               })}
+              {list.manual.length > 0 ? (
+                <View>
+                  <Text style={[styles.catLabel, { color: colors.forest }]}>Ajoutés manuellement</Text>
+                  {list.manual.map((item) =>
+                    renderRow(item.id, item.checked, () => onToggleManual(item), item.name, `${item.quantity} ${item.unit}`),
+                  )}
+                </View>
+              ) : null}
+            </>
+          ) : (
+            dishGroups.map(({ dishId, dish, occurrences, ingredients }) => {
+              const rows = ingredients.map((ing) => itemByKey.get(`${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`));
+              const allChecked = rows.length > 0 && rows.every((r) => r?.checked);
+              const collapsed = allChecked && !expandedOverride.has(dishId);
+              const badgeText =
+                occurrences.length > 1
+                  ? `×${occurrences.length}`
+                  : `${shortDayLabel(new Date(occurrences[0].date))} · ${SLOT_SHORT[occurrences[0].slot]}`;
+
+              return (
+                <Pressable
+                  key={dishId}
+                  onPress={() => {
+                    if (!allChecked) return;
+                    setExpandedOverride((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(dishId)) next.delete(dishId);
+                      else next.add(dishId);
+                      return next;
+                    });
+                  }}
+                  style={[styles.dishGroup, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: allChecked ? 0.6 : 1 }]}
+                >
+                  <View style={styles.dishGroupHeader}>
+                    <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: colors.ink }}>
+                      {dish.image_emoji} {dish.name} {allChecked ? '✓' : ''}
+                    </Text>
+                    <View style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+                      <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{badgeText}</Text>
+                    </View>
+                  </View>
+                  {collapsed ? null : (
+                    <View style={{ gap: 8, marginTop: 4 }}>
+                      {ingredients.map((ing) => {
+                        const key = `${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`;
+                        const computed = itemByKey.get(key);
+                        if (!computed) return null;
+                        return renderRow(
+                          ing.id,
+                          computed.checked,
+                          () => onToggleAuto(computed),
+                          ing.name,
+                          `${ing.quantity * occurrences.length} ${ing.unit}`,
+                          computed.source_dish_ids.length > 1 ? (
+                            <Text style={{ fontSize: 9.5, color: colors.honey, marginTop: 2 }}>🔗 aussi dans {computed.source_dish_ids.length - 1} autre(s) plat(s)</Text>
+                          ) : undefined,
+                        );
+                      })}
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })
+          )}
 
           {!manualOpen ? (
             <Pressable onPress={() => setManualOpen(true)} style={[styles.addManual, { borderColor: colors.sage }]}>
@@ -209,13 +323,35 @@ export default function Courses() {
 const styles = StyleSheet.create({
   switchWrap: { flexDirection: 'row', marginHorizontal: 18, marginTop: 12, borderRadius: 12, padding: 3 },
   switchOpt: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 9 },
+  stripWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 18,
+    marginTop: 10,
+    padding: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'space-between',
+  },
+  stripArrow: { width: 18, alignItems: 'center' },
+  dayChip: { flex: 1, paddingVertical: 5, borderRadius: 10, alignItems: 'center' },
+  weekNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 18,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
   catLabel: { fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
   itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 10, borderRadius: radii.md, marginBottom: 8 },
   dishGroup: { borderRadius: radii.lg, padding: 12, marginBottom: 10 },
-  dishGroupHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  dishIngRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
+  dishGroupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   addManual: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radii.lg, padding: 12, alignItems: 'center', marginTop: 10 },
   manualPanel: { borderWidth: 1, borderRadius: radii.lg, padding: 14, marginTop: 10, gap: 4 },
-  sharedBadge: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: radii.pill },
+  sharedBadge: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: radii.pill, alignSelf: 'flex-start' },
   dishPill: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: radii.pill },
 });
