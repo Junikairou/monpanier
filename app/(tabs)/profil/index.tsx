@@ -1,0 +1,151 @@
+import React, { useCallback, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { useAuth } from '../../../src/lib/auth';
+import { useTheme } from '../../../src/theme/ThemeProvider';
+import { LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
+import { getProfile, Profile, updateProfile } from '../../../src/data/profile';
+
+const LANGUAGES: { code: string; label: string }[] = [
+  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'English' },
+];
+
+export default function Profil() {
+  const { colors, preference, setPreference } = useTheme();
+  const { session, signOut } = useAuth();
+  const userId = session!.user.id;
+
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    getProfile(userId)
+      .then(setProfile)
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const patch = async (p: Partial<Profile>) => {
+    setProfile((prev) => (prev ? { ...prev, ...p } : prev));
+    await updateProfile(userId, p);
+  };
+
+  if (loading || !profile) {
+    return (
+      <Screen>
+        <ScreenHeader title="Mon profil" />
+        <LoadingBlock />
+      </Screen>
+    );
+  }
+
+  const initial = (profile.display_name || session!.user.email || '?').charAt(0).toUpperCase();
+
+  return (
+    <Screen>
+      <ScreenHeader title="Mon profil" />
+      <ScrollView contentContainerStyle={{ padding: 18 }}>
+        <View style={[styles.avatarRow, { borderColor: colors.line }]}>
+          <View style={[styles.avatar, { backgroundColor: colors.sage }]}>
+            <Text style={{ fontSize: 20, fontStyle: 'italic', color: colors.forestDark }}>{initial}</Text>
+          </View>
+          <View>
+            <Text style={{ fontSize: 16, color: colors.ink, fontStyle: 'italic' }}>
+              {profile.display_name || 'Mon profil'}
+            </Text>
+            <Text style={{ fontSize: 11.5, color: colors.inkSoft }}>{session!.user.email}</Text>
+          </View>
+        </View>
+
+        <SectionLabel text="Foyer" />
+        <Row label="Personnes dans le foyer" hint="Ajuste les portions par défaut">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Pressable onPress={() => patch({ household_size: Math.max(1, profile.household_size - 1) })}>
+              <Text style={{ color: colors.forest, fontSize: 18 }}>–</Text>
+            </Pressable>
+            <Text style={{ color: colors.ink, fontSize: 14, minWidth: 16, textAlign: 'center' }}>{profile.household_size}</Text>
+            <Pressable onPress={() => patch({ household_size: profile.household_size + 1 })}>
+              <Text style={{ color: colors.forest, fontSize: 18 }}>+</Text>
+            </Pressable>
+          </View>
+        </Row>
+
+        <SectionLabel text="Apparence" />
+        <Row label="Thème">
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {(['light', 'dark', 'auto'] as const).map((t) => (
+              <Pressable
+                key={t}
+                onPress={() => setPreference(t)}
+                style={[
+                  styles.themeSwatch,
+                  {
+                    borderColor: preference === t ? colors.forest : colors.line,
+                    backgroundColor: t === 'light' ? '#FAF7EF' : t === 'dark' ? '#1C2019' : colors.honey,
+                  },
+                ]}
+              >
+                {t === 'auto' ? <Text style={{ fontSize: 10, color: colors.paper }}>A</Text> : null}
+              </Pressable>
+            ))}
+          </View>
+        </Row>
+
+        <SectionLabel text="Langue" />
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 4 }}>
+          {LANGUAGES.map((l) => (
+            <Pill key={l.code} label={l.label} variant={profile.language === l.code ? 'primary' : 'default'} onPress={() => patch({ language: l.code })} />
+          ))}
+        </View>
+        {profile.language !== 'fr' ? (
+          <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 10, fontStyle: 'italic' }}>
+            Préférence enregistrée — la traduction complète de l'interface arrive dans une prochaine version.
+          </Text>
+        ) : null}
+
+        <SectionLabel text="Unités" />
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 4 }}>
+          <Pill label="Métrique (g, ml)" variant={profile.units === 'metric' ? 'primary' : 'default'} onPress={() => patch({ units: 'metric' })} />
+          <Pill label="Impérial (oz, cup)" variant={profile.units === 'imperial' ? 'primary' : 'default'} onPress={() => patch({ units: 'imperial' })} />
+        </View>
+
+        <View style={{ marginTop: 30 }}>
+          <Pill label="Se déconnecter" variant="ghost" onPress={signOut} />
+        </View>
+      </ScrollView>
+    </Screen>
+  );
+}
+
+function SectionLabel({ text }: { text: string }) {
+  const { colors } = useTheme();
+  return <Text style={[styles.section, { color: colors.inkSoft }]}>{text}</Text>;
+}
+
+function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.row, { borderColor: colors.line }]}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 13.5, color: colors.ink }}>{label}</Text>
+        {hint ? <Text style={{ fontSize: 10.5, color: colors.inkSoft, marginTop: 2 }}>{hint}</Text> : null}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottomWidth: 1, marginBottom: 6 },
+  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  section: { fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 18, marginBottom: 6 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1 },
+  themeSwatch: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+});
