@@ -89,6 +89,11 @@ export default function Courses() {
   );
 
   const itemByKey = useMemo(() => new Map(list.auto.map((i) => [i.key, i])), [list.auto]);
+  const dishById = useMemo(() => {
+    const map: Record<string, { id: string; name: string; image_emoji: string | null }> = {};
+    for (const e of planningEntries) if (e.dish) map[e.dish.id] = e.dish;
+    return map;
+  }, [planningEntries]);
   const totalCount = list.auto.length + list.manual.length;
   const checkedCount = list.auto.filter((i) => i.checked).length + list.manual.filter((i) => i.checked).length;
 
@@ -136,6 +141,30 @@ export default function Courses() {
       <Text style={{ fontSize: 10.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{qty}</Text>
     </View>
   );
+
+  const dishOriginBadges = (sourceDishIds: string[]) => {
+    if (sourceDishIds.length === 0) return null;
+    const names = sourceDishIds.map((id) => dishById[id]?.name).filter(Boolean) as string[];
+    if (names.length === 0) return null;
+    return (
+      <>
+        {sourceDishIds.length > 1 ? (
+          <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
+            <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
+              🔗 dans {sourceDishIds.length} plats
+            </Text>
+          </View>
+        ) : (
+          <Text style={{ fontSize: 9.5, color: colors.inkFaint }}>dans :</Text>
+        )}
+        {names.map((name, i) => (
+          <View key={i} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+            <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{name}</Text>
+          </View>
+        ))}
+      </>
+    );
+  };
 
   const renderRow = (
     keyId: string,
@@ -229,13 +258,7 @@ export default function Courses() {
                           () => onToggleAuto(item),
                           item.name,
                           `${item.quantity} ${item.unit}`,
-                          item.source_dish_ids.length > 1 ? (
-                            <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
-                              <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
-                                🔗 dans {item.source_dish_ids.length} plats
-                              </Text>
-                            </View>
-                          ) : undefined,
+                          dishOriginBadges(item.source_dish_ids),
                         ),
                       )}
                     </View>
@@ -355,7 +378,7 @@ const styles = StyleSheet.create({
   stripWrap: { flexDirection: 'row', alignItems: 'center', gap: 4, marginHorizontal: 18, marginTop: 10 },
   weekStrip: { flex: 1, flexDirection: 'row', gap: 4 },
   arrowBtn: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  dayChip: { flex: 1, minWidth: 30, paddingVertical: 5, paddingHorizontal: 2, borderRadius: radii.tag, borderWidth: 1.5, alignItems: 'center' },
+  dayChip: { flex: 1, minWidth: 30, paddingVertical: 13, paddingHorizontal: 2, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 3 },
   weekNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginHorizontal: 18, marginTop: 10 },
   catLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
   itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 9, borderRadius: radii.sm, marginBottom: 8 },
@@ -366,6 +389,7 @@ const styles = StyleSheet.create({
   dishIngRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10 },
   manualPanel: { borderWidth: 1, borderRadius: radii.lg, padding: 14, marginTop: 10, gap: 4 },
   sharedBadge: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.pill },
+  dishPill: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.pill },
   fab: {
     position: 'absolute',
     bottom: 16,
