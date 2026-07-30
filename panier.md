@@ -29,7 +29,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 - Planning de la semaine : navigation semaine par semaine, ajout/changement/suppression de repas, ne montre que les repas activés dans le profil ; **un créneau peut contenir plusieurs plats** (entrée + plat + dessert...) ; total calories du jour et indicateur "repas équilibré" (règle simple : présence d'un plat + accompagnement + fruit dans la journée)
 - Planning : bouton retour à aujourd'hui (⟲), calendrier mois/année pour sauter à une date (📅), jour actuel mis en avant dans la frise (bordure + agrandi), repas "au resto" (créneau marqué complété sans choisir de plat, exclu de la liste de courses), vue "Semaine" en grille d'ensemble (tape une case pour ouvrir ce jour)
 - Plats : création (ingrédients + étapes de recette), **type de plat** (entrée/plat/accompagnement/dessert/fruit/boisson/autre), **calories en saisie manuelle** (optionnel), fiche détail, ajout au planning
-- Liste de courses : vue "Par catégorie" (une carte par ingrédient, indique le/les plat(s) d'origine) et vue "Par plat" (bloc compact par plat, se replie si tout est coché) — filtre Jour/Semaine avec navigation, état coché persistant (indépendant de la fenêtre affichée)
+- Liste de courses : vue "Par catégorie" (icône + une carte par ingrédient, indique le/les plat(s) d'origine) et vue "Par plat" (bloc compact par plat, se replie si tout est coché) — filtre Jour/Semaine/**Plage** (sélection libre de deux dates via calendrier, pour les courses tous les 2-3 jours), état coché persistant (indépendant de la fenêtre affichée)
 - Profil : thème clair/sombre/auto, langue (préférence enregistrée, pas de traduction complète), unités, taille du foyer, repas à planifier
 - PWA installable (manifest + icônes — icône encore générique Expo, pas personnalisée)
 
@@ -56,8 +56,8 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 Fait par étapes, push à chaque étape terminée :
 1. ✅ Structure repas multi-plats (entrée/plat/dessert/accompagnement/fruit/boisson) + calories manuelles + indicateur équilibre — fait, migration 005 exécutée.
-2. ✅ Planning : retour à aujourd'hui, calendrier (choix mois/année), repas "au resto", mise en avant du jour actuel, vue hebdomadaire d'ensemble — **fait, migration 006 à exécuter dans Supabase**.
-3. ⏳ Courses : icônes par catégorie, sélecteur de plage de dates (plusieurs jours) pour les utilisateurs qui font les courses tous les 2-3 jours.
+2. ✅ Planning : retour à aujourd'hui, calendrier (choix mois/année), repas "au resto", mise en avant du jour actuel, vue hebdomadaire d'ensemble — fait, migration 006 exécutée.
+3. ✅ Courses : icônes par catégorie, sélecteur de plage de dates (calendrier libre "Du/Au") — fait, aucune migration nécessaire.
 4. ⏳ Thèmes rose et bleu (palettes complètes en plus de clair/sombre/auto).
 
 ## Décisions notables (avec date)

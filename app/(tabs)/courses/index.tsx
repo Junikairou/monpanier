@@ -14,12 +14,13 @@ import {
 } from '../../../src/data/groceries';
 import { listIngredients } from '../../../src/data/dishes';
 import { listPlanningRange } from '../../../src/data/planning';
-import { GROCERY_CATEGORY_LABELS, GroceryCategory, GroceryItem, Ingredient, MealSlot, PlanningEntry } from '../../../src/types/models';
+import { GROCERY_CATEGORY_ICONS, GROCERY_CATEGORY_LABELS, GroceryCategory, GroceryItem, Ingredient, MealSlot, PlanningEntry } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
 import { addDays, dayLabel, formatWeekOf, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
+import { CalendarPicker } from '../../../src/components/CalendarPicker';
 
 const GROCERY_CATEGORIES: GroceryCategory[] = [
-  'fruits_legumes', 'viandes_poissons', 'epicerie', 'epicerie_salee', 'produits_laitiers', 'surgeles', 'boissons', 'autre',
+  'fruits_legumes', 'viandes_poissons', 'feculents', 'epicerie', 'epicerie_salee', 'produits_laitiers', 'surgeles', 'boissons', 'autre',
 ];
 
 const SLOT_SHORT: Record<MealSlot, string> = {
@@ -44,8 +45,11 @@ export default function Courses() {
   const { session } = useAuth();
   const userId = session!.user.id;
 
-  const [period, setPeriod] = useState<'jour' | 'semaine'>('semaine');
+  const [period, setPeriod] = useState<'jour' | 'semaine' | 'plage'>('semaine');
   const [anchor, setAnchor] = useState(() => new Date());
+  const [rangeFrom, setRangeFrom] = useState(() => toIso(new Date()));
+  const [rangeTo, setRangeTo] = useState(() => toIso(addDays(new Date(), 3)));
+  const [pickerTarget, setPickerTarget] = useState<'from' | 'to' | null>(null);
   const [view, setView] = useState<'rayon' | 'plat'>('rayon');
 
   const [list, setList] = useState<GroceryList>({ auto: [], manual: [] });
@@ -58,10 +62,19 @@ export default function Courses() {
   const [mQty, setMQty] = useState('');
   const [mUnit, setMUnit] = useState('');
 
-  const rangeStart = period === 'jour' ? anchor : startOfWeek(anchor);
-  const rangeEnd = period === 'jour' ? anchor : addDays(startOfWeek(anchor), 6);
+  const rangeStart = period === 'jour' ? anchor : period === 'semaine' ? startOfWeek(anchor) : new Date(rangeFrom);
+  const rangeEnd = period === 'jour' ? anchor : period === 'semaine' ? addDays(startOfWeek(anchor), 6) : new Date(rangeTo);
   const startIso = toIso(rangeStart);
   const endIso = toIso(rangeEnd);
+
+  const pickFrom = (iso: string) => {
+    setRangeFrom(iso);
+    if (iso > rangeTo) setRangeTo(iso);
+  };
+  const pickTo = (iso: string) => {
+    setRangeTo(iso);
+    if (iso < rangeFrom) setRangeFrom(iso);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -206,6 +219,9 @@ export default function Courses() {
         <Pressable style={[styles.switchOpt, period === 'semaine' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('semaine')}>
           <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'semaine' ? colors.ink : colors.inkSoft }}>Semaine</Text>
         </Pressable>
+        <Pressable style={[styles.switchOpt, period === 'plage' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('plage')}>
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'plage' ? colors.ink : colors.inkSoft }}>Plage</Text>
+        </Pressable>
       </View>
 
       {period === 'jour' ? (
@@ -228,13 +244,32 @@ export default function Courses() {
           </View>
           <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 1))} />
         </View>
-      ) : (
+      ) : period === 'semaine' ? (
         <View style={styles.weekNav}>
           <ArrowBtn dir="prev" onPress={() => setAnchor(addDays(anchor, -7))} />
           <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(startOfWeek(anchor))}</Text>
           <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 7))} />
         </View>
+      ) : (
+        <View style={styles.rangeNav}>
+          <Pressable onPress={() => setPickerTarget('from')} style={[styles.rangeBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}>
+            <Text style={{ fontSize: 10, color: colors.inkFaint, fontFamily: fonts.bodyMedium }}>Du</Text>
+            <Text style={{ fontSize: 12, color: colors.ink, fontFamily: fonts.bodySemiBold }}>{shortDayLabel(rangeStart)} {rangeStart.getDate()}</Text>
+          </Pressable>
+          <Text style={{ color: colors.inkFaint }}>→</Text>
+          <Pressable onPress={() => setPickerTarget('to')} style={[styles.rangeBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}>
+            <Text style={{ fontSize: 10, color: colors.inkFaint, fontFamily: fonts.bodyMedium }}>Au</Text>
+            <Text style={{ fontSize: 12, color: colors.ink, fontFamily: fonts.bodySemiBold }}>{shortDayLabel(rangeEnd)} {rangeEnd.getDate()}</Text>
+          </Pressable>
+        </View>
       )}
+
+      <CalendarPicker
+        visible={pickerTarget !== null}
+        selectedDate={pickerTarget === 'from' ? rangeFrom : rangeTo}
+        onClose={() => setPickerTarget(null)}
+        onSelect={(iso) => (pickerTarget === 'from' ? pickFrom(iso) : pickTo(iso))}
+      />
 
       {loading ? (
         <LoadingBlock />
@@ -250,7 +285,7 @@ export default function Courses() {
                   if (catItems.length === 0) return null;
                   return (
                     <View key={cat}>
-                      <Text style={[styles.catLabel, { color: colors.inkFaint }]}>{GROCERY_CATEGORY_LABELS[cat]}</Text>
+                      <Text style={[styles.catLabel, { color: colors.inkFaint }]}>{GROCERY_CATEGORY_ICONS[cat]} {GROCERY_CATEGORY_LABELS[cat]}</Text>
                       {catItems.map((item) =>
                         renderRow(
                           item.key,
@@ -380,6 +415,8 @@ const styles = StyleSheet.create({
   arrowBtn: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   dayChip: { flex: 1, minWidth: 30, paddingVertical: 13, paddingHorizontal: 2, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 3 },
   weekNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginHorizontal: 18, marginTop: 10 },
+  rangeNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginHorizontal: 18, marginTop: 10 },
+  rangeBtn: { alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1.5 },
   catLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
   itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 9, borderRadius: radii.sm, marginBottom: 8 },
   qtyTag: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.tag },
