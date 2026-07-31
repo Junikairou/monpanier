@@ -9,7 +9,76 @@ import { Chip, Field, Pill } from './ui';
 import { ActionSheet } from './ActionSheet';
 import { EmojiPicker } from './EmojiPicker';
 import { NewDishInput } from '../data/dishes';
+import { TaxonomyItem } from '../data/taxonomies';
 import { Category, CourseType, GroceryCategory } from '../types/models';
+
+const RAYON_KEYWORDS: { category: string; words: string[] }[] = [
+  {
+    category: 'fruits_legumes',
+    words: [
+      'pomme', 'banane', 'carotte', 'tomate', 'salade', 'oignon', 'ail', 'poivron', 'courgette',
+      'citron', 'fraise', 'poire', 'orange', 'concombre', 'brocoli', 'épinard', 'epinard',
+      'champignon', 'avocat', 'pomme de terre', 'patate', 'persil', 'basilic', 'menthe', 'coriandre',
+      'aubergine', 'radis', 'chou', 'poireau', 'céleri', 'celeri', 'framboise', 'mangue', 'raisin',
+    ],
+  },
+  {
+    category: 'viandes_poissons',
+    words: [
+      'poulet', 'boeuf', 'bœuf', 'porc', 'dinde', 'veau', 'agneau', 'saumon', 'thon', 'cabillaud',
+      'crevette', 'jambon', 'lardons', 'steak', 'poisson', 'viande', 'merguez', 'saucisse', 'bacon',
+    ],
+  },
+  {
+    category: 'feculents',
+    words: ['riz', 'pâtes', 'pates', 'pain', 'quinoa', 'semoule', 'boulgour', 'farine', 'spaghetti', 'nouilles'],
+  },
+  {
+    category: 'produits_laitiers',
+    words: [
+      'lait', 'beurre', 'crème', 'creme', 'fromage', 'yaourt', 'yogourt', 'oeuf', 'œuf', 'parmesan',
+      'mozzarella', 'feta', 'chèvre', 'chevre', 'gruyère', 'gruyere',
+    ],
+  },
+  {
+    category: 'epicerie',
+    words: ['huile', 'sucre', 'sel', 'poivre', 'miel', 'vinaigre', 'moutarde', 'épice', 'epice', 'levure', 'vanille', 'farine'],
+  },
+  {
+    category: 'epicerie_salee',
+    words: ['conserve', 'olive', 'cornichon', 'ketchup', 'mayonnaise', 'bouillon', 'sauce tomate'],
+  },
+  {
+    category: 'surgeles',
+    words: ['surgelé', 'surgele', 'glace'],
+  },
+  {
+    category: 'boissons',
+    words: ['eau', 'jus', 'soda', 'vin', 'bière', 'biere', 'café', 'cafe', 'thé', 'the'],
+  },
+];
+
+function guessGroceryCategory(name: string, available: TaxonomyItem[]): string | null {
+  const n = name.trim().toLowerCase();
+  if (!n) return null;
+  for (const { category, words } of RAYON_KEYWORDS) {
+    if (words.some((w) => n.includes(w)) && available.some((g) => g.key === category)) {
+      return category;
+    }
+  }
+  return null;
+}
+
+const STEP_SUGGESTIONS = [
+  'Préchauffer le four à 180°C',
+  'Éplucher et couper les légumes',
+  "Faire chauffer l'huile dans une poêle",
+  'Faire revenir à feu moyen pendant 5 minutes',
+  'Ajouter et mélanger',
+  'Assaisonner avec sel et poivre',
+  'Laisser cuire 20 minutes',
+  'Laisser reposer avant de servir',
+];
 
 export type IngredientDraft = { name: string; quantity: string; unit: string; grocery_category: GroceryCategory };
 
@@ -33,6 +102,7 @@ interface DishFormProps {
   initial?: DishFormInitial;
   submitLabel: string;
   onSubmit: (input: NewDishInput) => Promise<void>;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
@@ -53,7 +123,7 @@ export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
 
 const UNIT_OPTIONS = ['Pièce', 'Gramme', 'ML', 'Cuillère à soupe', 'Pincée'];
 
-export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSubmit }: DishFormProps) {
+export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSubmit, onDirtyChange }: DishFormProps) {
   const { colors } = useTheme();
   const { session } = useAuth();
   const { categories, courseTypes, groceryCategories } = useTaxonomies();
@@ -82,6 +152,16 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   useEffect(() => {
     getProfile(session!.user.id).then((p) => setShowNutrition(p.show_nutrition_fields));
   }, [session]);
+
+  useEffect(() => {
+    if (!onDirtyChange) return;
+    const current: DishFormInitial = {
+      name, emoji, category, courseType, calories, protein, carbs, fat, fiber,
+      baseServings, prepMinutes, ingredients, steps,
+    };
+    onDirtyChange(JSON.stringify(current) !== JSON.stringify(initial));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, emoji, category, courseType, calories, protein, carbs, fat, fiber, baseServings, prepMinutes, ingredients, steps]);
 
   const updateIngredient = (i: number, patch: Partial<IngredientDraft>) => {
     setIngredients((prev) => prev.map((ing, idx) => (idx === i ? { ...ing, ...patch } : ing)));
@@ -121,6 +201,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
           })),
         steps: steps.map((s) => s.trim()).filter(Boolean),
       });
+      onDirtyChange?.(false);
     } catch (e: any) {
       setError(e?.message ?? "Erreur lors de l'enregistrement.");
     } finally {
@@ -206,7 +287,19 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         <View key={i} style={[styles.ingRow, { borderColor: colors.line }]}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <View style={{ flex: 2 }}>
-              <Field label="Nom" value={ing.name} onChangeText={(v) => updateIngredient(i, { name: v })} placeholder="Riz basmati" />
+              <Field
+                label="Nom"
+                value={ing.name}
+                onChangeText={(v) => {
+                  const patch: Partial<IngredientDraft> = { name: v };
+                  if (ing.grocery_category === 'autre') {
+                    const guess = guessGroceryCategory(v, groceryCategories);
+                    if (guess) patch.grocery_category = guess;
+                  }
+                  updateIngredient(i, patch);
+                }}
+                placeholder="Riz basmati"
+              />
             </View>
             <View style={{ width: 45 }}>
               <Field
@@ -243,6 +336,14 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       />
 
       <Text style={[styles.section, { color: colors.ink, marginTop: 22 }]}>Étapes de la recette</Text>
+      <Text style={[styles.label, { color: colors.inkSoft, textTransform: 'none', letterSpacing: 0 }]}>
+        Étapes courantes (à ajouter puis ajuster) :
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+        {STEP_SUGGESTIONS.map((phrase) => (
+          <Chip key={phrase} label={phrase} onPress={() => setSteps((prev) => [...prev.filter((s) => s.trim()), phrase])} />
+        ))}
+      </ScrollView>
       {steps.map((s, i) => (
         <Field
           key={i}

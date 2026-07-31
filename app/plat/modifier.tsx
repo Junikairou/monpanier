@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LoadingBlock, Screen, ScreenHeader } from '../../src/components/ui';
+import { ActionSheet } from '../../src/components/ActionSheet';
 import { DishForm, DishFormInitial } from '../../src/components/DishForm';
 import { getDish, listIngredients, listRecipeSteps, updateDish } from '../../src/data/dishes';
+import { useUnsavedChangesGuard } from '../../src/lib/unsavedChangesGuard';
 
 export default function ModifierDish() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [initial, setInitial] = useState<DishFormInitial | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const guard = useUnsavedChangesGuard(dirty);
 
   useEffect(() => {
     Promise.all([getDish(id), listIngredients(id), listRecipeSteps(id)]).then(([dish, ingredients, steps]) => {
@@ -45,12 +49,19 @@ export default function ModifierDish() {
         <DishForm
           initial={initial}
           submitLabel="Enregistrer les modifications"
+          onDirtyChange={setDirty}
           onSubmit={async (input) => {
             await updateDish(id, input);
             router.back();
           }}
         />
       )}
+      <ActionSheet
+        visible={guard.visible}
+        title="Quitter sans enregistrer ?"
+        actions={[{ label: 'Quitter sans enregistrer', destructive: true, onPress: guard.confirmLeave }]}
+        onClose={guard.cancelLeave}
+      />
     </Screen>
   );
 }

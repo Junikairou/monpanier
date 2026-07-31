@@ -138,7 +138,12 @@ Lot 1 (terminé, cette conversation) :
 
 **⚠️ Migration 019 — à lire avant d'exécuter :** redéfinit la fonction `handle_new_user` (comme la migration 013) pour ajouter la création des créneaux de repas par défaut à l'inscription ; reprend la version de la migration 018 (rôles chef/membre) en y ajoutant `meal_slots`. Chaque foyer existant reçoit automatiquement les 5 créneaux actuels. **Non testé en conditions réelles** (pas d'identifiants) — à tester soigneusement avant de compter dessus, idéalement en vérifiant qu'un nouveau compte reçoit bien ses 5 créneaux et que Personnalisation > Repas à planifier fonctionne (créer/renommer/supprimer).
 
-Reste du lot 2 en cours : confirmation avant de quitter sans sauvegarder, suggestion auto de rayon, animations, saisie rapide d'étape de recette, mode Complet/Simple à l'inscription, tutoriel des onglets.
+3. ✅ Suggestion automatique de rayon à la saisie du nom d'un ingrédient (dictionnaire de mots-clés français courants), seulement si le rayon est encore sur "Autre" (ne remplace jamais un choix déjà fait par l'utilisateur) ; reste modifiable manuellement.
+4. ✅ Saisie rapide d'étape de recette : rangée de suggestions ("Préchauffer le four à 180°C", "Faire revenir à feu moyen pendant 5 minutes"...) au-dessus des étapes — appuyer dessus ajoute l'étape déjà pré-remplie à ajuster, au lieu de tout taper.
+5. ✅ Confirmation avant de quitter sans enregistrer sur Nouveau plat / Modifier le plat (modifications non enregistrées détectées automatiquement) — bouton retour, geste retour et navigation clavier/système interceptés, message dans le thème de l'app (pas d'alerte native).
+6. ✅ Choix Mode Complet / Mode Simple à la première connexion (onboarding) — Complet : toutes options avancées + tous les repas activés (défaut) ; Simple : options avancées désactivées + seulement déjeuner/dîner. Modifiable ensuite dans Options avancées.
+
+Reste du lot 2 en cours : animations de transition, tutoriel des onglets.
 
 Backlog (lot 2, prochaine conversation) :
 6. ⬜ Ajouter un repas directement dans le planning sans passer par "Options avancées".

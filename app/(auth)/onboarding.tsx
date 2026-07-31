@@ -19,6 +19,7 @@ export default function Onboarding() {
 
   const [householdSize, setHouseholdSize] = useState(1);
   const [activeSlots, setActiveSlots] = useState<MealSlot[]>([]);
+  const [mode, setMode] = useState<'complet' | 'simple'>('complet');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +43,16 @@ export default function Onboarding() {
     );
   };
 
+  const chooseMode = (next: 'complet' | 'simple') => {
+    setMode(next);
+    if (next === 'complet') {
+      setActiveSlots(allSlotKeys);
+    } else {
+      const preferred = allSlotKeys.filter((s) => s === 'dejeuner' || s === 'diner');
+      setActiveSlots(preferred.length ? preferred : allSlotKeys.slice(0, 2));
+    }
+  };
+
   const finish = async () => {
     setSaving(true);
     setError(null);
@@ -49,6 +60,8 @@ export default function Onboarding() {
       await updateProfile(session.user.id, {
         household_size: householdSize,
         active_slots: activeSlots.length ? activeSlots : allSlotKeys,
+        show_balance_hint: mode === 'complet',
+        show_nutrition_fields: mode === 'complet',
         onboarded: true,
       });
       router.replace('/(tabs)/planning');
@@ -68,10 +81,30 @@ export default function Onboarding() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.wrap}>
-        <Text style={[styles.title, { color: colors.ink }]}>Encore deux questions</Text>
+        <Text style={[styles.title, { color: colors.ink }]}>Encore quelques questions</Text>
         <Text style={[styles.subtitle, { color: colors.inkSoft }]}>
           Pour adapter les portions et le planning à tes besoins
         </Text>
+
+        <Text style={[styles.section, { color: colors.ink }]}>Quel mode veux-tu ?</Text>
+        <Pressable
+          onPress={() => chooseMode('complet')}
+          style={[styles.modeCard, { borderColor: mode === 'complet' ? colors.forest : colors.line, backgroundColor: mode === 'complet' ? colors.sagePale : 'transparent' }]}
+        >
+          <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink }}>🌿 Mode Complet</Text>
+          <Text style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 3 }}>
+            Toutes les options avancées activées (nutriments, indicateur d'équilibre, tous les repas). Tu peux tout désactiver ensuite si besoin.
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => chooseMode('simple')}
+          style={[styles.modeCard, { borderColor: mode === 'simple' ? colors.forest : colors.line, backgroundColor: mode === 'simple' ? colors.sagePale : 'transparent', marginBottom: 20 }]}
+        >
+          <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink }}>🍃 Mode Simple</Text>
+          <Text style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 3 }}>
+            Options avancées désactivées, juste déjeuner et dîner au planning. Le plus épuré pour démarrer — tu pourras tout activer plus tard.
+          </Text>
+        </Pressable>
 
         <Text style={[styles.section, { color: colors.ink }]}>Combien de personnes dans le foyer ?</Text>
         <View style={styles.stepper}>
@@ -119,6 +152,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 25, fontFamily: fonts.display, marginBottom: 6, textAlign: 'center' },
   subtitle: { fontSize: 12.5, textAlign: 'center', lineHeight: 18 },
   section: { fontSize: 15, fontFamily: fonts.bodySemiBold, marginTop: 10, marginBottom: 12, textAlign: 'center' },
+  modeCard: { borderWidth: 1.5, borderRadius: 16, padding: 14, marginBottom: 10 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 22 },
   stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   slotRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 13, borderWidth: 1, borderRadius: 14, marginBottom: 8 },
