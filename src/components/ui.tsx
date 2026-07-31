@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   StyleSheet,
   TextInputProps,
@@ -162,8 +163,35 @@ export function EmptyState({ text }: { text: string }) {
   const { colors } = useTheme();
   return (
     <View style={styles.empty}>
-      <Text style={{ color: colors.inkFaint, fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13 }}>{text}</Text>
+      <Text style={{ color: colors.inkFaint, fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, textAlign: 'center' }}>{text}</Text>
     </View>
+  );
+}
+
+export function InfoTip({ title, text }: { title?: string; text: string }) {
+  const { colors } = useTheme();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Pressable
+        onPress={() => setOpen(true)}
+        hitSlop={8}
+        style={[styles.infoDot, { backgroundColor: colors.paper, borderColor: colors.beige }]}
+      >
+        <Text style={{ fontSize: 10.5, fontFamily: fonts.bodySemiBold, color: colors.inkSoft }}>i</Text>
+      </Pressable>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={styles.infoBackdrop} onPress={() => setOpen(false)}>
+          <Pressable style={[styles.infoPanel, { backgroundColor: colors.paper, borderColor: colors.line }]} onPress={(e) => e.stopPropagation()}>
+            {title ? <Text style={[styles.infoTitle, { color: colors.ink }]}>{title}</Text> : null}
+            <Text style={{ fontSize: 13, fontFamily: fonts.body, color: colors.inkSoft, lineHeight: 19 }}>{text}</Text>
+            <Pressable onPress={() => setOpen(false)} style={[styles.infoClose, { backgroundColor: colors.sagePale }]}>
+              <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: colors.forestDark }}>Compris</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -212,7 +240,12 @@ const styles = StyleSheet.create({
   card: { borderRadius: radii.md, padding: 13 },
   fieldLabel: { fontSize: 10.5, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: fonts.bodySemiBold },
   input: { borderWidth: 1.5, borderRadius: radii.sm, paddingVertical: 10, paddingHorizontal: 12, fontSize: 14, fontFamily: fonts.body },
-  empty: { paddingVertical: 30, alignItems: 'center' },
+  empty: { paddingVertical: 30, paddingHorizontal: 24, alignItems: 'center' },
   checkbox: { width: 16, height: 16, borderRadius: radii.tag, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   miniBtn: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: radii.btn, alignItems: 'center' },
+  infoDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  infoBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  infoPanel: { width: '100%', maxWidth: 320, borderRadius: radii.lg, borderWidth: 1, padding: 18, gap: 12 },
+  infoTitle: { fontSize: 14.5, fontFamily: fonts.bodySemiBold },
+  infoClose: { alignSelf: 'flex-end', paddingVertical: 7, paddingHorizontal: 14, borderRadius: radii.pill },
 });

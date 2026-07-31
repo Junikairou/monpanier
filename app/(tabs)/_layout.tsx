@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/lib/auth';
@@ -10,6 +10,7 @@ export default function TabsLayout() {
   const { session, initializing } = useAuth();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -68,6 +69,11 @@ export default function TabsLayout() {
         options={{
           title: 'Plus',
           tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal-circle-outline" size={size} color={color} />,
+        }}
+        listeners={{
+          tabPress: () => {
+            router.replace('/(tabs)/profil');
+          },
         }}
       />
     </Tabs>

@@ -4,7 +4,7 @@ import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
-import { Checkbox, EmptyState, Field, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
+import { Checkbox, EmptyState, Field, InfoTip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import {
   addManualItem,
   ComputedGroceryItem,
@@ -242,6 +242,10 @@ export default function Courses() {
             >
               <Text style={{ fontSize: 13 }}>⟲</Text>
             </Pressable>
+            <InfoTip
+              title="Boutons du haut"
+              text={"🔄 Recharger la liste\n⟲ Revenir à aujourd'hui"}
+            />
           </View>
         }
       />
@@ -255,16 +259,22 @@ export default function Courses() {
         </Pressable>
       </View>
 
-      <View style={[styles.switchWrap, { backgroundColor: colors.beige, marginTop: 8 }]}>
-        <Pressable style={[styles.switchOpt, period === 'jour' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('jour')}>
-          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'jour' ? colors.ink : colors.inkSoft }}>Jour</Text>
-        </Pressable>
-        <Pressable style={[styles.switchOpt, period === 'semaine' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('semaine')}>
-          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'semaine' ? colors.ink : colors.inkSoft }}>Semaine</Text>
-        </Pressable>
-        <Pressable style={[styles.switchOpt, period === 'plage' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('plage')}>
-          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'plage' ? colors.ink : colors.inkSoft }}>Plage</Text>
-        </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+        <View style={[styles.switchWrap, { backgroundColor: colors.beige, marginTop: 0, flex: 1 }]}>
+          <Pressable style={[styles.switchOpt, period === 'jour' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('jour')}>
+            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'jour' ? colors.ink : colors.inkSoft }}>Jour</Text>
+          </Pressable>
+          <Pressable style={[styles.switchOpt, period === 'semaine' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('semaine')}>
+            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'semaine' ? colors.ink : colors.inkSoft }}>Semaine</Text>
+          </Pressable>
+          <Pressable style={[styles.switchOpt, period === 'plage' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('plage')}>
+            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'plage' ? colors.ink : colors.inkSoft }}>Plage</Text>
+          </Pressable>
+        </View>
+        <InfoTip
+          title="Jour / Semaine / Plage"
+          text={"Jour et Semaine montrent les courses pour une journée ou la semaine en cours.\n\nPlage : choisis librement une date de début et une date de fin (deux calendriers) pour voir les courses sur une période précise, pratique quand tu fais tes courses tous les 2-3 jours."}
+        />
       </View>
 
       {period === 'jour' ? (

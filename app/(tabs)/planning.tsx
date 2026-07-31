@@ -4,7 +4,7 @@ import { Text } from '../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { Card, Checkbox, LoadingBlock, MiniButton, Screen } from '../../src/components/ui';
+import { Card, Checkbox, InfoTip, LoadingBlock, MiniButton, Screen } from '../../src/components/ui';
 import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
@@ -284,6 +284,10 @@ export default function Planning() {
           >
             <Text style={{ fontSize: 13 }}>🛒</Text>
           </Pressable>
+          <InfoTip
+            title="Boutons du haut"
+            text={"⟲ Revenir à aujourd'hui\n📅 Choisir une date sur un calendrier\n🛒 Aller à la liste de courses"}
+          />
         </View>
       </View>
 

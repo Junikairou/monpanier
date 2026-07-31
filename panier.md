@@ -111,12 +111,14 @@ Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 
 ## Chantier en cours (2026-08-01, retours utilisateur — gros lot v2)
 
-Lot 1 (en cours, cette conversation) :
-1. ⬜ Message "Aucun plat dans cette catégorie" (vide) : respecter la marge de la page, ne pas toucher le bord — règle globale à appliquer partout, y compris futures maj.
-2. ⬜ Bouton "+ Ajouter un plat" (sélecteur de plat pour un créneau) : permettre de créer un plat directement depuis ce bouton.
-3. ⬜ Onglet "Plus" : revenir dessus après avoir quitté une sous-page doit réafficher la page principale de Plus (pas rester sur la sous-page).
-4. ⬜ Options avancées activées par défaut (l'utilisateur peut les désactiver ensuite).
-5. ⬜ Logo (i) info à côté des boutons non intuitifs (ex. bouton "Plage" dans Courses, boutons ⟲/📅 en haut du planning) — règle à appliquer aussi pour toutes les futures maj de boutons peu explicites.
+Lot 1 (terminé, cette conversation) :
+1. ✅ Message vide ("Aucun plat dans cette catégorie…") : `EmptyState` (`src/components/ui.tsx`) a maintenant une marge horizontale (24px) + texte centré — corrige ce message partout où il est utilisé (sélecteur de plat, Mes plats, Courses), règle valable pour toutes les futures maj.
+2. ✅ Sélecteur de plat (`app/choisir-plat.tsx`), catégorie vide : bouton "+ Créer un nouveau plat" ouvre directement la création (`plats/new`) et ajoute le plat créé au créneau visé automatiquement au lieu de renvoyer vers l'onglet Plats.
+3. ✅ Onglet "Plus" : revenir dessus (depuis un autre onglet) réaffiche toujours sa page principale, même si une sous-page était ouverte (reset de la pile de navigation au tap sur l'onglet).
+4. ✅ Options avancées : déjà activées par défaut pour tout nouveau compte/foyer (vérifié en base — `show_balance_hint`, `show_nutrition_fields`, tous les créneaux repas). Rien à changer.
+5. ✅ Logo (i) ajouté à côté des boutons ⟲/📅/🛒 du planning, ⟲ des courses, et du bloc Jour/Semaine/Plage — explique ce que fait chaque bouton. Règle à appliquer aussi pour toutes les futures maj de boutons peu explicites.
+
+**Non testé visuellement** (pas d'identifiants) — l'app compile et l'écran de connexion s'affiche sans erreur (vérifié), mais le comportement exact (ajout au planning depuis "+Créer un nouveau plat", reset de l'onglet Plus) reste à vérifier par l'utilisateur.
 
 Backlog (lot 2, prochaine conversation) :
 6. ⬜ Ajouter un repas directement dans le planning sans passer par "Options avancées".

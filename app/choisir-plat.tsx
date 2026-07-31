@@ -35,6 +35,19 @@ export default function ChoisirPlat() {
 
   const visible = filter ? dishes.filter((d) => d.category === filter) : dishes;
 
+  const createNew = () => {
+    router.push({
+      pathname: '/(tabs)/plats/new',
+      params: {
+        returnDate: params.date,
+        returnSlot: params.slot,
+        returnEntryId: params.entryId,
+        returnMode: params.mode,
+        returnWeekday: params.weekday,
+      },
+    });
+  };
+
   const choose = async (dish: Dish) => {
     setSaving(dish.id);
     try {
@@ -72,7 +85,10 @@ export default function ChoisirPlat() {
       {loading ? (
         <LoadingBlock />
       ) : visible.length === 0 ? (
-        <EmptyState text="Aucun plat dans cette catégorie pour l'instant. Ajoute-en un depuis l'onglet Plats." />
+        <View style={{ alignItems: 'center', gap: 14 }}>
+          <EmptyState text="Aucun plat dans cette catégorie pour l'instant." />
+          <Pill label="+ Créer un nouveau plat" variant="primary" onPress={createNew} />
+        </View>
       ) : (
         <FlatList
           data={visible}
