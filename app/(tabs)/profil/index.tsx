@@ -5,6 +5,7 @@ import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { getProfile, Profile, updateProfile } from '../../../src/data/profile';
+import { createHouseholdInvite, joinHouseholdWithCode, listHouseholdMembers } from '../../../src/data/household';
 import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot } from '../../../src/types/models';
 import { fonts } from '../../../src/theme/tokens';
 
@@ -23,6 +24,12 @@ export default function Profil() {
   const [phoneDraft, setPhoneDraft] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+  const [memberCount, setMemberCount] = useState<number | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [joinCode, setJoinCode] = useState('');
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [joinBusy, setJoinBusy] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -32,6 +39,7 @@ export default function Profil() {
         setPhoneDraft(p.phone ?? '');
       })
       .finally(() => setLoading(false));
+    listHouseholdMembers().then((m) => setMemberCount(m.length));
   }, [userId]);
 
   useFocusEffect(
@@ -116,6 +124,57 @@ export default function Profil() {
             </Pressable>
           </View>
         </Row>
+
+        <SectionLabel text="Partage du foyer" />
+        <Text style={{ fontSize: 11.5, color: colors.inkSoft, marginBottom: 8 }}>
+          Le planning et la liste de courses sont partagés avec les membres de ton foyer
+          {memberCount != null ? ` (${memberCount} membre${memberCount > 1 ? 's' : ''} actuellement)` : ''}.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 6 }}>
+          <Pill
+            label={inviteCode ? `Code : ${inviteCode}` : 'Générer un code (5 min)'}
+            variant="primary"
+            onPress={async () => {
+              try {
+                const code = await createHouseholdInvite();
+                setInviteCode(code);
+                setInviteError(null);
+              } catch (e: any) {
+                setInviteError(e.message ?? 'Erreur');
+              }
+            }}
+          />
+        </View>
+        {inviteError ? <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 8 }}>{inviteError}</Text> : null}
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+          <TextInput
+            value={joinCode}
+            onChangeText={setJoinCode}
+            placeholder="Code reçu"
+            placeholderTextColor={colors.inkFaint}
+            autoCapitalize="characters"
+            style={{ flex: 1, fontSize: 13.5, color: colors.ink, borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10 }}
+          />
+          <Pill
+            label={joinBusy ? '…' : 'Rejoindre'}
+            variant="ghost"
+            disabled={joinBusy || !joinCode.trim()}
+            onPress={async () => {
+              setJoinBusy(true);
+              try {
+                await joinHouseholdWithCode(userId, joinCode.trim());
+                setJoinCode('');
+                setJoinError(null);
+                load();
+              } catch (e: any) {
+                setJoinError(e.message ?? 'Code invalide ou expiré');
+              } finally {
+                setJoinBusy(false);
+              }
+            }}
+          />
+        </View>
+        {joinError ? <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 4 }}>{joinError}</Text> : null}
 
         <SectionLabel text="Repas à planifier" />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>

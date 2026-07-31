@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { addDays, toIso } from '../lib/dates';
+import { getMyHouseholdId } from './household';
 import type { Dish, MealSlot, PlanningEntry } from '../types/models';
 
 export type CopyMode = 'replace' | 'add';
@@ -12,7 +13,6 @@ export async function listPlanningRange(
   const { data, error } = await supabase
     .from('planning_entries')
     .select('*, dish:dishes(*)')
-    .eq('user_id', userId)
     .gte('date', startIso)
     .lte('date', endIso)
     .order('date');
@@ -26,8 +26,10 @@ export async function setMeal(
   slot: MealSlot,
   dish: Dish,
 ): Promise<void> {
+  const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('planning_entries').insert({
     user_id: userId,
+    household_id,
     date,
     slot,
     dish_id: dish.id,
@@ -36,8 +38,10 @@ export async function setMeal(
 }
 
 export async function setRestaurantMeal(userId: string, date: string, slot: MealSlot): Promise<void> {
+  const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('planning_entries').insert({
     user_id: userId,
+    household_id,
     date,
     slot,
     dish_id: null,
@@ -72,7 +76,6 @@ export async function hasEntriesInRange(userId: string, startIso: string, endIso
   const { count, error } = await supabase
     .from('planning_entries')
     .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
     .gte('date', startIso)
     .lte('date', endIso);
   if (error) throw error;
@@ -86,14 +89,15 @@ export async function copyDay(
   mode: CopyMode,
 ): Promise<void> {
   if (fromIso === toDate) return;
-  const source = await listPlanningRange(userId, fromIso, fromIso);
+  const [source, household_id] = await Promise.all([listPlanningRange(userId, fromIso, fromIso), getMyHouseholdId(userId)]);
   if (mode === 'replace') {
-    const { error } = await supabase.from('planning_entries').delete().eq('user_id', userId).eq('date', toDate);
+    const { error } = await supabase.from('planning_entries').delete().eq('household_id', household_id).eq('date', toDate);
     if (error) throw error;
   }
   if (source.length === 0) return;
   const rows = source.map((e) => ({
     user_id: userId,
+    household_id,
     date: toDate,
     slot: e.slot,
     dish_id: e.dish_id,
@@ -114,12 +118,15 @@ export async function copyWeek(
   const toStart = new Date(toWeekStartIso);
   const fromEnd = toIso(addDays(fromStart, 6));
   const toEnd = toIso(addDays(toStart, 6));
-  const source = await listPlanningRange(userId, fromWeekStartIso, fromEnd);
+  const [source, household_id] = await Promise.all([
+    listPlanningRange(userId, fromWeekStartIso, fromEnd),
+    getMyHouseholdId(userId),
+  ]);
   if (mode === 'replace') {
     const { error } = await supabase
       .from('planning_entries')
       .delete()
-      .eq('user_id', userId)
+      .eq('household_id', household_id)
       .gte('date', toWeekStartIso)
       .lte('date', toEnd);
     if (error) throw error;
@@ -129,6 +136,7 @@ export async function copyWeek(
     const offset = Math.round((new Date(e.date).getTime() - fromStart.getTime()) / 86400000);
     return {
       user_id: userId,
+      household_id,
       date: toIso(addDays(toStart, offset)),
       slot: e.slot,
       dish_id: e.dish_id,

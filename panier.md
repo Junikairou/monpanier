@@ -43,14 +43,17 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 4. ✅ Liste de courses : affichage du/des jour(s) de consommation prévu par ingrédient/plat en vues Semaine et Plage (masqué en vue Jour, redondant).
 5. ⏳ Récurrence à l'ajout au planning (une fois / tous les jours / toutes les 2 semaines…).
 6. ⏳ Infos nutritionnelles détaillées par plat (protéines/glucides/fibres…), au-delà des calories actuelles.
-7. ⏳ Nombre de personnes par repas planifié → recalcul des quantités dans la liste de courses (cas : deux plats différents le même soir pour des groupes de tailles différentes).
-8. ⏳ Partage de l'app entre membres d'un même foyer (planning/courses communs).
+7. ⏳ Nombre de personnes par repas planifié → recalcul des quantités dans la liste de courses (cas : deux plats différents le même soir pour des groupes de tailles différentes). **Décision prise** (2026-07-31) : un nombre de personnes par plat planifié (pré-rempli avec la taille du foyer), pas encore implémenté.
+8. ✅ **Partage de l'app entre membres d'un même foyer** — planning et liste de courses communs à tous les membres d'un foyer. Rejoindre se fait via un code temporaire de 5 minutes (Profil → section "Partage du foyer" : bouton pour générer un code, champ pour saisir un code reçu). "Mes plats" reste personnel à chacun pour l'instant. **Migration 012 à exécuter — lire l'avertissement ci-dessous avant.**
+   - Sous-demandes explicitement **différées** (pas encore faites) : inviter quelqu'un pour un seul repas ponctuel (sans l'ajouter au foyer), et partage individuel d'un plat/recette d'une personne à une autre.
 9. ⏳ Modifier une recette existante (actuellement seulement création + suppression).
 10. ⏳ Icône de l'onglet "Profil" en bas → remplacer par "⋯" pour signifier "Plus".
 11. ⏳ Catalogue de recettes prédéfinies dans "Plus", ajoutables à "Mes plats".
 12. ⏳ Section "Personnalisation/Gestion" dans "Plus" : CRUD par l'utilisateur sur types de plat, rayons (catégories courses), catégories de plat (actuellement listes figées dans le code).
 
-**Points 5 à 12 : en attente de clarifications avec l'utilisateur avant implémentation** (portée large, plusieurs choix structurants).
+**⚠️ Migration 012 (foyers/partage) — à lire avant d'exécuter :** c'est la modification la plus lourde faite jusqu'ici sur la base (nouvelles tables + colonnes `household_id` sur `profiles`, `planning_entries`, `grocery_items`, `planning_template_entries`, remplacement des règles de sécurité RLS de ces tables, remplacement de l'index unique de la liste de courses). Chaque compte existant reçoit automatiquement son propre foyer solo (rien ne change tant que personne n'est invité). Recommandé : faire une sauvegarde Supabase (Database → Backups) avant d'exécuter cette migration. **Non testé en conditions réelles** (pas d'identifiants disponibles pour l'agent) — à tester soigneusement (idéalement avec un deuxième compte) avant de compter dessus.
+
+Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 
 ## Pas fait / en attente
 
@@ -63,7 +66,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 ## Points d'attention techniques
 
-- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...011` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 011 en attente d'exécution** (ajoute `phone` sur `profiles`) — à lancer dans Supabase SQL Editor. Migrations 009 et 010 déjà exécutées (2026-07-31).
+- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...012` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migrations 011 et 012 en attente d'exécution** (011 : `phone` sur `profiles` ; 012 : foyers/partage, voir avertissement dans le chantier ci-dessous) — à lancer dans Supabase SQL Editor. Migrations 009 et 010 déjà exécutées (2026-07-31).
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.

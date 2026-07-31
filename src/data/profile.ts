@@ -5,6 +5,7 @@ export interface Profile {
   id: string;
   display_name: string | null;
   phone: string | null;
+  household_id: string;
   household_size: number;
   language: string;
   units: 'metric' | 'imperial';

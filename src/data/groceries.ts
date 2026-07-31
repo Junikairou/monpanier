@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getMyHouseholdId } from './household';
 import type { GroceryCategory, GroceryItem } from '../types/models';
 
 function mergeKey(name: string, unit: string): string {
@@ -35,7 +36,6 @@ export async function getGroceryListForRange(
   const { data: entries, error: entriesErr } = await supabase
     .from('planning_entries')
     .select('dish_id, date')
-    .eq('user_id', userId)
     .gte('date', startIso)
     .lte('date', endIso)
     .not('dish_id', 'is', null);
@@ -86,8 +86,7 @@ export async function getGroceryListForRange(
 
   const { data: ledgerAndManual, error: ledgerErr } = await supabase
     .from('grocery_items')
-    .select('*')
-    .eq('user_id', userId);
+    .select('*');
   if (ledgerErr) throw ledgerErr;
 
   const checkedByKey = new Map<string, boolean>();
@@ -117,9 +116,11 @@ export async function toggleAutoChecked(
   item: ComputedGroceryItem,
   checked: boolean,
 ): Promise<void> {
+  const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('grocery_items').upsert(
     {
       user_id: userId,
+      household_id,
       name: item.name,
       unit: item.unit,
       grocery_category: item.grocery_category,
@@ -129,7 +130,7 @@ export async function toggleAutoChecked(
       merge_key: item.key,
       source_dish_ids: item.source_dish_ids,
     },
-    { onConflict: 'user_id,merge_key' },
+    { onConflict: 'household_id,merge_key' },
   );
   if (error) throw error;
 }
@@ -146,8 +147,10 @@ export async function addManualItem(
   unit: string,
   grocery_category: GroceryCategory,
 ): Promise<void> {
+  const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('grocery_items').insert({
     user_id: userId,
+    household_id,
     name,
     quantity,
     unit,
