@@ -25,15 +25,14 @@ const SECTIONS: { title: string; tiles: TileDef[] }[] = [
   {
     title: 'Social',
     tiles: [
-      { label: 'Foyer', icon: 'home-outline', route: '/(tabs)/profil/foyer' },
-      { label: 'Partage du foyer', icon: 'people-outline', route: '/(tabs)/profil/partage' },
+      { label: 'Partage du foyer', icon: 'home-outline', route: '/(tabs)/profil/partage' },
       { label: 'Amis', icon: 'person-add-outline', route: '/(tabs)/profil/amis' },
     ],
   },
   {
     title: 'Gestion',
     tiles: [
-      { label: 'Recettes', icon: 'restaurant-outline', route: '/(tabs)/plats/catalogue' },
+      { label: 'Recettes', icon: 'restaurant-outline', route: '/(tabs)/profil/catalogue' },
       { label: 'Personnalisation', icon: 'pricetags-outline', route: '/personnalisation' },
     ],
   },
@@ -48,14 +47,14 @@ const SECTIONS: { title: string; tiles: TileDef[] }[] = [
 ];
 
 function Tile({ tile }: { tile: TileDef }) {
-  const { colors, textScale } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   return (
     <Pressable style={styles.tile} onPress={() => router.push(tile.route as any)}>
       <View style={[styles.tileIcon, { backgroundColor: colors.paper, shadowColor: colors.ink }]}>
         <Ionicons name={tile.icon} size={22} color={colors.forestDark} />
       </View>
-      <Text style={{ fontSize: 10.5 * textScale, fontFamily: fonts.bodyMedium, color: colors.inkSoft, textAlign: 'center' }} numberOfLines={2}>
+      <Text style={{ fontSize: 10.5, fontFamily: fonts.bodyMedium, color: colors.inkSoft, textAlign: 'center' }} numberOfLines={2}>
         {tile.label}
       </Text>
     </Pressable>
@@ -63,7 +62,7 @@ function Tile({ tile }: { tile: TileDef }) {
 }
 
 export default function Profil() {
-  const { colors, textScale } = useTheme();
+  const { colors } = useTheme();
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
@@ -94,17 +93,17 @@ export default function Profil() {
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14 * textScale, fontFamily: fonts.bodySemiBold, color: colors.ink }}>
+            <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink }}>
               {profile?.display_name || 'Mon profil'}
             </Text>
-            <Text style={{ fontSize: 11 * textScale, color: colors.inkSoft }}>{session!.user.email}</Text>
+            <Text style={{ fontSize: 11, color: colors.inkSoft }}>{session!.user.email}</Text>
           </View>
           <Text style={{ color: colors.inkSoft, fontSize: 16 }}>›</Text>
         </Pressable>
 
         {SECTIONS.map((section) => (
           <View key={section.title} style={{ marginTop: 20 }}>
-            <Text style={{ fontSize: 13 * textScale, fontFamily: fonts.bodySemiBold, color: colors.forestDark, marginBottom: 10 }}>
+            <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: colors.forestDark, marginBottom: 10 }}>
               {section.title}
             </Text>
             <View style={styles.grid}>

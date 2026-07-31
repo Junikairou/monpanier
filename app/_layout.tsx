@@ -1,3 +1,4 @@
+import '../src/lib/globalText';
 import React, { useCallback, useEffect } from 'react';
 import { Platform, Text, View } from 'react-native';
 import { Stack } from 'expo-router';

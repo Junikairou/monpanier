@@ -340,6 +340,29 @@ export default function Courses() {
                     </View>
                   );
                 })}
+                {(() => {
+                  const knownKeys = new Set(groceryCategories.map((gc) => gc.key));
+                  const leftovers = list.auto.filter((i) => !knownKeys.has(i.grocery_category));
+                  if (leftovers.length === 0) return null;
+                  return (
+                    <View>
+                      <Text style={[styles.catLabel, { color: colors.inkFaint }]}>📦 Autres</Text>
+                      {leftovers.map((item) =>
+                        renderRow(
+                          item.key,
+                          item.checked,
+                          () => onToggleAuto(item),
+                          item.name,
+                          `${item.quantity} ${item.unit}`,
+                          <>
+                            {dayBadge(item.dates)}
+                            {dishOriginBadges(item.source_dish_ids)}
+                          </>,
+                        ),
+                      )}
+                    </View>
+                  );
+                })()}
                 {list.manual.length > 0 ? (
                   <View>
                     <Text style={[styles.catLabel, { color: colors.inkFaint }]}>Ajoutés manuellement</Text>

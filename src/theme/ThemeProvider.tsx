@@ -20,6 +20,11 @@ const TEXT_SCALE_KEY = 'mijote.text-scale';
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+// Contexte séparé (valeur par défaut 1, jamais null) pour que le composant
+// Text/TextInput global patché (src/lib/globalText.tsx) puisse lire l'échelle
+// même s'il est rendu avant que ThemeProvider soit monté.
+export const TextScaleContext = createContext<TextScale>(1);
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
   const [preference, setPreferenceState] = useState<ThemePreference>('auto');
@@ -63,7 +68,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     [colors, scheme, preference, textScale],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>
+      <TextScaleContext.Provider value={textScale}>{children}</TextScaleContext.Provider>
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

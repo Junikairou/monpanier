@@ -9,6 +9,7 @@ import { getProfile, Profile, updateProfile } from '../../../src/data/profile';
 const LANGUAGES: { code: string; label: string }[] = [
   { code: 'fr', label: 'Français' },
   { code: 'en', label: 'English' },
+  { code: 'zh', label: '中文' },
 ];
 
 const TEXT_SCALES: { value: TextScale; label: string }[] = [

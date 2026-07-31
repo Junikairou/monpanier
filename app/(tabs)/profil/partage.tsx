@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { createHouseholdInvite, HouseholdMemberProfile, joinHouseholdWithCode, listHouseholdMemberProfiles } from '../../../src/data/household';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
+import { getProfile, Profile, updateProfile } from '../../../src/data/profile';
 import { fonts } from '../../../src/theme/tokens';
 
 export default function PartageFoyer() {
@@ -16,6 +17,7 @@ export default function PartageFoyer() {
   const { reload: reloadTaxonomies } = useTaxonomies();
 
   const [members, setMembers] = useState<HouseholdMemberProfile[] | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState('');
@@ -24,6 +26,7 @@ export default function PartageFoyer() {
 
   const load = useCallback(() => {
     listHouseholdMemberProfiles(userId).then(setMembers);
+    getProfile(userId).then(setProfile);
   }, [userId]);
 
   useFocusEffect(
@@ -32,7 +35,12 @@ export default function PartageFoyer() {
     }, [load]),
   );
 
-  if (!members) {
+  const patch = async (p: Partial<Profile>) => {
+    setProfile((prev) => (prev ? { ...prev, ...p } : prev));
+    await updateProfile(userId, p);
+  };
+
+  if (!members || !profile) {
     return (
       <Screen>
         <ScreenHeader title="Partage du foyer" onBack={() => router.back()} />
@@ -45,6 +53,20 @@ export default function PartageFoyer() {
     <Screen>
       <ScreenHeader title="Partage du foyer" subtitle="Planning et courses communs" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={{ padding: 18 }}>
+        <Text style={[styles.section, { color: colors.inkSoft }]}>Personnes dans le foyer</Text>
+        <View style={[styles.memberRow, { borderColor: colors.line, marginBottom: 20, justifyContent: 'space-between' }]}>
+          <Text style={{ fontSize: 12.5, color: colors.inkSoft }}>Ajuste les portions par défaut</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Pressable onPress={() => patch({ household_size: Math.max(1, profile.household_size - 1) })}>
+              <Text style={{ color: colors.forest, fontSize: 18 }}>–</Text>
+            </Pressable>
+            <Text style={{ color: colors.ink, fontSize: 14, minWidth: 16, textAlign: 'center' }}>{profile.household_size}</Text>
+            <Pressable onPress={() => patch({ household_size: profile.household_size + 1 })}>
+              <Text style={{ color: colors.forest, fontSize: 18 }}>+</Text>
+            </Pressable>
+          </View>
+        </View>
+
         <Text style={[styles.section, { color: colors.inkSoft }]}>Membres du foyer</Text>
         <View style={{ gap: 8, marginBottom: 20 }}>
           {members.map((m) => (

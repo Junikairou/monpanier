@@ -9,7 +9,7 @@ import { pickAndUploadAvatar } from '../../../src/data/avatar';
 import { fonts } from '../../../src/theme/tokens';
 
 export default function MonProfil() {
-  const { colors, textScale } = useTheme();
+  const { colors } = useTheme();
   const { session, signOut, resetPassword } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
@@ -88,21 +88,21 @@ export default function MonProfil() {
             </View>
           </Pressable>
           {avatarError ? <Text style={{ fontSize: 11, color: colors.danger, marginTop: 6 }}>{avatarError}</Text> : null}
-          <Text style={{ fontSize: 11.5 * textScale, color: colors.inkSoft, marginTop: 8 }}>{session!.user.email}</Text>
+          <Text style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 8 }}>{session!.user.email}</Text>
         </View>
 
-        <Row label="Pseudo" colors={colors} textScale={textScale}>
+        <Row label="Pseudo" colors={colors}>
           <TextInput
             value={nameDraft}
             onChangeText={setNameDraft}
             onBlur={() => nameDraft !== (profile.display_name ?? '') && patch({ display_name: nameDraft || null })}
             placeholder="Ton nom"
             placeholderTextColor={colors.inkFaint}
-            style={{ fontSize: 13.5 * textScale, color: colors.ink, textAlign: 'right', minWidth: 120 }}
+            style={{ fontSize: 13.5, color: colors.ink, textAlign: 'right', minWidth: 120 }}
           />
         </Row>
 
-        <Row label="Téléphone" hint="Information seulement, non utilisée pour la connexion" colors={colors} textScale={textScale}>
+        <Row label="Téléphone" hint="Information seulement, non utilisée pour la connexion" colors={colors}>
           <TextInput
             value={phoneDraft}
             onChangeText={setPhoneDraft}
@@ -110,13 +110,13 @@ export default function MonProfil() {
             placeholder="Ajouter"
             placeholderTextColor={colors.inkFaint}
             keyboardType="phone-pad"
-            style={{ fontSize: 13.5 * textScale, color: colors.ink, textAlign: 'right', minWidth: 120 }}
+            style={{ fontSize: 13.5, color: colors.ink, textAlign: 'right', minWidth: 120 }}
           />
         </Row>
 
         <View style={{ marginTop: 20, gap: 10 }}>
           {isGoogle ? (
-            <Text style={{ fontSize: 11.5 * textScale, color: colors.inkSoft, fontStyle: 'italic' }}>
+            <Text style={{ fontSize: 11.5, color: colors.inkSoft, fontStyle: 'italic' }}>
               Ce compte se connecte avec Google : le mot de passe est géré directement par Google.
             </Text>
           ) : (
@@ -150,20 +150,18 @@ function Row({
   label,
   hint,
   colors,
-  textScale,
   children,
 }: {
   label: string;
   hint?: string;
   colors: any;
-  textScale: number;
   children: React.ReactNode;
 }) {
   return (
     <View style={[styles.row, { borderColor: colors.line }]}>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 13.5 * textScale, color: colors.ink }}>{label}</Text>
-        {hint ? <Text style={{ fontSize: 10.5 * textScale, color: colors.inkSoft, marginTop: 2 }}>{hint}</Text> : null}
+        <Text style={{ fontSize: 13.5, color: colors.ink }}>{label}</Text>
+        {hint ? <Text style={{ fontSize: 10.5, color: colors.inkSoft, marginTop: 2 }}>{hint}</Text> : null}
       </View>
       {children}
     </View>
