@@ -6,8 +6,10 @@ import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { deleteDish, getDish, listIngredients, listRecipeSteps } from '../../../src/data/dishes';
 import { setMeal, setMealRecurring } from '../../../src/data/planning';
+import { getProfile } from '../../../src/data/profile';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
+import { ActionSheet } from '../../../src/components/ActionSheet';
 import {
   Dish,
   Ingredient,
@@ -16,8 +18,17 @@ import {
   MealSlot,
   RecipeStep,
 } from '../../../src/types/models';
-import { addDays, dayLabel, toIso } from '../../../src/lib/dates';
+import { formatDayCaption, toIso } from '../../../src/lib/dates';
 import { fonts } from '../../../src/theme/tokens';
+
+type Frequency = 'once' | 1 | 2 | 7 | 14 | 'custom';
+const FREQUENCY_LABELS: Record<Exclude<Frequency, 'custom'>, string> = {
+  once: 'Une fois',
+  1: 'Tous les jours',
+  2: 'Tous les 2 jours',
+  7: 'Toutes les semaines',
+  14: 'Une semaine sur deux',
+};
 
 export default function DishDetail() {
   const { colors } = useTheme();
@@ -33,32 +44,41 @@ export default function DishDetail() {
   const [loading, setLoading] = useState(true);
   const [planOpen, setPlanOpen] = useState(false);
   const [planDate, setPlanDate] = useState(toIso(new Date()));
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const [planSlot, setPlanSlot] = useState<MealSlot>('diner');
+  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
   const [saving, setSaving] = useState(false);
   const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
-  const [frequency, setFrequency] = useState<'once' | 1 | 2 | 7 | 14 | 'custom'>('once');
+  const [frequency, setFrequency] = useState<Frequency>('once');
+  const [freqMenuOpen, setFreqMenuOpen] = useState(false);
   const [customDays, setCustomDays] = useState('3');
   const [endDate, setEndDate] = useState<string | null>(null);
   const [endPickerOpen, setEndPickerOpen] = useState(false);
   const [recurError, setRecurError] = useState<string | null>(null);
+  const [previewServings, setPreviewServings] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [d, ing, st] = await Promise.all([getDish(id), listIngredients(id), listRecipeSteps(id)]);
+      const [d, ing, st, profile] = await Promise.all([
+        getDish(id),
+        listIngredients(id),
+        listRecipeSteps(id),
+        getProfile(session!.user.id),
+      ]);
       setDish(d);
       setIngredients(ing);
       setSteps(st);
+      setActiveSlots(profile.active_slots?.length ? profile.active_slots : [...MEAL_SLOT_ORDER]);
+      setPreviewServings(d.base_servings);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, session]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  const nextDays = Array.from({ length: 10 }, (_, i) => addDays(new Date(), i));
 
   const confirmAdd = async () => {
     if (frequency !== 'once') {
@@ -141,34 +161,52 @@ export default function DishDetail() {
           </Text>
         ) : null}
 
-        <View style={[styles.tabStrip, { borderColor: colors.line }]}>
-          <Pressable onPress={() => setTab('ingredients')}>
-            <Text style={[styles.tabText, { color: tab === 'ingredients' ? colors.forest : colors.inkSoft, fontWeight: tab === 'ingredients' ? '700' : '400' }]}>
-              Ingrédients
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => setTab('recette')}>
-            <Text style={[styles.tabText, { color: tab === 'recette' ? colors.forest : colors.inkSoft, fontWeight: tab === 'recette' ? '700' : '400' }]}>
-              Recette
-            </Text>
-          </Pressable>
+        <View style={[styles.tabStrip, { borderColor: colors.line, justifyContent: 'space-between' }]}>
+          <View style={{ flexDirection: 'row', gap: 20 }}>
+            <Pressable onPress={() => setTab('ingredients')}>
+              <Text style={[styles.tabText, { color: tab === 'ingredients' ? colors.forest : colors.inkSoft, fontWeight: tab === 'ingredients' ? '700' : '400' }]}>
+                Ingrédients
+              </Text>
+            </Pressable>
+            <Pressable onPress={() => setTab('recette')}>
+              <Text style={[styles.tabText, { color: tab === 'recette' ? colors.forest : colors.inkSoft, fontWeight: tab === 'recette' ? '700' : '400' }]}>
+                Recette
+              </Text>
+            </Pressable>
+          </View>
+          {tab === 'ingredients' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>👤</Text>
+              <Pressable onPress={() => setPreviewServings((n) => Math.max(1, (n ?? dish.base_servings) - 1))} hitSlop={6}>
+                <Text style={{ color: colors.forest, fontSize: 15 }}>–</Text>
+              </Pressable>
+              <Text style={{ fontSize: 12, color: colors.ink, minWidth: 14, textAlign: 'center' }}>{previewServings ?? dish.base_servings}</Text>
+              <Pressable onPress={() => setPreviewServings((n) => (n ?? dish.base_servings) + 1)} hitSlop={6}>
+                <Text style={{ color: colors.forest, fontSize: 15 }}>+</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         {tab === 'ingredients' ? (
           ingredients.length === 0 ? (
             <Text style={{ color: colors.inkSoft, fontStyle: 'italic', fontSize: 13 }}>Aucun ingrédient renseigné.</Text>
           ) : (
-            ingredients.map((ing) => (
-              <View key={ing.id} style={[styles.ingredientRow, { borderColor: colors.line }]}>
-                <View>
-                  <Text style={{ fontSize: 13.5, color: colors.ink }}>{ing.name}</Text>
-                  <Text style={{ fontSize: 10, color: colors.inkSoft }}>{label('grocery_category', ing.grocery_category)}</Text>
+            ingredients.map((ing) => {
+              const factor = (previewServings ?? dish.base_servings) / (dish.base_servings || 1);
+              const scaledQty = Math.round(ing.quantity * factor * 100) / 100;
+              return (
+                <View key={ing.id} style={[styles.ingredientRow, { borderColor: colors.line }]}>
+                  <View>
+                    <Text style={{ fontSize: 13.5, color: colors.ink }}>{ing.name}</Text>
+                    <Text style={{ fontSize: 10, color: colors.inkSoft }}>{label('grocery_category', ing.grocery_category)}</Text>
+                  </View>
+                  <Text style={{ color: colors.inkSoft, fontSize: 12 }}>
+                    {scaledQty} {ing.unit}
+                  </Text>
                 </View>
-                <Text style={{ color: colors.inkSoft, fontSize: 12 }}>
-                  {ing.quantity} {ing.unit}
-                </Text>
-              </View>
-            ))
+              );
+            })
           )
         ) : steps.length === 0 ? (
           <Text style={{ color: colors.inkSoft, fontStyle: 'italic', fontSize: 13 }}>Aucune étape renseignée.</Text>
@@ -193,29 +231,23 @@ export default function DishDetail() {
           ) : (
             <View style={[styles.planPanel, { borderColor: colors.line, backgroundColor: colors.paper }]}>
               <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Jour</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                {nextDays.map((d) => {
-                  const iso = toIso(d);
-                  return (
-                    <Chip key={iso} label={`${dayLabel(d)} ${d.getDate()}`} active={planDate === iso} onPress={() => setPlanDate(iso)} />
-                  );
-                })}
-              </ScrollView>
+              <Pressable onPress={() => setDayPickerOpen(true)} style={[styles.endBtn, { borderColor: colors.beigeDark }]}>
+                <Text style={{ fontSize: 12, color: colors.ink }}>📅 {formatDayCaption(new Date(planDate))}</Text>
+              </Pressable>
+
               <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Repas</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                {MEAL_SLOT_ORDER.map((slot) => (
+                {MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s)).map((slot) => (
                   <Chip key={slot} label={MEAL_SLOT_LABELS[slot]} active={planSlot === slot} onPress={() => setPlanSlot(slot)} />
                 ))}
               </ScrollView>
+
               <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Répétition</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                <Chip label="Une fois" active={frequency === 'once'} onPress={() => setFrequency('once')} />
-                <Chip label="Tous les jours" active={frequency === 1} onPress={() => setFrequency(1)} />
-                <Chip label="Tous les 2 jours" active={frequency === 2} onPress={() => setFrequency(2)} />
-                <Chip label="Toutes les semaines" active={frequency === 7} onPress={() => setFrequency(7)} />
-                <Chip label="Une semaine sur deux" active={frequency === 14} onPress={() => setFrequency(14)} />
-                <Chip label="Personnalisé" active={frequency === 'custom'} onPress={() => setFrequency('custom')} />
-              </ScrollView>
+              <Pressable onPress={() => setFreqMenuOpen(true)} style={[styles.endBtn, { borderColor: colors.beigeDark }]}>
+                <Text style={{ fontSize: 12, color: colors.ink }}>
+                  {frequency === 'custom' ? `Tous les ${customDays} jours` : FREQUENCY_LABELS[frequency]} ▾
+                </Text>
+              </Pressable>
               {frequency !== 'once' ? (
                 <View style={{ marginTop: 10, gap: 8 }}>
                   {frequency === 'custom' ? (
@@ -253,6 +285,16 @@ export default function DishDetail() {
       </ScrollView>
 
       <CalendarPicker
+        visible={dayPickerOpen}
+        selectedDate={planDate}
+        onClose={() => setDayPickerOpen(false)}
+        onSelect={(iso) => {
+          setPlanDate(iso);
+          setDayPickerOpen(false);
+        }}
+      />
+
+      <CalendarPicker
         visible={endPickerOpen}
         selectedDate={endDate ?? planDate}
         onClose={() => setEndPickerOpen(false)}
@@ -260,6 +302,20 @@ export default function DishDetail() {
           setEndDate(iso);
           setEndPickerOpen(false);
         }}
+      />
+
+      <ActionSheet
+        visible={freqMenuOpen}
+        title="Répétition"
+        actions={[
+          { label: 'Une fois', onPress: () => setFrequency('once') },
+          { label: 'Tous les jours', onPress: () => setFrequency(1) },
+          { label: 'Tous les 2 jours', onPress: () => setFrequency(2) },
+          { label: 'Toutes les semaines', onPress: () => setFrequency(7) },
+          { label: 'Une semaine sur deux', onPress: () => setFrequency(14) },
+          { label: 'Personnalisé (en jours)', onPress: () => setFrequency('custom') },
+        ]}
+        onClose={() => setFreqMenuOpen(false)}
       />
     </Screen>
   );

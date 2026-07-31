@@ -7,7 +7,7 @@ import { Card, Checkbox, LoadingBlock, MiniButton, Screen } from '../../src/comp
 import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
-import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked, setEntryServings, setRestaurantMeal } from '../../src/data/planning';
+import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked } from '../../src/data/planning';
 import { applyTemplateToWeek, saveTemplateFromWeek } from '../../src/data/template';
 import { getProfile } from '../../src/data/profile';
 import { useTaxonomies } from '../../src/lib/taxonomies';
@@ -113,17 +113,8 @@ export default function Planning() {
     router.push({ pathname: '/choisir-plat', params: { date: selectedDate, slot } });
   };
 
-  const onChange = (slot: MealSlot, entryId: string) => {
-    router.push({ pathname: '/choisir-plat', params: { date: selectedDate, slot, entryId } });
-  };
-
   const onRemove = async (entryId: string) => {
     await removeMeal(userId, entryId);
-    load();
-  };
-
-  const onMarkResto = async (slot: MealSlot) => {
-    await setRestaurantMeal(userId, selectedDate, slot);
     load();
   };
 
@@ -138,12 +129,6 @@ export default function Planning() {
   const onToggleCooked = async (entryId: string, next: boolean) => {
     setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, is_cooked: next } : e)));
     await setCooked(entryId, next);
-  };
-
-  const onChangeServings = async (entryId: string, next: number) => {
-    if (next < 1) return;
-    setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, servings: next } : e)));
-    await setEntryServings(entryId, next);
   };
 
   const goPrevWeek = () => setWeekStart(addDays(weekStart, -7));
@@ -358,9 +343,8 @@ export default function Planning() {
                         <Text style={{ color: colors.inkFaint, fontStyle: 'italic', fontSize: 12, marginBottom: 7, fontFamily: fonts.body }}>
                           Aucun plat prévu
                         </Text>
-                        <View style={{ flexDirection: 'row', gap: 5 }}>
+                        <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
                           <MiniButton label="+ Planifier un plat" variant="sage" onPress={() => onAdd(slot)} />
-                          <MiniButton label="🍽️ Au resto" variant="outline" onPress={() => onMarkResto(slot)} />
                         </View>
                       </>
                     ) : (
@@ -388,7 +372,14 @@ export default function Planning() {
                                     <Text style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
                                       {label('course_type', entry.dish.course_type)}
                                     </Text>
-                                    <Text style={[styles.dishName, { color: colors.ink, marginBottom: 2 }]}>{entry.dish.name}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                      <Pressable onPress={() => onSeeRecipe(entry.dish!.id)} style={{ flexShrink: 1 }}>
+                                        <Text style={[styles.dishName, { color: colors.ink }]}>{entry.dish.name}</Text>
+                                      </Pressable>
+                                      <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium }}>
+                                        {entry.servings} pers.
+                                      </Text>
+                                    </View>
                                     {entry.dish.calories != null ? (
                                       <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginBottom: 5 }}>🔥 {entry.dish.calories} kcal</Text>
                                     ) : null}
@@ -401,19 +392,8 @@ export default function Planning() {
                                     <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕</Text>
                                   </Pressable>
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-                                  <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>👤 Portions</Text>
-                                  <Pressable onPress={() => onChangeServings(entry.id, entry.servings - 1)} hitSlop={6}>
-                                    <Text style={{ color: colors.forest, fontSize: 15 }}>–</Text>
-                                  </Pressable>
-                                  <Text style={{ fontSize: 12, color: colors.ink, minWidth: 14, textAlign: 'center' }}>{entry.servings}</Text>
-                                  <Pressable onPress={() => onChangeServings(entry.id, entry.servings + 1)} hitSlop={6}>
-                                    <Text style={{ color: colors.forest, fontSize: 15 }}>+</Text>
-                                  </Pressable>
-                                </View>
-                                <View style={{ flexDirection: 'row', gap: 5 }}>
+                                <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
                                   <MiniButton label="📖 Voir recette" variant="sage" onPress={() => onSeeRecipe(entry.dish!.id)} />
-                                  <MiniButton label="🔄 Changer" variant="outline" onPress={() => onChange(slot, entry.id)} />
                                 </View>
                               </>
                             ) : null}
@@ -424,9 +404,8 @@ export default function Planning() {
                             {balance.balanced ? '✅ Équilibré' : `⚠️ Il manque : ${balance.missing.map((t) => label('course_type', t)).join(', ')}`}
                           </Text>
                         ) : null}
-                        <View style={{ flexDirection: 'row', gap: 5 }}>
+                        <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
                           <MiniButton label="+ Ajouter un autre plat" variant="outline" onPress={() => onAdd(slot)} />
-                          <MiniButton label="🍽️ Au resto" variant="outline" onPress={() => onMarkResto(slot)} />
                         </View>
                       </>
                     )}
