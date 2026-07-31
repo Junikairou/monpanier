@@ -101,8 +101,11 @@ Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 2. ✅ Planning : le nombre de personnes ("N pers.") est repositionné à droite du nom du plat, juste avant le bouton ✕ (au lieu d'être collé au nom).
 3. ✅ Semaine du planning : glisser avec la souris fonctionne maintenant aussi sur ordinateur (avant : seulement au doigt sur mobile).
 4. ✅ "Tous les plats" : bouton "+ Nouveau" déplacé en bas (bouton flottant), ouvre maintenant un choix "Piocher dans le catalogue" / "Créer une nouvelle recette" au lieu d'aller direct sur le formulaire vierge.
+5. ✅ Liste de courses : badges réordonnés (nom du plat affiché avant le jour de consommation, au lieu de l'inverse).
+6. ✅ Personnalisation : réordonnancement par glisser-déposer (maintenir l'icône ☰ et glisser), remplace les flèches ▲▼.
+7. ✅ Sélecteur d'emoji visuel (grille d'emojis courants + champ pour en coller un autre) au lieu d'ouvrir le clavier du système — utilisé pour l'emoji d'un plat et les icônes de catégories/types/rayons dans Personnalisation.
 
-**Migration 018 à exécuter** (rôles chef/membre — si pas déjà fait).
+**Migration 018 à exécuter** (rôles chef/membre — si pas déjà fait). Aucune nouvelle migration pour ce lot.
 
 **Migration 018 à exécuter** (rôles chef/membre du foyer, voir SQL dans le chat).
 
