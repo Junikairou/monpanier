@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { FlatList, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { Card, Checkbox, InfoTip, LoadingBlock, MiniButton, Screen } from '../../src/components/ui';
+import { Card, Checkbox, InfoPressable, LoadingBlock, MiniButton, Screen } from '../../src/components/ui';
 import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
@@ -266,28 +266,20 @@ export default function Planning() {
           </Text>
         </Pressable>
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          <Pressable
+          <InfoPressable
             onPress={goToday}
+            info={{ title: "Revenir à aujourd'hui", text: "Remet le planning sur la date du jour." }}
             style={[styles.iconBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}
           >
             <Text style={{ fontSize: 13 }}>⟲</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setCalendarOpen(true)}
-            style={[styles.iconBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}
-          >
-            <Text style={{ fontSize: 13 }}>📅</Text>
-          </Pressable>
-          <Pressable
+          </InfoPressable>
+          <InfoPressable
             onPress={() => router.push('/(tabs)/courses')}
+            info={{ title: 'Liste de courses', text: 'Ouvre la liste de courses.' }}
             style={[styles.iconBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}
           >
             <Text style={{ fontSize: 13 }}>🛒</Text>
-          </Pressable>
-          <InfoTip
-            title="Boutons du haut"
-            text={"⟲ Revenir à aujourd'hui\n📅 Choisir une date sur un calendrier\n🛒 Aller à la liste de courses"}
-          />
+          </InfoPressable>
         </View>
       </View>
 
@@ -319,7 +311,10 @@ export default function Planning() {
                 return (
                   <Pressable
                     key={iso}
-                    onPress={() => setSelectedDate(iso)}
+                    onPress={() => {
+                      setSelectedDate(iso);
+                      setCalendarOpen(true);
+                    }}
                     onLongPress={() => openDayMenu(iso)}
                     style={[
                       styles.dayChip,
@@ -373,6 +368,7 @@ export default function Planning() {
               data={MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s))}
               keyExtractor={(s) => s}
               contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10 }}
+              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
               renderItem={({ item: slot }) => {
                 const slotList = slotEntries(slot);
                 const balance = showBalanceHint ? slotBalance(slot) : null;

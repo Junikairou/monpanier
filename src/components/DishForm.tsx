@@ -35,7 +35,7 @@ interface DishFormProps {
   onSubmit: (input: NewDishInput) => Promise<void>;
 }
 
-const EMPTY: DishFormInitial = {
+export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
   name: '',
   emoji: '🍽️',
   category: 'rapide',
@@ -53,7 +53,7 @@ const EMPTY: DishFormInitial = {
 
 const UNIT_OPTIONS = ['Pièce', 'Gramme', 'ML', 'Cuillère à soupe', 'Pincée'];
 
-export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormProps) {
+export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSubmit }: DishFormProps) {
   const { colors } = useTheme();
   const { session } = useAuth();
   const { categories, courseTypes, groceryCategories } = useTaxonomies();

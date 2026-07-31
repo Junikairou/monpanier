@@ -120,6 +120,17 @@ Lot 1 (terminé, cette conversation) :
 
 **Non testé visuellement** (pas d'identifiants) — l'app compile et l'écran de connexion s'affiche sans erreur (vérifié), mais le comportement exact (ajout au planning depuis "+Créer un nouveau plat", reset de l'onglet Plus) reste à vérifier par l'utilisateur.
 
+## Chantier en cours (2026-08-01, retours après le lot 1)
+
+1. ✅ Pull-to-refresh (glisser du doigt vers le bas) sur Planning (vue Jour), Courses et "Tous les plats".
+2. ✅ Info-bulles (i) retirées — remplacées par un **appui long** directement sur les boutons concernés (⟲, 🛒 en Planning ; ⟲ et "Plage" en Courses), même contenu explicatif qu'avant.
+3. ✅ Bouton 🔄 (recharger) retiré de la liste de courses (redondant avec le pull-to-refresh).
+4. ✅ Bouton calendrier (📅) retiré du planning (vue Jour) : cliquer sur **n'importe quel jour** de la frise ouvre maintenant directement le calendrier (en plus de sélectionner ce jour).
+5. ✅ Sélecteur de plat (`choisir-plat`) : bouton "+ Créer un nouveau plat" toujours visible (plus seulement quand la catégorie est vide), quelle que soit la catégorie filtrée — la nouvelle recette est créée pré-remplie avec cette catégorie.
+6. ✅ Bouton retour (‹) ajouté sur l'écran du sélecteur de plat, pour annuler et revenir en arrière.
+
+**Non testé visuellement** (pas d'identifiants) — compilation et écran de connexion vérifiés sans erreur. Point d'attention à confirmer par l'utilisateur : cliquer sur un jour de la frise ouvre désormais le calendrier systématiquement (au lieu de juste changer de jour) — à valider que ce comportement convient à l'usage.
+
 Backlog (lot 2, prochaine conversation) :
 6. ⬜ Ajouter un repas directement dans le planning sans passer par "Options avancées".
 7. ⬜ Possibilité d'ajouter des repas à planifier en plus des créneaux existants (petit-déj/déjeuner/dîner...).

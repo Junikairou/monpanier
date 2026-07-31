@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
@@ -125,6 +125,7 @@ export default function PlatsIndex() {
             data={visible}
             keyExtractor={(d) => d.id}
             contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10, paddingBottom: manageMode ? 90 : 18 }}
+            refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
             renderItem={({ item }) => (
               <Pressable
                 onPress={() =>

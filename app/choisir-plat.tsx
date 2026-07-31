@@ -44,6 +44,7 @@ export default function ChoisirPlat() {
         returnEntryId: params.entryId,
         returnMode: params.mode,
         returnWeekday: params.weekday,
+        initialCategory: filter ?? undefined,
       },
     });
   };
@@ -74,6 +75,7 @@ export default function ChoisirPlat() {
       <ScreenHeader
         title={`${params.entryId ? 'Remplacer' : 'Ajouter'} — ${MEAL_SLOT_LABELS[params.slot]}`}
         subtitle={isTemplate ? WEEKDAY_NAMES[Number(params.weekday)] : params.date}
+        onBack={() => router.back()}
       />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, paddingVertical: 12 }} contentContainerStyle={{ paddingHorizontal: 18 }}>
         <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
@@ -82,13 +84,14 @@ export default function ChoisirPlat() {
         ))}
       </ScrollView>
 
+      <View style={{ paddingHorizontal: 18, paddingBottom: 10, alignItems: 'center' }}>
+        <Pill label="+ Créer un nouveau plat" variant="primary" onPress={createNew} />
+      </View>
+
       {loading ? (
         <LoadingBlock />
       ) : visible.length === 0 ? (
-        <View style={{ alignItems: 'center', gap: 14 }}>
-          <EmptyState text="Aucun plat dans cette catégorie pour l'instant." />
-          <Pill label="+ Créer un nouveau plat" variant="primary" onPress={createNew} />
-        </View>
+        <EmptyState text="Aucun plat dans cette catégorie pour l'instant." />
       ) : (
         <FlatList
           data={visible}

@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
-import { Checkbox, EmptyState, Field, InfoTip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
+import { Checkbox, EmptyState, Field, InfoPressable, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import {
   addManualItem,
   ComputedGroceryItem,
@@ -225,27 +225,18 @@ export default function Courses() {
         subtitle={`${totalCount} article${totalCount > 1 ? 's' : ''} · ${checkedCount} coché${checkedCount > 1 ? 's' : ''}`}
         right={
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            <Pressable
-              onPress={() => load()}
-              style={[styles.arrowBtn, { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.paper, borderColor: colors.beige }]}
-            >
-              <Text style={{ fontSize: 13 }}>🔄</Text>
-            </Pressable>
-            <Pressable
+            <InfoPressable
               onPress={() => {
                 const today = new Date();
                 setAnchor(today);
                 setRangeFrom(toIso(today));
                 setRangeTo(toIso(addDays(today, 3)));
               }}
+              info={{ title: "Revenir à aujourd'hui", text: "Remet la liste de courses sur la date du jour." }}
               style={[styles.arrowBtn, { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.paper, borderColor: colors.beige }]}
             >
               <Text style={{ fontSize: 13 }}>⟲</Text>
-            </Pressable>
-            <InfoTip
-              title="Boutons du haut"
-              text={"🔄 Recharger la liste\n⟲ Revenir à aujourd'hui"}
-            />
+            </InfoPressable>
           </View>
         }
       />
@@ -259,22 +250,23 @@ export default function Courses() {
         </Pressable>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-        <View style={[styles.switchWrap, { backgroundColor: colors.beige, marginTop: 0, flex: 1 }]}>
-          <Pressable style={[styles.switchOpt, period === 'jour' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('jour')}>
-            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'jour' ? colors.ink : colors.inkSoft }}>Jour</Text>
-          </Pressable>
-          <Pressable style={[styles.switchOpt, period === 'semaine' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('semaine')}>
-            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'semaine' ? colors.ink : colors.inkSoft }}>Semaine</Text>
-          </Pressable>
-          <Pressable style={[styles.switchOpt, period === 'plage' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('plage')}>
-            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'plage' ? colors.ink : colors.inkSoft }}>Plage</Text>
-          </Pressable>
-        </View>
-        <InfoTip
-          title="Jour / Semaine / Plage"
-          text={"Jour et Semaine montrent les courses pour une journée ou la semaine en cours.\n\nPlage : choisis librement une date de début et une date de fin (deux calendriers) pour voir les courses sur une période précise, pratique quand tu fais tes courses tous les 2-3 jours."}
-        />
+      <View style={[styles.switchWrap, { backgroundColor: colors.beige, marginTop: 8 }]}>
+        <Pressable style={[styles.switchOpt, period === 'jour' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('jour')}>
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'jour' ? colors.ink : colors.inkSoft }}>Jour</Text>
+        </Pressable>
+        <Pressable style={[styles.switchOpt, period === 'semaine' && { backgroundColor: colors.paper }]} onPress={() => setPeriod('semaine')}>
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'semaine' ? colors.ink : colors.inkSoft }}>Semaine</Text>
+        </Pressable>
+        <InfoPressable
+          onPress={() => setPeriod('plage')}
+          info={{
+            title: 'Plage',
+            text: "Choisis librement une date de début et une date de fin pour voir les courses sur une période précise, pratique quand tu fais tes courses tous les 2-3 jours.",
+          }}
+          style={[styles.switchOpt, period === 'plage' && { backgroundColor: colors.paper }]}
+        >
+          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: period === 'plage' ? colors.ink : colors.inkSoft }}>Plage</Text>
+        </InfoPressable>
       </View>
 
       {period === 'jour' ? (
@@ -343,7 +335,10 @@ export default function Courses() {
         <EmptyState text="Rien de planifié sur cette période. Ajoute des plats à ton planning pour générer la liste." />
       ) : (
         <View style={{ flex: 1 }}>
-          <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 10, paddingBottom: 80 }}>
+          <ScrollView
+            contentContainerStyle={{ padding: 18, paddingTop: 10, paddingBottom: 80 }}
+            refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
+          >
             {view === 'rayon' ? (
               <>
                 {groceryCategories.map((gc) => {

@@ -2,11 +2,11 @@ import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { Screen, ScreenHeader } from '../../../src/components/ui';
-import { DishForm } from '../../../src/components/DishForm';
+import { DishForm, EMPTY_DISH_FORM_INITIAL } from '../../../src/components/DishForm';
 import { createDish } from '../../../src/data/dishes';
 import { replaceMeal, setMeal } from '../../../src/data/planning';
 import { replaceTemplateMeal, setTemplateMeal } from '../../../src/data/template';
-import { MealSlot } from '../../../src/types/models';
+import { Category, MealSlot } from '../../../src/types/models';
 
 export default function NewDish() {
   const { session } = useAuth();
@@ -17,12 +17,14 @@ export default function NewDish() {
     returnEntryId?: string;
     returnMode?: string;
     returnWeekday?: string;
+    initialCategory?: Category;
   }>();
 
   return (
     <Screen>
       <ScreenHeader title="Nouveau plat" onBack={() => router.back()} />
       <DishForm
+        initial={params.initialCategory ? { ...EMPTY_DISH_FORM_INITIAL, category: params.initialCategory } : undefined}
         submitLabel="Enregistrer le plat"
         onSubmit={async (input) => {
           const userId = session!.user.id;

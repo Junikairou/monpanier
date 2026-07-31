@@ -168,23 +168,38 @@ export function EmptyState({ text }: { text: string }) {
   );
 }
 
-export function InfoTip({ title, text }: { title?: string; text: string }) {
+export function InfoPressable({
+  onPress,
+  onLongPressExtra,
+  info,
+  style,
+  children,
+}: {
+  onPress?: () => void;
+  onLongPressExtra?: () => void;
+  info: { title?: string; text: string };
+  style?: any;
+  children: React.ReactNode;
+}) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   return (
     <>
       <Pressable
-        onPress={() => setOpen(true)}
-        hitSlop={8}
-        style={[styles.infoDot, { backgroundColor: colors.paper, borderColor: colors.beige }]}
+        onPress={onPress}
+        onLongPress={() => {
+          setOpen(true);
+          onLongPressExtra?.();
+        }}
+        style={style}
       >
-        <Text style={{ fontSize: 10.5, fontFamily: fonts.bodySemiBold, color: colors.inkSoft }}>i</Text>
+        {children}
       </Pressable>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.infoBackdrop} onPress={() => setOpen(false)}>
           <Pressable style={[styles.infoPanel, { backgroundColor: colors.paper, borderColor: colors.line }]} onPress={(e) => e.stopPropagation()}>
-            {title ? <Text style={[styles.infoTitle, { color: colors.ink }]}>{title}</Text> : null}
-            <Text style={{ fontSize: 13, fontFamily: fonts.body, color: colors.inkSoft, lineHeight: 19 }}>{text}</Text>
+            {info.title ? <Text style={[styles.infoTitle, { color: colors.ink }]}>{info.title}</Text> : null}
+            <Text style={{ fontSize: 13, fontFamily: fonts.body, color: colors.inkSoft, lineHeight: 19 }}>{info.text}</Text>
             <Pressable onPress={() => setOpen(false)} style={[styles.infoClose, { backgroundColor: colors.sagePale }]}>
               <Text style={{ fontSize: 12, fontFamily: fonts.bodySemiBold, color: colors.forestDark }}>Compris</Text>
             </Pressable>
@@ -243,7 +258,6 @@ const styles = StyleSheet.create({
   empty: { paddingVertical: 30, paddingHorizontal: 24, alignItems: 'center' },
   checkbox: { width: 16, height: 16, borderRadius: radii.tag, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   miniBtn: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: radii.btn, alignItems: 'center' },
-  infoDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   infoBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   infoPanel: { width: '100%', maxWidth: 320, borderRadius: radii.lg, borderWidth: 1, padding: 18, gap: 12 },
   infoTitle: { fontSize: 14.5, fontFamily: fonts.bodySemiBold },
