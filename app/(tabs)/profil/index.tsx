@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
@@ -17,6 +17,7 @@ const LANGUAGES: { code: string; label: string }[] = [
 export default function Profil() {
   const { colors, preference, setPreference } = useTheme();
   const { session, signOut, resetPassword } = useAuth();
+  const router = useRouter();
   const userId = session!.user.id;
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -79,6 +80,11 @@ export default function Profil() {
             <Text style={{ fontSize: 11.5, color: colors.inkSoft }}>{session!.user.email}</Text>
           </View>
         </View>
+
+        <SectionLabel text="Recettes" />
+        <Row label="📖 Catalogue de recettes" hint="Des idées prêtes à ajouter à Mes plats">
+          <Pill label="Voir" variant="ghost" onPress={() => router.push('/(tabs)/plats/catalogue')} />
+        </Row>
 
         <SectionLabel text="Compte" />
         <Row label="Téléphone" hint="Information seulement, non utilisée pour la connexion">

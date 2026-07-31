@@ -116,7 +116,7 @@ export async function deleteDish(id: string): Promise<void> {
   if (error) throw error;
 }
 
-const DEMO_DISHES: NewDishInput[] = [
+export const DEMO_DISHES: NewDishInput[] = [
   {
     name: 'Curry de pois chiches',
     category: 'healthy',
