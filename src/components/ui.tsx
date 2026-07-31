@@ -3,12 +3,11 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  Text,
-  TextInput,
   TextInputProps,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Text, TextInput } from './ScaledText';
 import { useTheme } from '../theme/ThemeProvider';
 import { cardShadow, fonts, radii, spacing } from '../theme/tokens';
 

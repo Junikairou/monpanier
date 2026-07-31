@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './ScaledText';
 import { useTheme } from '../theme/ThemeProvider';
 import { addDays, addMonths, formatMonthYear, isToday, startOfMonth, startOfWeek, toIso } from '../lib/dates';
 import { fonts, radii } from '../theme/tokens';

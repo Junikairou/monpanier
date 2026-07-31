@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from './ScaledText';
 import { useTheme } from '../theme/ThemeProvider';
 import { useTaxonomies } from '../lib/taxonomies';
 import { useAuth } from '../lib/auth';
@@ -49,7 +50,7 @@ const EMPTY: DishFormInitial = {
   steps: [''],
 };
 
-const UNIT_OPTIONS = ['pièce', 'gramme', 'mL', 'cuillère à soupe', 'pincée'];
+const UNIT_OPTIONS = ['Pièce', 'Gramme', 'ML', 'Cuillère à soupe', 'Pincée'];
 
 export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormProps) {
   const { colors } = useTheme();
@@ -84,7 +85,8 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
     setIngredients((prev) => prev.map((ing, idx) => (idx === i ? { ...ing, ...patch } : ing)));
   };
 
-  const courseTypeLabel = courseTypes.find((c) => c.key === courseType)?.label ?? courseType;
+  const courseTypeItem = courseTypes.find((c) => c.key === courseType);
+  const courseTypeLabel = courseTypeItem ? `${courseTypeItem.icon ?? ''} ${courseTypeItem.label}`.trim() : courseType;
   const groceryLabel = (key: string) => groceryCategories.find((g) => g.key === key)?.label ?? key;
 
   const save = async () => {
@@ -117,6 +119,8 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
           })),
         steps: steps.map((s) => s.trim()).filter(Boolean),
       });
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur lors de l'enregistrement.");
     } finally {
       setSaving(false);
     }
@@ -124,9 +128,16 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
 
   return (
     <ScrollView contentContainerStyle={{ padding: 18 }}>
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <View style={{ width: 72 }}>
-          <Field label="Emoji" value={emoji} onChangeText={setEmoji} placeholder="🍽️" />
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
+        <View>
+          <Text style={[styles.label, { color: colors.inkSoft }]}>Emoji</Text>
+          <TextInput
+            value={emoji}
+            onChangeText={setEmoji}
+            placeholder="🍽️"
+            placeholderTextColor={colors.inkFaint}
+            style={[styles.emojiBox, { borderColor: colors.beigeDark, color: colors.ink, backgroundColor: colors.paper }]}
+          />
         </View>
         <View style={{ flex: 1 }}>
           <Field label="Nom du plat" value={name} onChangeText={setName} placeholder="Ex. Poêlée de légumes" />
@@ -136,7 +147,7 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
       <Text style={[styles.label, { color: colors.inkSoft }]}>Catégorie</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
         {categories.map((c) => (
-          <Chip key={c.key} label={c.label} active={category === c.key} onPress={() => setCategory(c.key)} />
+          <Chip key={c.key} label={`${c.icon ?? ''} ${c.label}`.trim()} active={category === c.key} onPress={() => setCategory(c.key)} />
         ))}
       </ScrollView>
 
@@ -195,21 +206,25 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
       <Text style={[styles.section, { color: colors.ink }]}>Ingrédients</Text>
       {ingredients.map((ing, i) => (
         <View key={i} style={[styles.ingRow, { borderColor: colors.line }]}>
-          <Field label="Nom" value={ing.name} onChangeText={(v) => updateIngredient(i, { name: v })} placeholder="Riz basmati" />
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ width: 90 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 2 }}>
+              <Field label="Nom" value={ing.name} onChangeText={(v) => updateIngredient(i, { name: v })} placeholder="Riz basmati" />
+            </View>
+            <View style={{ width: 45 }}>
               <Field
-                label="Quantité"
+                label="Qté"
                 value={ing.quantity}
                 onChangeText={(v) => updateIngredient(i, { quantity: v })}
                 keyboardType="numeric"
                 placeholder="200"
               />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1.3 }}>
               <Text style={[styles.label, { color: colors.inkSoft }]}>Unité</Text>
               <Pressable onPress={() => setUnitMenuFor(i)} style={[styles.dropdown, { borderColor: colors.beigeDark }]}>
-                <Text style={{ fontSize: 13, color: ing.unit ? colors.ink : colors.inkFaint }}>{ing.unit || 'Choisir'}</Text>
+                <Text style={{ fontSize: 12.5, color: ing.unit ? colors.ink : colors.inkFaint }} numberOfLines={1}>
+                  {ing.unit || 'Choisir'}
+                </Text>
                 <Text style={{ color: colors.inkSoft }}>▾</Text>
               </Pressable>
             </View>
@@ -251,7 +266,7 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
       <ActionSheet
         visible={courseTypeMenuOpen}
         title="Type de plat"
-        actions={courseTypes.map((c) => ({ label: c.label, onPress: () => setCourseType(c.key) }))}
+        actions={courseTypes.map((c) => ({ label: `${c.icon ?? ''} ${c.label}`.trim(), onPress: () => setCourseType(c.key) }))}
         onClose={() => setCourseTypeMenuOpen(false)}
       />
 
@@ -279,6 +294,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
   section: { fontSize: 16, fontStyle: 'italic', marginBottom: 10 },
   ingRow: { borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 10 },
+  emojiBox: { width: 52, height: 52, borderWidth: 1.5, borderRadius: 12, fontSize: 24, textAlign: 'center', textAlignVertical: 'center' },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',

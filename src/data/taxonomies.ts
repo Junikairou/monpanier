@@ -66,3 +66,14 @@ export async function deleteTaxonomyItem(kind: TaxonomyKind, id: string): Promis
   const { error } = await supabase.from(TABLE[kind]).delete().eq('id', id);
   if (error) throw error;
 }
+
+export async function swapTaxonomyPositions(
+  kind: TaxonomyKind,
+  a: { id: string; position: number },
+  b: { id: string; position: number },
+): Promise<void> {
+  const { error: e1 } = await supabase.from(TABLE[kind]).update({ position: b.position }).eq('id', a.id);
+  if (e1) throw e1;
+  const { error: e2 } = await supabase.from(TABLE[kind]).update({ position: a.position }).eq('id', b.id);
+  if (e2) throw e2;
+}

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../theme/ThemeProvider';
 import { EmptyState, Screen, ScreenHeader } from './ui';

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../src/components/ScaledText';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/lib/auth';
 import { useTheme } from '../src/theme/ThemeProvider';
@@ -9,8 +10,8 @@ import { TaxonomyItem, TaxonomyKind } from '../src/data/taxonomies';
 import { fonts, radii } from '../src/theme/tokens';
 
 const TABS: { key: TaxonomyKind; title: string; hasIcon: boolean }[] = [
-  { key: 'category', title: 'Catégories de plat', hasIcon: false },
-  { key: 'course_type', title: 'Types de plat', hasIcon: false },
+  { key: 'category', title: 'Catégories de plat', hasIcon: true },
+  { key: 'course_type', title: 'Types de plat', hasIcon: true },
   { key: 'grocery_category', title: 'Rayons (courses)', hasIcon: true },
 ];
 
@@ -69,8 +70,17 @@ export default function Personnalisation() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 18, gap: 8 }}>
-        {items.map((item) => (
-          <TaxonomyRow key={item.id} item={item} hasIcon={current.hasIcon} onRename={(label, icon) => taxo.rename(tab, item.id, label, icon)} onDelete={() => confirmDelete(item)} />
+        {items.map((item, idx) => (
+          <TaxonomyRow
+            key={item.id}
+            item={item}
+            hasIcon={current.hasIcon}
+            canMoveUp={idx > 0}
+            canMoveDown={idx < items.length - 1}
+            onMove={(dir) => taxo.move(tab, item.id, dir)}
+            onRename={(label, icon) => taxo.rename(tab, item.id, label, icon)}
+            onDelete={() => confirmDelete(item)}
+          />
         ))}
 
         <Card style={{ marginTop: 8, gap: 8 }}>
@@ -105,11 +115,17 @@ export default function Personnalisation() {
 function TaxonomyRow({
   item,
   hasIcon,
+  canMoveUp,
+  canMoveDown,
+  onMove,
   onRename,
   onDelete,
 }: {
   item: TaxonomyItem;
   hasIcon: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMove: (dir: 'up' | 'down') => void;
   onRename: (label: string, icon?: string) => void;
   onDelete: () => void;
 }) {
@@ -119,6 +135,14 @@ function TaxonomyRow({
 
   return (
     <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ gap: 2 }}>
+        <Pressable onPress={() => onMove('up')} disabled={!canMoveUp} hitSlop={4}>
+          <Text style={{ fontSize: 12, color: canMoveUp ? colors.forest : colors.line }}>▲</Text>
+        </Pressable>
+        <Pressable onPress={() => onMove('down')} disabled={!canMoveDown} hitSlop={4}>
+          <Text style={{ fontSize: 12, color: canMoveDown ? colors.forest : colors.line }}>▼</Text>
+        </Pressable>
+      </View>
       {hasIcon ? (
         <TextInput
           value={icon}
