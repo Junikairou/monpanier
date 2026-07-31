@@ -179,6 +179,7 @@ export default function DishDetail() {
               </View>
             </View>
           )}
+          <Pill label="✏️ Modifier la recette" variant="ghost" onPress={() => router.push({ pathname: '/(tabs)/plats/modifier', params: { id } })} />
           <Pill label="Supprimer ce plat" variant="ghost" onPress={onDelete} />
         </View>
       </ScrollView>

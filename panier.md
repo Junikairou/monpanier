@@ -46,7 +46,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 7. ⏳ Nombre de personnes par repas planifié → recalcul des quantités dans la liste de courses (cas : deux plats différents le même soir pour des groupes de tailles différentes). **Décision prise** (2026-07-31) : un nombre de personnes par plat planifié (pré-rempli avec la taille du foyer), pas encore implémenté.
 8. ✅ **Partage de l'app entre membres d'un même foyer** — planning et liste de courses communs à tous les membres d'un foyer. Rejoindre se fait via un code temporaire de 5 minutes (Profil → section "Partage du foyer" : bouton pour générer un code, champ pour saisir un code reçu). "Mes plats" reste personnel à chacun pour l'instant. **Migration 012 à exécuter — lire l'avertissement ci-dessous avant.**
    - Sous-demandes explicitement **différées** (pas encore faites) : inviter quelqu'un pour un seul repas ponctuel (sans l'ajouter au foyer), et partage individuel d'un plat/recette d'une personne à une autre.
-9. ⏳ Modifier une recette existante (actuellement seulement création + suppression).
+9. ✅ Modifier une recette existante — bouton "✏️ Modifier la recette" sur la fiche plat, écran dédié (`/plats/modifier`) réutilisant le même formulaire que la création. Aucune migration nécessaire. **Non testé visuellement** (pas d'identifiants) — à vérifier.
 10. ⏳ Icône de l'onglet "Profil" en bas → remplacer par "⋯" pour signifier "Plus".
 11. ⏳ Catalogue de recettes prédéfinies dans "Plus", ajoutables à "Mes plats".
 12. ⏳ Section "Personnalisation/Gestion" dans "Plus" : CRUD par l'utilisateur sur types de plat, rayons (catégories courses), catégories de plat (actuellement listes figées dans le code).

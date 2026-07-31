@@ -79,6 +79,38 @@ export async function createDish(userId: string, input: NewDishInput): Promise<D
   return dish as Dish;
 }
 
+export async function updateDish(id: string, input: NewDishInput): Promise<void> {
+  const { error } = await supabase
+    .from('dishes')
+    .update({
+      name: input.name,
+      category: input.category,
+      course_type: input.course_type,
+      calories: input.calories,
+      image_emoji: input.image_emoji || '🍽️',
+    })
+    .eq('id', id);
+  if (error) throw error;
+
+  const { error: delIngErr } = await supabase.from('ingredients').delete().eq('dish_id', id);
+  if (delIngErr) throw delIngErr;
+  if (input.ingredients.length) {
+    const { error: ingErr } = await supabase.from('ingredients').insert(
+      input.ingredients.map((i) => ({ ...i, dish_id: id })),
+    );
+    if (ingErr) throw ingErr;
+  }
+
+  const { error: delStepErr } = await supabase.from('recipe_steps').delete().eq('dish_id', id);
+  if (delStepErr) throw delStepErr;
+  if (input.steps.length) {
+    const { error: stepErr } = await supabase.from('recipe_steps').insert(
+      input.steps.map((instruction, idx) => ({ dish_id: id, position: idx + 1, instruction })),
+    );
+    if (stepErr) throw stepErr;
+  }
+}
+
 export async function deleteDish(id: string): Promise<void> {
   const { error } = await supabase.from('dishes').delete().eq('id', id);
   if (error) throw error;
