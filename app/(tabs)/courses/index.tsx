@@ -246,7 +246,7 @@ export default function Courses() {
       />
 
       <Text style={{ textAlign: 'center', fontSize: 9.5, color: colors.inkFaint, marginTop: 2 }}>
-        🔍 {startIso} → {endIso} · {planningEntries.filter((e) => e.dish_id).length} repas avec plat · {list.auto.length} article(s) auto
+        🔍 {startIso} → {endIso} · {planningEntries.length} entrées total · {planningEntries.filter((e) => e.dish_id).length} avec plat · {list.auto.length} article(s)
       </Text>
 
       <View style={[styles.switchWrap, { backgroundColor: colors.beige }]}>
