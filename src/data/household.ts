@@ -5,10 +5,13 @@ export interface HouseholdMember {
   joined_at: string;
 }
 
+export type HouseholdRole = 'chef' | 'membre';
+
 export interface HouseholdMemberProfile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  role: HouseholdRole;
 }
 
 const householdIdCache = new Map<string, string>();
@@ -34,12 +37,19 @@ export async function listHouseholdMembers(): Promise<HouseholdMember[]> {
 
 export async function listHouseholdMemberProfiles(userId: string): Promise<HouseholdMemberProfile[]> {
   const household_id = await getMyHouseholdId(userId);
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url')
-    .eq('household_id', household_id);
+  const [{ data: profiles, error: profErr }, { data: members, error: memErr }] = await Promise.all([
+    supabase.from('profiles').select('id, display_name, avatar_url').eq('household_id', household_id),
+    supabase.from('household_members').select('user_id, role').eq('household_id', household_id),
+  ]);
+  if (profErr) throw profErr;
+  if (memErr) throw memErr;
+  const roleByUser = new Map((members ?? []).map((m) => [m.user_id, m.role as HouseholdRole]));
+  return (profiles ?? []).map((p) => ({ ...p, role: roleByUser.get(p.id) ?? 'membre' })) as HouseholdMemberProfile[];
+}
+
+export async function removeHouseholdMember(targetUserId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_household_member', { target_user_id: targetUserId });
   if (error) throw error;
-  return data as HouseholdMemberProfile[];
 }
 
 export async function createHouseholdInvite(): Promise<string> {

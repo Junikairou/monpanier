@@ -64,7 +64,7 @@ Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 1. ✅ **Bug résolu et confirmé (2026-08-01) : planning/courses "pas synchronisés"** — cause réelle trouvée grâce à un diagnostic ajouté temporairement dans l'app : la migration 015 (colonnes `servings`/`base_servings`) n'avait en fait jamais été appliquée en base malgré une confirmation précédente. `groceries.ts` demande explicitement la colonne `planning_entries.servings`, ce qui faisait échouer silencieusement le calcul de la liste de courses (Planning utilisait `select('*')`, insensible à la colonne manquante, d'où l'écart entre les deux écrans). Corrigé en réexécutant la migration 015. Au passage : le partage des plats entre membres du foyer (migration 016) reste une amélioration valide et nécessaire, mais n'était pas la cause de ce bug précis.
    - Séquelles à nettoyer si besoin : Planning et Courses affichent maintenant un message d'erreur visible en cas d'échec de chargement (au lieu de rester silencieusement vides) — changement gardé en permanence, utile pour tout futur souci similaire.
 2. ✅ Bouton "retour à aujourd'hui" (⟲) ajouté dans l'en-tête de la liste de courses (comme dans Planning).
-3. ✅ Réglage "Taille du texte" (Normal/Grand/Très grand) dans Plus → Apparence — **s'applique maintenant à toute l'app** (tous les `Text`/`TextInput`, pas seulement les éléments communs) via un patch global (`src/lib/globalText.tsx`) qui multiplie la taille de police de tout texte affiché. Stocké localement (comme le thème).
+3. ✅ Réglage "Taille du texte" (Normal/Grand/Très grand) dans Plus → Apparence — **corrigé et confirmé (2026-08-01)** : la première version (patch global du module react-native) ne fonctionnait pas silencieusement (bundler bloquant la mutation). Remplacé par `src/components/ScaledText.tsx`, un composant `Text`/`TextInput` partagé que tous les écrans importent désormais à la place de 'react-native' directement — s'applique réellement à toute l'app. Vérifié techniquement (27px → 35.1px à l'échelle 1.3). Stocké localement (comme le thème).
 4. ✅ Refonte de l'onglet "Plus" façon grille de vignettes par catégorie :
    - **Mon profil** → page dédiée `/profil/mon-profil` : photo de profil (upload depuis l'appareil), pseudo, e-mail (lecture seule), téléphone, changer le mot de passe (masqué si connecté par Google), "changer de compte" (= déconnexion, pas de multi-compte dans l'app), se déconnecter, réinitialiser des données. **Suppression de compte : pas fait** (nécessite une fonction serveur avec clé secrète).
    - **Préférences** : Apparence (thème, langue — français/anglais/中文, taille du texte, unités) ; Options avancées (indicateur repas équilibré, affichage calories/nutriments dans le formulaire de plat, repas à planifier).
@@ -81,9 +81,25 @@ Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 12. ✅ "Tous les plats" : bouton "Gérer" en haut à droite pour sélectionner plusieurs plats et les supprimer en une fois.
 13. ✅ Catégories de plat par défaut modernisées pour les **nouveaux foyers** uniquement (Français/Italien/Asiatique/Rapide/Végé/Resto/Autre au lieu de Rapide/Healthy/Pâtes/Végé/Autre) — les foyers existants gèrent déjà les leurs via Personnalisation, non touchés.
 
-**Migrations à exécuter, dans l'ordre : 011 à 017** (SQL envoyé dans le chat à chaque étape). **Rien de tout ce chantier n'a pu être testé visuellement** (pas d'identifiants) — à tester en priorité : le bug de synchronisation planning/courses (016) et le partage entre deux comptes d'un même foyer.
+**Migrations à exécuter, dans l'ordre : 011 à 017** (SQL envoyé dans le chat à chaque étape).
 
-**Point non résolu, à confirmer après test :** la vue "Semaine" du planning (cartes glissantes) permet déjà en théorie de glisser horizontalement pour voir les 7 jours (`ScrollView` sur tous les jours) — si le souci persiste après ce lot, préciser ce qui bloque exactement (jours avant aujourd'hui inaccessibles ? geste qui ne répond pas ? autre chose ?).
+## Chantier en cours (2026-08-01, retours après le lot précédent)
+
+1. ✅ **Bug résolu et confirmé** : synchronisation planning/courses — voir détail plus haut (migration 015 manquante).
+2. ✅ **Taille du texte corrigée et confirmée** — voir détail plus haut (`ScaledText.tsx` au lieu du patch global qui ne marchait pas).
+3. ✅ **Bug corrigé : "Enregistrer les modifications" ne faisait rien** dans Modifier le plat — le formulaire n'affichait aucune erreur si `onSubmit` échouait (échec silencieux). `DishForm` affiche maintenant le message d'erreur réel s'il y en a une.
+4. ✅ Formulaire de plat : emoji en carré (au lieu d'un champ texte classique) ; ingrédient sur une seule ligne (nom, quantité en petit encadré, unité) ; unités avec majuscule (Pièce/Gramme/ML/Cuillère à soupe/Pincée) ; icônes désormais possibles aussi pour "Catégories de plat" et "Types de plat" (pas seulement les rayons), affichées dans les puces et menus.
+5. ✅ Personnalisation : réordonnancement des vignettes par flèches ▲▼ (haut/bas), persistant (`position` en base).
+6. ✅ Planning (vue Jour) : bouton "Voir recette" retiré (le nom du plat suffit) ; les portions modifiées **depuis la fiche recette ouverte depuis un repas planifié** se répercutent sur ce repas précis (pas sur la recette elle-même — un aperçu générique reste possible en ouvrant la recette autrement) ; boutons "+ Ajouter un autre plat" / "+ Planifier un plat" unifiés en un seul "+ Ajouter un plat" en bas de chaque repas ; présentation des cartes uniformisée (même style qu'il y ait un plat ou non).
+7. ✅ "Tous les plats" : bouton "Tout sélectionner" dans le mode Gérer (la suppression des plats du catalogue de démonstration fonctionnait déjà, aucune restriction n'existait).
+8. ✅ Catalogue de recettes : sélection multiple (cases à cocher) + ajout groupé en une fois.
+9. ✅ Partage du foyer : rôle **chef de foyer** (la première personne du foyer, ou celle arrivée en premier pour les foyers existants) / **membre**. Seul le chef peut retirer un membre (bouton ✕ visible seulement pour lui) ; la personne retirée récupère automatiquement son propre foyer solo (comme à l'inscription), aucune perte de données. **Migration 018 à exécuter.**
+
+**Reste non traité de ce lot (ambigu, à clarifier si toujours voulu) :** la remarque sur "image 4 trait en pointillé... image 5 disparu" a été interprétée comme le même problème que "présentation pas uniforme entre Petit déj et Déjeuner" (point 6 ci-dessus, cartes maintenant identiques qu'elles aient un plat ou non) — à confirmer que c'est bien réglé, sinon préciser ce qui manque encore.
+
+**Point non résolu, à confirmer après test :** la vue "Semaine" du planning (cartes glissantes) permet déjà en théorie de glisser horizontalement pour voir les 7 jours (`ScrollView` sur tous les jours) — si le souci persiste, préciser ce qui bloque exactement (jours avant aujourd'hui inaccessibles ? geste qui ne répond pas ? autre chose ?).
+
+**Migration 018 à exécuter** (rôles chef/membre du foyer, voir SQL dans le chat).
 
 ## Pas fait / en attente
 
