@@ -109,6 +109,25 @@ Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 
 **Migration 018 à exécuter** (rôles chef/membre du foyer, voir SQL dans le chat).
 
+## Chantier en cours (2026-08-01, retours utilisateur — gros lot v2)
+
+Lot 1 (en cours, cette conversation) :
+1. ⬜ Message "Aucun plat dans cette catégorie" (vide) : respecter la marge de la page, ne pas toucher le bord — règle globale à appliquer partout, y compris futures maj.
+2. ⬜ Bouton "+ Ajouter un plat" (sélecteur de plat pour un créneau) : permettre de créer un plat directement depuis ce bouton.
+3. ⬜ Onglet "Plus" : revenir dessus après avoir quitté une sous-page doit réafficher la page principale de Plus (pas rester sur la sous-page).
+4. ⬜ Options avancées activées par défaut (l'utilisateur peut les désactiver ensuite).
+5. ⬜ Logo (i) info à côté des boutons non intuitifs (ex. bouton "Plage" dans Courses, boutons ⟲/📅 en haut du planning) — règle à appliquer aussi pour toutes les futures maj de boutons peu explicites.
+
+Backlog (lot 2, prochaine conversation) :
+6. ⬜ Ajouter un repas directement dans le planning sans passer par "Options avancées".
+7. ⬜ Possibilité d'ajouter des repas à planifier en plus des créneaux existants (petit-déj/déjeuner/dîner...).
+8. ⬜ Confirmation avant de quitter une page avec modifications non enregistrées (création/modif de plat + autres endroits de validation) — dans le thème visuel de l'app.
+9. ⬜ Suggestion automatique du rayon à l'ajout d'un ingrédient (dictionnaire de mots-clés), modifiable par l'utilisateur, "Autre" si incertain.
+10. ⬜ Animations de transition pour toutes les actions — règle à appliquer aussi pour toutes les futures maj.
+11. ⬜ Accélérer la saisie d'une étape de recette dans "Nouveau plat" (éviter de taper à la main de A à Z).
+12. ⬜ Choix Mode Complet / Mode Simple à la première connexion (options avancées activées ou désactivées par défaut) avec explication brève des deux modes.
+13. ⬜ Petit tutoriel des onglets (flèche + texte explicatif par onglet) avec case "Ne plus rappeler" par fenêtre, si les onglets restent sans info.
+
 ## Pas fait / en attente
 
 - Communauté (partage de recettes) — explicitement mis de côté dès le départ
