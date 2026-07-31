@@ -28,6 +28,10 @@ export interface Dish {
   category: Category;
   course_type: CourseType;
   calories: number | null;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+  fiber_g: number | null;
   image_emoji: string | null;
   image_url: string | null;
   created_at: string;

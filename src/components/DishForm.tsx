@@ -14,6 +14,10 @@ export interface DishFormInitial {
   category: Category;
   courseType: CourseType;
   calories: string;
+  protein: string;
+  carbs: string;
+  fat: string;
+  fiber: string;
   ingredients: IngredientDraft[];
   steps: string[];
 }
@@ -30,6 +34,10 @@ const EMPTY: DishFormInitial = {
   category: 'rapide',
   courseType: 'plat',
   calories: '',
+  protein: '',
+  carbs: '',
+  fat: '',
+  fiber: '',
   ingredients: [{ name: '', quantity: '', unit: '', grocery_category: 'autre' }],
   steps: [''],
 };
@@ -43,6 +51,10 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
   const [category, setCategory] = useState<Category>(initial.category);
   const [courseType, setCourseType] = useState<CourseType>(initial.courseType);
   const [calories, setCalories] = useState(initial.calories);
+  const [protein, setProtein] = useState(initial.protein);
+  const [carbs, setCarbs] = useState(initial.carbs);
+  const [fat, setFat] = useState(initial.fat);
+  const [fiber, setFiber] = useState(initial.fiber);
   const [ingredients, setIngredients] = useState<IngredientDraft[]>(initial.ingredients);
   const [steps, setSteps] = useState<string[]>(initial.steps);
   const [saving, setSaving] = useState(false);
@@ -65,6 +77,10 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
         category,
         course_type: courseType,
         calories: calories.trim() ? Number(calories.replace(',', '.')) || null : null,
+        protein_g: protein.trim() ? Number(protein.replace(',', '.')) || null : null,
+        carbs_g: carbs.trim() ? Number(carbs.replace(',', '.')) || null : null,
+        fat_g: fat.trim() ? Number(fat.replace(',', '.')) || null : null,
+        fiber_g: fiber.trim() ? Number(fiber.replace(',', '.')) || null : null,
         image_emoji: emoji.trim() || '🍽️',
         ingredients: ingredients
           .filter((i) => i.name.trim())
@@ -107,6 +123,24 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
         keyboardType="numeric"
         placeholder="Ex. 550"
       />
+
+      <Text style={[styles.label, { color: colors.inkSoft, marginTop: 4 }]}>Nutriments (optionnel, en grammes)</Text>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <Field label="Protéines" value={protein} onChangeText={setProtein} keyboardType="numeric" placeholder="30" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field label="Glucides" value={carbs} onChangeText={setCarbs} keyboardType="numeric" placeholder="60" />
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <Field label="Lipides" value={fat} onChangeText={setFat} keyboardType="numeric" placeholder="15" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field label="Fibres" value={fiber} onChangeText={setFiber} keyboardType="numeric" placeholder="8" />
+        </View>
+      </View>
 
       <Text style={[styles.section, { color: colors.ink }]}>Ingrédients</Text>
       {ingredients.map((ing, i) => (

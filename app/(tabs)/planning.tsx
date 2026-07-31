@@ -94,6 +94,11 @@ export default function Planning() {
   const dayEntries = entries.filter((e) => e.date === selectedDate && e.dish_id);
   const totalCalories = dayEntries.reduce((sum, e) => sum + (e.dish?.calories ?? 0), 0);
   const hasCalorieData = dayEntries.some((e) => e.dish?.calories != null);
+  const totalProtein = dayEntries.reduce((sum, e) => sum + (e.dish?.protein_g ?? 0), 0);
+  const totalCarbs = dayEntries.reduce((sum, e) => sum + (e.dish?.carbs_g ?? 0), 0);
+  const totalFat = dayEntries.reduce((sum, e) => sum + (e.dish?.fat_g ?? 0), 0);
+  const totalFiber = dayEntries.reduce((sum, e) => sum + (e.dish?.fiber_g ?? 0), 0);
+  const hasMacroData = dayEntries.some((e) => e.dish?.protein_g != null || e.dish?.carbs_g != null || e.dish?.fat_g != null || e.dish?.fiber_g != null);
 
   const BALANCE_TYPES: CourseType[] = ['plat', 'accompagnement', 'fruit'];
   const slotBalance = (slot: MealSlot) => {
@@ -317,8 +322,13 @@ export default function Planning() {
           </Text>
 
           {hasCalorieData ? (
-            <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: 8 }}>
+            <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: hasMacroData ? 1 : 8 }}>
               🔥 {totalCalories} kcal sur la journée
+            </Text>
+          ) : null}
+          {hasMacroData ? (
+            <Text style={{ textAlign: 'center', fontSize: 9.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: 8 }}>
+              P {totalProtein}g · G {totalCarbs}g · L {totalFat}g · Fibres {totalFiber}g
             </Text>
           ) : null}
 

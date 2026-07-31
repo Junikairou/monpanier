@@ -17,6 +17,10 @@ export default function ModifierDish() {
         category: dish.category,
         courseType: dish.course_type,
         calories: dish.calories != null ? String(dish.calories) : '',
+        protein: dish.protein_g != null ? String(dish.protein_g) : '',
+        carbs: dish.carbs_g != null ? String(dish.carbs_g) : '',
+        fat: dish.fat_g != null ? String(dish.fat_g) : '',
+        fiber: dish.fiber_g != null ? String(dish.fiber_g) : '',
         ingredients: ingredients.length
           ? ingredients.map((i) => ({
               name: i.name,

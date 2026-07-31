@@ -124,8 +124,20 @@ export default function DishDetail() {
           <Text style={{ fontSize: 46 }}>{dish.image_emoji ?? '🍽️'}</Text>
         </View>
         {dish.calories != null ? (
-          <Text style={{ textAlign: 'center', fontSize: 12.5, color: colors.inkSoft, marginBottom: 10 }}>
+          <Text style={{ textAlign: 'center', fontSize: 12.5, color: colors.inkSoft, marginBottom: 4 }}>
             🔥 {dish.calories} kcal
+          </Text>
+        ) : null}
+        {dish.protein_g != null || dish.carbs_g != null || dish.fat_g != null || dish.fiber_g != null ? (
+          <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkFaint, marginBottom: 10 }}>
+            {[
+              dish.protein_g != null ? `P ${dish.protein_g} g` : null,
+              dish.carbs_g != null ? `G ${dish.carbs_g} g` : null,
+              dish.fat_g != null ? `L ${dish.fat_g} g` : null,
+              dish.fiber_g != null ? `Fibres ${dish.fiber_g} g` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </Text>
         ) : null}
 
