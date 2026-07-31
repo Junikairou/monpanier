@@ -71,6 +71,7 @@ export function Pill({
       style={({ pressed }) => [
         styles.pill,
         { backgroundColor: bg, borderColor: border, opacity: disabled ? 0.5 : pressed ? 0.75 : 1 },
+        { transform: [{ scale: pressed && !disabled ? 0.97 : 1 }] },
       ]}
     >
       <Text style={[styles.pillText, { color: textColor }]}>{label}</Text>
@@ -91,11 +92,12 @@ export function MiniButton({
   return (
     <Pressable
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.miniBtn,
         variant === 'sage'
           ? { backgroundColor: colors.sagePale, borderColor: 'transparent' }
           : { backgroundColor: 'transparent', borderColor: colors.beigeDark, borderWidth: 1.2 },
+        { opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
       ]}
     >
       <Text style={{ fontSize: 10, fontFamily: fonts.bodyMedium, color: variant === 'sage' ? colors.forestDark : colors.inkSoft }}>
@@ -118,9 +120,10 @@ export function Chip({
   return (
     <Pressable
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.chip,
         { backgroundColor: active ? colors.forest : colors.paper, borderColor: active ? colors.forest : colors.beigeDark },
+        { opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
       ]}
     >
       <Text style={{ color: active ? '#FFFFFF' : colors.inkSoft, fontSize: 11.5, fontFamily: active ? fonts.bodySemiBold : fonts.bodyMedium }}>

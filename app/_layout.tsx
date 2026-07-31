@@ -48,10 +48,10 @@ function MaybeTaxonomyProvider({ children }: { children: React.ReactNode }) {
 function RootStack() {
   const { colors } = useTheme();
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream }, animation: 'slide_from_right' }}>
       <Stack.Screen
         name="choisir-plat"
-        options={{ presentation: 'modal', headerShown: false }}
+        options={{ presentation: 'modal', headerShown: false, animation: 'slide_from_bottom' }}
       />
     </Stack>
   );

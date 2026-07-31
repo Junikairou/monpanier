@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { getProfile } from '../../src/data/profile';
+import { TabsIntro } from '../../src/components/TabsIntro';
 
 export default function TabsLayout() {
   const { session, initializing } = useAuth();
@@ -12,6 +14,7 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
     if (!session) return;
@@ -26,56 +29,59 @@ export default function TabsLayout() {
   if (!onboarded) return <Redirect href="/(auth)/onboarding" />;
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.forest,
-        tabBarInactiveTintColor: colors.inkSoft,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: { fontSize: 10, fontFamily: 'DMSans_500Medium' },
-        tabBarStyle: {
-          backgroundColor: colors.paper,
-          borderTopColor: colors.line,
-          height: 56 + insets.bottom,
-          paddingTop: 6,
-          paddingBottom: Math.max(insets.bottom, 8),
-        },
-        tabBarItemStyle: { paddingTop: 2 },
-      }}
-    >
-      <Tabs.Screen
-        name="planning"
-        options={{
-          title: 'Planning',
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="courses"
-        options={{
-          title: 'Courses',
-          tabBarIcon: ({ color, size }) => <Ionicons name="basket-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="plats"
-        options={{
-          title: 'Plats',
-          tabBarIcon: ({ color, size }) => <Ionicons name="restaurant-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profil"
-        options={{
-          title: 'Plus',
-          tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal-circle-outline" size={size} color={color} />,
-        }}
-        listeners={{
-          tabPress: () => {
-            router.replace('/(tabs)/profil');
+    <View style={{ flex: 1 }} onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.forest,
+          tabBarInactiveTintColor: colors.inkSoft,
+          tabBarShowLabel: true,
+          tabBarLabelStyle: { fontSize: 10, fontFamily: 'DMSans_500Medium' },
+          tabBarStyle: {
+            backgroundColor: colors.paper,
+            borderTopColor: colors.line,
+            height: 56 + insets.bottom,
+            paddingTop: 6,
+            paddingBottom: Math.max(insets.bottom, 8),
           },
+          tabBarItemStyle: { paddingTop: 2 },
         }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="planning"
+          options={{
+            title: 'Planning',
+            tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="courses"
+          options={{
+            title: 'Courses',
+            tabBarIcon: ({ color, size }) => <Ionicons name="basket-outline" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="plats"
+          options={{
+            title: 'Plats',
+            tabBarIcon: ({ color, size }) => <Ionicons name="restaurant-outline" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profil"
+          options={{
+            title: 'Plus',
+            tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal-circle-outline" size={size} color={color} />,
+          }}
+          listeners={{
+            tabPress: () => {
+              router.replace('/(tabs)/profil');
+            },
+          }}
+        />
+      </Tabs>
+      <TabsIntro tabBarWidth={containerWidth} bottomInset={insets.bottom} />
+    </View>
   );
 }

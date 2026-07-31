@@ -143,7 +143,10 @@ Lot 1 (terminé, cette conversation) :
 5. ✅ Confirmation avant de quitter sans enregistrer sur Nouveau plat / Modifier le plat (modifications non enregistrées détectées automatiquement) — bouton retour, geste retour et navigation clavier/système interceptés, message dans le thème de l'app (pas d'alerte native).
 6. ✅ Choix Mode Complet / Mode Simple à la première connexion (onboarding) — Complet : toutes options avancées + tous les repas activés (défaut) ; Simple : options avancées désactivées + seulement déjeuner/dîner. Modifiable ensuite dans Options avancées.
 
-Reste du lot 2 en cours : animations de transition, tutoriel des onglets.
+7. ✅ Animations de transition : navigation entre écrans (Stack, y compris les sous-pages de "Plus") en glissement animé au lieu d'un changement instantané ; retour effet visuel (léger zoom + estompage) sur Pill/Chip/MiniButton à l'appui. Règle à appliquer aussi pour toutes les futures maj (composants partagés `ui.tsx` déjà couverts, donc hérité automatiquement par les nouveaux écrans qui les utilisent).
+8. ✅ Petit tutoriel des onglets (`src/components/TabsIntro.tsx`) : bulle avec flèche pointant vers l'onglet concerné, un texte par onglet (Planning/Courses/Plats/Plus), bouton Suivant/​"C'est compris", case "Ne plus me montrer ça" (persistante). Affiché automatiquement à la première visite des onglets tant que la case n'a pas été cochée. **Position de la flèche approximative** (calculée sur la largeur de la barre d'onglets divisée en 4, pas une mesure pixel-exacte du bouton réel) — à vérifier visuellement, ajuster si décalée.
+
+**Lot 2 terminé (8/8).** **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur à chaque étape.
 
 Backlog (lot 2, prochaine conversation) :
 6. ⬜ Ajouter un repas directement dans le planning sans passer par "Options avancées".

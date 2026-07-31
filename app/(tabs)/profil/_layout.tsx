@@ -4,6 +4,6 @@ import { useTheme } from '../../../src/theme/ThemeProvider';
 export default function ProfilLayout() {
   const { colors } = useTheme();
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }} />
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream }, animation: 'slide_from_right' }} />
   );
 }
