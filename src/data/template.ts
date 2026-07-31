@@ -32,18 +32,6 @@ export async function setTemplateMeal(
   if (error) throw error;
 }
 
-export async function setTemplateRestaurant(userId: string, weekday: number, slot: MealSlot): Promise<void> {
-  const household_id = await getMyHouseholdId(userId);
-  const { error } = await supabase.from('planning_template_entries').insert({
-    user_id: userId,
-    household_id,
-    weekday,
-    slot,
-    dish_id: null,
-    is_restaurant: true,
-  });
-  if (error) throw error;
-}
 
 export async function replaceTemplateMeal(entryId: string, dish: Dish): Promise<void> {
   const { error } = await supabase.from('planning_template_entries').update({ dish_id: dish.id }).eq('id', entryId);

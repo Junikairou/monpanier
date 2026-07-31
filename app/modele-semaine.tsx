@@ -5,7 +5,7 @@ import { useAuth } from '../src/lib/auth';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { Card, LoadingBlock, MiniButton, Screen, ScreenHeader } from '../src/components/ui';
 import { getProfile } from '../src/data/profile';
-import { clearTemplate, listTemplate, removeTemplateEntry, setTemplateRestaurant } from '../src/data/template';
+import { clearTemplate, listTemplate, removeTemplateEntry } from '../src/data/template';
 import { useTaxonomies } from '../src/lib/taxonomies';
 import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, TemplateEntry } from '../src/types/models';
 import { fonts } from '../src/theme/tokens';
@@ -55,11 +55,6 @@ export default function ModeleSemaine() {
     router.push({ pathname: '/choisir-plat', params: { mode: 'template', weekday: String(weekday), slot, entryId } });
   };
 
-  const onResto = async (weekday: number, slot: MealSlot) => {
-    await setTemplateRestaurant(userId, weekday, slot);
-    load();
-  };
-
   const onRemove = async (entryId: string) => {
     await removeTemplateEntry(entryId);
     load();
@@ -104,7 +99,6 @@ export default function ModeleSemaine() {
                       {list.length === 0 ? (
                         <View style={{ flexDirection: 'row', gap: 5 }}>
                           <MiniButton label="+ Ajouter" variant="sage" onPress={() => onAdd(weekday, slot)} />
-                          <MiniButton label="🍽️ Au resto" variant="outline" onPress={() => onResto(weekday, slot)} />
                         </View>
                       ) : (
                         <>

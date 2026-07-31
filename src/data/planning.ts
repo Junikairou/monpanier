@@ -63,19 +63,6 @@ export async function setEntryServings(entryId: string, servings: number): Promi
   if (error) throw error;
 }
 
-export async function setRestaurantMeal(userId: string, date: string, slot: MealSlot): Promise<void> {
-  const household_id = await getMyHouseholdId(userId);
-  const { error } = await supabase.from('planning_entries').insert({
-    user_id: userId,
-    household_id,
-    date,
-    slot,
-    dish_id: null,
-    is_restaurant: true,
-  });
-  if (error) throw error;
-}
-
 export async function replaceMeal(
   userId: string,
   entryId: string,
