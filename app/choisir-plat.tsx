@@ -7,10 +7,10 @@ import { Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../s
 import { listDishes } from '../src/data/dishes';
 import { replaceMeal, setMeal } from '../src/data/planning';
 import { replaceTemplateMeal, setTemplateMeal } from '../src/data/template';
-import { CATEGORY_LABELS, Category, COURSE_TYPE_LABELS, Dish, MEAL_SLOT_LABELS, MealSlot } from '../src/types/models';
+import { useTaxonomies } from '../src/lib/taxonomies';
+import { Category, Dish, MEAL_SLOT_LABELS, MealSlot } from '../src/types/models';
 import { fonts } from '../src/theme/tokens';
 
-const CATEGORIES: Category[] = ['rapide', 'healthy', 'pates', 'vege', 'autre'];
 const WEEKDAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 export default function ChoisirPlat() {
@@ -19,6 +19,7 @@ export default function ChoisirPlat() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; slot: MealSlot; entryId?: string; mode?: string; weekday?: string }>();
   const isTemplate = params.mode === 'template';
+  const { categories, label } = useTaxonomies();
 
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,8 +63,8 @@ export default function ChoisirPlat() {
       />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, paddingVertical: 12 }} contentContainerStyle={{ paddingHorizontal: 18 }}>
         <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
-        {CATEGORIES.map((c) => (
-          <Chip key={c} label={CATEGORY_LABELS[c]} active={filter === c} onPress={() => setFilter(c)} />
+        {categories.map((c) => (
+          <Chip key={c.key} label={c.label} active={filter === c.key} onPress={() => setFilter(c.key)} />
         ))}
       </ScrollView>
 
@@ -87,7 +88,7 @@ export default function ChoisirPlat() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                  {COURSE_TYPE_LABELS[item.course_type]} · {CATEGORY_LABELS[item.category]}
+                  {label('course_type', item.course_type)} · {label('category', item.category)}
                 </Text>
                 <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
                 {item.calories != null ? (

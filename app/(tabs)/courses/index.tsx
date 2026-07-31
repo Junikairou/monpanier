@@ -14,14 +14,11 @@ import {
 } from '../../../src/data/groceries';
 import { listIngredients } from '../../../src/data/dishes';
 import { listPlanningRange } from '../../../src/data/planning';
-import { GROCERY_CATEGORY_ICONS, GROCERY_CATEGORY_LABELS, GroceryCategory, GroceryItem, Ingredient, MealSlot, PlanningEntry } from '../../../src/types/models';
+import { GroceryItem, Ingredient, MealSlot, PlanningEntry } from '../../../src/types/models';
+import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
 import { addDays, dayLabel, formatWeekOf, isToday, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
-
-const GROCERY_CATEGORIES: GroceryCategory[] = [
-  'fruits_legumes', 'viandes_poissons', 'feculents', 'epicerie', 'epicerie_salee', 'produits_laitiers', 'surgeles', 'boissons', 'autre',
-];
 
 const SLOT_SHORT: Record<MealSlot, string> = {
   petit_dej: 'P-déj',
@@ -45,6 +42,7 @@ export default function Courses() {
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
+  const { groceryCategories } = useTaxonomies();
 
   const [period, setPeriod] = useState<'jour' | 'semaine' | 'plage'>('semaine');
   const [anchor, setAnchor] = useState(() => new Date());
@@ -303,12 +301,13 @@ export default function Courses() {
           <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 10, paddingBottom: 80 }}>
             {view === 'rayon' ? (
               <>
-                {GROCERY_CATEGORIES.map((cat) => {
+                {groceryCategories.map((gc) => {
+                  const cat = gc.key;
                   const catItems = list.auto.filter((i) => i.grocery_category === cat);
                   if (catItems.length === 0) return null;
                   return (
                     <View key={cat}>
-                      <Text style={[styles.catLabel, { color: colors.inkFaint }]}>{GROCERY_CATEGORY_ICONS[cat]} {GROCERY_CATEGORY_LABELS[cat]}</Text>
+                      <Text style={[styles.catLabel, { color: colors.inkFaint }]}>{gc.icon ?? '📦'} {gc.label}</Text>
                       {catItems.map((item) =>
                         renderRow(
                           item.key,

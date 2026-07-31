@@ -10,7 +10,8 @@ import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek
 import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked, setRestaurantMeal } from '../../src/data/planning';
 import { applyTemplateToWeek, saveTemplateFromWeek } from '../../src/data/template';
 import { getProfile } from '../../src/data/profile';
-import { COURSE_TYPE_LABELS, CourseType, MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
+import { useTaxonomies } from '../../src/lib/taxonomies';
+import { CourseType, MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
 import { fonts, radii } from '../../src/theme/tokens';
 
 const MEAL_SLOT_EMOJI: Record<MealSlot, string> = {
@@ -35,6 +36,7 @@ export default function Planning() {
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
+  const { label } = useTaxonomies();
   const { width: windowWidth } = useWindowDimensions();
   const weekScrollRef = useRef<ScrollView>(null);
 
@@ -368,7 +370,7 @@ export default function Planning() {
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                   <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                                      {COURSE_TYPE_LABELS[entry.dish.course_type]}
+                                      {label('course_type', entry.dish.course_type)}
                                     </Text>
                                     <Text style={[styles.dishName, { color: colors.ink, marginBottom: 2 }]}>{entry.dish.name}</Text>
                                     {entry.dish.calories != null ? (
@@ -393,7 +395,7 @@ export default function Planning() {
                         ))}
                         {balance ? (
                           <Text style={{ fontSize: 10, color: balance.balanced ? colors.forest : colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: 8 }}>
-                            {balance.balanced ? '✅ Équilibré' : `⚠️ Il manque : ${balance.missing.map((t) => COURSE_TYPE_LABELS[t]).join(', ')}`}
+                            {balance.balanced ? '✅ Équilibré' : `⚠️ Il manque : ${balance.missing.map((t) => label('course_type', t)).join(', ')}`}
                           </Text>
                         ) : null}
                         <View style={{ flexDirection: 'row', gap: 5 }}>

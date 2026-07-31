@@ -6,7 +6,8 @@ import { useTheme } from '../src/theme/ThemeProvider';
 import { Card, LoadingBlock, MiniButton, Screen, ScreenHeader } from '../src/components/ui';
 import { getProfile } from '../src/data/profile';
 import { clearTemplate, listTemplate, removeTemplateEntry, setTemplateRestaurant } from '../src/data/template';
-import { COURSE_TYPE_LABELS, MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, TemplateEntry } from '../src/types/models';
+import { useTaxonomies } from '../src/lib/taxonomies';
+import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, TemplateEntry } from '../src/types/models';
 import { fonts } from '../src/theme/tokens';
 
 const WEEKDAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -23,6 +24,7 @@ export default function ModeleSemaine() {
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
+  const { label } = useTaxonomies();
 
   const [entries, setEntries] = useState<TemplateEntry[]>([]);
   const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
@@ -114,7 +116,7 @@ export default function ModeleSemaine() {
                                 <Pressable onPress={() => onChange(weekday, slot, entry.id)} style={{ flex: 1 }}>
                                   <Text style={{ fontSize: 12.5, fontFamily: fonts.bodyMedium, color: colors.ink }}>
                                     {entry.dish ? entry.dish.name : '…'}
-                                    {entry.dish ? ` (${COURSE_TYPE_LABELS[entry.dish.course_type]})` : ''}
+                                    {entry.dish ? ` (${label('course_type', entry.dish.course_type)})` : ''}
                                   </Text>
                                 </Pressable>
                               )}

@@ -6,11 +6,9 @@ import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { deleteDish, getDish, listIngredients, listRecipeSteps } from '../../../src/data/dishes';
 import { setMeal } from '../../../src/data/planning';
+import { useTaxonomies } from '../../../src/lib/taxonomies';
 import {
-  CATEGORY_LABELS,
-  COURSE_TYPE_LABELS,
   Dish,
-  GROCERY_CATEGORY_LABELS,
   Ingredient,
   MEAL_SLOT_LABELS,
   MEAL_SLOT_ORDER,
@@ -25,6 +23,7 @@ export default function DishDetail() {
   const { session } = useAuth();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { label } = useTaxonomies();
 
   const [dish, setDish] = useState<Dish | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -94,7 +93,7 @@ export default function DishDetail() {
     <Screen>
       <ScreenHeader
         title={dish.name}
-        subtitle={`${COURSE_TYPE_LABELS[dish.course_type]} · ${CATEGORY_LABELS[dish.category]}`}
+        subtitle={`${label('course_type', dish.course_type)} · ${label('category', dish.category)}`}
         onBack={() => router.back()}
       />
       <ScrollView contentContainerStyle={{ padding: 18 }}>
@@ -128,7 +127,7 @@ export default function DishDetail() {
               <View key={ing.id} style={[styles.ingredientRow, { borderColor: colors.line }]}>
                 <View>
                   <Text style={{ fontSize: 13.5, color: colors.ink }}>{ing.name}</Text>
-                  <Text style={{ fontSize: 10, color: colors.inkSoft }}>{GROCERY_CATEGORY_LABELS[ing.grocery_category]}</Text>
+                  <Text style={{ fontSize: 10, color: colors.inkSoft }}>{label('grocery_category', ing.grocery_category)}</Text>
                 </View>
                 <Text style={{ color: colors.inkSoft, fontSize: 12 }}>
                   {ing.quantity} {ing.unit}

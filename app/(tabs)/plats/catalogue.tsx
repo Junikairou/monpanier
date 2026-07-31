@@ -5,7 +5,8 @@ import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Card, LoadingBlock, MiniButton, Screen, ScreenHeader } from '../../../src/components/ui';
 import { createDish, DEMO_DISHES, listDishes } from '../../../src/data/dishes';
-import { CATEGORY_LABELS, COURSE_TYPE_LABELS, Dish } from '../../../src/types/models';
+import { useTaxonomies } from '../../../src/lib/taxonomies';
+import { Dish } from '../../../src/types/models';
 import { fonts } from '../../../src/theme/tokens';
 
 export default function Catalogue() {
@@ -13,6 +14,7 @@ export default function Catalogue() {
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
+  const { label } = useTaxonomies();
 
   const [myDishes, setMyDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function Catalogue() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                    {COURSE_TYPE_LABELS[item.course_type]} · {CATEGORY_LABELS[item.category]}
+                    {label('course_type', item.course_type)} · {label('category', item.category)}
                   </Text>
                   <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
                 </View>

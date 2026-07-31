@@ -16,7 +16,8 @@ import {
   PlayfairDisplay_600SemiBold,
 } from '@expo-google-fonts/playfair-display';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
-import { AuthProvider } from '../src/lib/auth';
+import { AuthProvider, useAuth } from '../src/lib/auth';
+import { TaxonomyProvider } from '../src/lib/taxonomies';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -35,6 +36,12 @@ const MAX_WIDTH = 480;
 function ThemedStatusBar() {
   const { scheme } = useTheme();
   return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
+}
+
+function MaybeTaxonomyProvider({ children }: { children: React.ReactNode }) {
+  const { session } = useAuth();
+  if (!session) return <>{children}</>;
+  return <TaxonomyProvider userId={session.user.id}>{children}</TaxonomyProvider>;
 }
 
 function RootStack() {
@@ -126,10 +133,12 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <ThemedStatusBar />
-        <WebFrame onLayout={onLayout}>
-          <RootStack />
-        </WebFrame>
+        <MaybeTaxonomyProvider>
+          <ThemedStatusBar />
+          <WebFrame onLayout={onLayout}>
+            <RootStack />
+          </WebFrame>
+        </MaybeTaxonomyProvider>
       </AuthProvider>
     </ThemeProvider>
   );

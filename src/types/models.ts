@@ -1,26 +1,11 @@
-export type Category = 'rapide' | 'healthy' | 'pates' | 'vege' | 'autre';
+// Les valeurs possibles sont personnalisables par foyer (voir Plus >
+// Personnalisation) : Category/CourseType/GroceryCategory sont donc des
+// identifiants libres (`string`), pas des unions figées. Les listes et
+// libellés affichés viennent de useTaxonomies() (src/lib/taxonomies.tsx),
+// pas des anciennes constantes ci-dessous.
+export type Category = string;
 
-export const CATEGORY_LABELS: Record<Category, string> = {
-  rapide: 'Rapide',
-  healthy: 'Healthy',
-  pates: 'Pâtes',
-  vege: 'Végé',
-  autre: 'Autre',
-};
-
-export type CourseType = 'entree' | 'plat' | 'accompagnement' | 'dessert' | 'fruit' | 'boisson' | 'autre';
-
-export const COURSE_TYPE_LABELS: Record<CourseType, string> = {
-  entree: 'Entrée',
-  plat: 'Plat',
-  accompagnement: 'Accompagnement',
-  dessert: 'Dessert',
-  fruit: 'Fruit',
-  boisson: 'Boisson',
-  autre: 'Autre',
-};
-
-export const COURSE_TYPE_ORDER: CourseType[] = ['entree', 'plat', 'accompagnement', 'fruit', 'dessert', 'boisson', 'autre'];
+export type CourseType = string;
 
 export type MealSlot = 'petit_dej' | 'dejeuner' | 'gouter' | 'diner' | 'collation';
 
@@ -34,40 +19,7 @@ export const MEAL_SLOT_LABELS: Record<MealSlot, string> = {
 
 export const MEAL_SLOT_ORDER: MealSlot[] = ['petit_dej', 'dejeuner', 'gouter', 'diner', 'collation'];
 
-export type GroceryCategory =
-  | 'fruits_legumes'
-  | 'viandes_poissons'
-  | 'feculents'
-  | 'epicerie'
-  | 'epicerie_salee'
-  | 'produits_laitiers'
-  | 'surgeles'
-  | 'boissons'
-  | 'autre';
-
-export const GROCERY_CATEGORY_LABELS: Record<GroceryCategory, string> = {
-  fruits_legumes: 'Fruits & légumes',
-  viandes_poissons: 'Viandes & poissons',
-  feculents: 'Féculents',
-  epicerie: 'Épicerie',
-  epicerie_salee: 'Épicerie salée',
-  produits_laitiers: 'Produits laitiers',
-  surgeles: 'Surgelés',
-  boissons: 'Boissons',
-  autre: 'Autre',
-};
-
-export const GROCERY_CATEGORY_ICONS: Record<GroceryCategory, string> = {
-  fruits_legumes: '🥦',
-  viandes_poissons: '🍗',
-  feculents: '🍞',
-  epicerie: '🛒',
-  epicerie_salee: '🥫',
-  produits_laitiers: '🧀',
-  surgeles: '🧊',
-  boissons: '🥤',
-  autre: '📦',
-};
+export type GroceryCategory = string;
 
 export interface Dish {
   id: string;

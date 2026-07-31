@@ -5,15 +5,15 @@ import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { listDishes, seedDemoDishes } from '../../../src/data/dishes';
-import { CATEGORY_LABELS, Category, Dish } from '../../../src/types/models';
+import { useTaxonomies } from '../../../src/lib/taxonomies';
+import { Category, Dish } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
-
-const CATEGORIES: Category[] = ['rapide', 'healthy', 'pates', 'vege', 'autre'];
 
 export default function PlatsIndex() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const router = useRouter();
+  const { categories, label } = useTaxonomies();
 
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,8 +51,8 @@ export default function PlatsIndex() {
       <View style={styles.topActions}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
           <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
-          {CATEGORIES.map((c) => (
-            <Chip key={c} label={CATEGORY_LABELS[c]} active={filter === c} onPress={() => setFilter(c)} />
+          {categories.map((c) => (
+            <Chip key={c.key} label={c.label} active={filter === c.key} onPress={() => setFilter(c.key)} />
           ))}
         </ScrollView>
         <Pill label="+ Nouveau" variant="primary" onPress={() => router.push('/(tabs)/plats/new')} />
@@ -83,7 +83,7 @@ export default function PlatsIndex() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                  {CATEGORY_LABELS[item.category]}
+                  {label('category', item.category)}
                 </Text>
                 <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
               </View>

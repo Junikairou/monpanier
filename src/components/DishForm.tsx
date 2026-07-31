@@ -1,22 +1,10 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { useTaxonomies } from '../lib/taxonomies';
 import { Chip, Field, Pill } from './ui';
 import { NewDishInput } from '../data/dishes';
-import {
-  CATEGORY_LABELS,
-  Category,
-  COURSE_TYPE_LABELS,
-  COURSE_TYPE_ORDER,
-  CourseType,
-  GROCERY_CATEGORY_LABELS,
-  GroceryCategory,
-} from '../types/models';
-
-const CATEGORIES: Category[] = ['rapide', 'healthy', 'pates', 'vege', 'autre'];
-const GROCERY_CATEGORIES: GroceryCategory[] = [
-  'fruits_legumes', 'viandes_poissons', 'feculents', 'epicerie', 'epicerie_salee', 'produits_laitiers', 'surgeles', 'boissons', 'autre',
-];
+import { Category, CourseType, GroceryCategory } from '../types/models';
 
 export type IngredientDraft = { name: string; quantity: string; unit: string; grocery_category: GroceryCategory };
 
@@ -48,6 +36,7 @@ const EMPTY: DishFormInitial = {
 
 export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormProps) {
   const { colors } = useTheme();
+  const { categories, courseTypes, groceryCategories } = useTaxonomies();
 
   const [name, setName] = useState(initial.name);
   const [emoji, setEmoji] = useState(initial.emoji);
@@ -99,15 +88,15 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
 
       <Text style={[styles.label, { color: colors.inkSoft }]}>Catégorie</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-        {CATEGORIES.map((c) => (
-          <Chip key={c} label={CATEGORY_LABELS[c]} active={category === c} onPress={() => setCategory(c)} />
+        {categories.map((c) => (
+          <Chip key={c.key} label={c.label} active={category === c.key} onPress={() => setCategory(c.key)} />
         ))}
       </ScrollView>
 
       <Text style={[styles.label, { color: colors.inkSoft }]}>Type de plat</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-        {COURSE_TYPE_ORDER.map((c) => (
-          <Chip key={c} label={COURSE_TYPE_LABELS[c]} active={courseType === c} onPress={() => setCourseType(c)} />
+        {courseTypes.map((c) => (
+          <Chip key={c.key} label={c.label} active={courseType === c.key} onPress={() => setCourseType(c.key)} />
         ))}
       </ScrollView>
 
@@ -133,12 +122,12 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
           </View>
           <Text style={[styles.label, { color: colors.inkSoft }]}>Rayon</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
-            {GROCERY_CATEGORIES.map((gc) => (
+            {groceryCategories.map((gc) => (
               <Chip
-                key={gc}
-                label={GROCERY_CATEGORY_LABELS[gc]}
-                active={ing.grocery_category === gc}
-                onPress={() => updateIngredient(i, { grocery_category: gc })}
+                key={gc.key}
+                label={`${gc.icon ?? ''} ${gc.label}`.trim()}
+                active={ing.grocery_category === gc.key}
+                onPress={() => updateIngredient(i, { grocery_category: gc.key })}
               />
             ))}
           </ScrollView>

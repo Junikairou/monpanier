@@ -6,6 +6,7 @@ import { useTheme } from '../../../src/theme/ThemeProvider';
 import { LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { getProfile, Profile, updateProfile } from '../../../src/data/profile';
 import { createHouseholdInvite, joinHouseholdWithCode, listHouseholdMembers } from '../../../src/data/household';
+import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot } from '../../../src/types/models';
 import { fonts } from '../../../src/theme/tokens';
 
@@ -19,6 +20,7 @@ export default function Profil() {
   const { session, signOut, resetPassword } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
+  const { reload: reloadTaxonomies } = useTaxonomies();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,6 +86,11 @@ export default function Profil() {
         <SectionLabel text="Recettes" />
         <Row label="📖 Catalogue de recettes" hint="Des idées prêtes à ajouter à Mes plats">
           <Pill label="Voir" variant="ghost" onPress={() => router.push('/(tabs)/plats/catalogue')} />
+        </Row>
+
+        <SectionLabel text="Personnalisation" />
+        <Row label="⚙️ Types, rayons, catégories" hint="Gère les listes utilisées pour les plats et les courses">
+          <Pill label="Gérer" variant="ghost" onPress={() => router.push('/personnalisation')} />
         </Row>
 
         <SectionLabel text="Compte" />
@@ -172,6 +179,7 @@ export default function Profil() {
                 setJoinCode('');
                 setJoinError(null);
                 load();
+                reloadTaxonomies();
               } catch (e: any) {
                 setJoinError(e.message ?? 'Code invalide ou expiré');
               } finally {
