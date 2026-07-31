@@ -351,8 +351,8 @@ export default function Courses() {
                           item.name,
                           `${item.quantity} ${item.unit}`,
                           <>
-                            {dayBadge(item.dates)}
                             {dishOriginBadges(item.source_dish_ids)}
+                            {dayBadge(item.dates)}
                           </>,
                         ),
                       )}
@@ -374,8 +374,8 @@ export default function Courses() {
                           item.name,
                           `${item.quantity} ${item.unit}`,
                           <>
-                            {dayBadge(item.dates)}
                             {dishOriginBadges(item.source_dish_ids)}
+                            {dayBadge(item.dates)}
                           </>,
                         ),
                       )}

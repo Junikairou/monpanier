@@ -7,6 +7,7 @@ import { useAuth } from '../lib/auth';
 import { getProfile } from '../data/profile';
 import { Chip, Field, Pill } from './ui';
 import { ActionSheet } from './ActionSheet';
+import { EmojiPicker } from './EmojiPicker';
 import { NewDishInput } from '../data/dishes';
 import { Category, CourseType, GroceryCategory } from '../types/models';
 
@@ -62,6 +63,7 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
   const [category, setCategory] = useState<Category>(initial.category);
   const [courseType, setCourseType] = useState<CourseType>(initial.courseType);
   const [courseTypeMenuOpen, setCourseTypeMenuOpen] = useState(false);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [calories, setCalories] = useState(initial.calories);
   const [protein, setProtein] = useState(initial.protein);
   const [carbs, setCarbs] = useState(initial.carbs);
@@ -131,13 +133,9 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
         <View>
           <Text style={[styles.label, { color: colors.inkSoft }]}>Emoji</Text>
-          <TextInput
-            value={emoji}
-            onChangeText={setEmoji}
-            placeholder="🍽️"
-            placeholderTextColor={colors.inkFaint}
-            style={[styles.emojiBox, { borderColor: colors.beigeDark, color: colors.ink, backgroundColor: colors.paper }]}
-          />
+          <Pressable onPress={() => setEmojiPickerOpen(true)} style={[styles.emojiBox, { borderColor: colors.beigeDark, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' }]}>
+            <Text style={{ fontSize: 24 }}>{emoji || '🍽️'}</Text>
+          </Pressable>
         </View>
         <View style={{ flex: 1 }}>
           <Field label="Nom du plat" value={name} onChangeText={setName} placeholder="Ex. Poêlée de légumes" />
@@ -286,6 +284,8 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
         }))}
         onClose={() => setGrocMenuFor(null)}
       />
+
+      <EmojiPicker visible={emojiPickerOpen} onSelect={setEmoji} onClose={() => setEmojiPickerOpen(false)} />
     </ScrollView>
   );
 }

@@ -4,6 +4,7 @@ import {
   deleteTaxonomyItem,
   listTaxonomy,
   renameTaxonomyItem,
+  setTaxonomyOrder,
   swapTaxonomyPositions,
   TaxonomyItem,
   TaxonomyKind,
@@ -21,6 +22,7 @@ interface TaxonomyContextValue {
   rename: (kind: TaxonomyKind, id: string, label: string, icon?: string) => Promise<void>;
   remove: (kind: TaxonomyKind, id: string) => Promise<void>;
   move: (kind: TaxonomyKind, id: string, direction: 'up' | 'down') => Promise<void>;
+  reorder: (kind: TaxonomyKind, orderedIds: string[]) => Promise<void>;
 }
 
 const TaxonomyContext = createContext<TaxonomyContextValue | null>(null);
@@ -86,9 +88,14 @@ export function TaxonomyProvider({ userId, children }: { userId: string; childre
     await reload();
   };
 
+  const reorder = async (kind: TaxonomyKind, orderedIds: string[]) => {
+    await setTaxonomyOrder(kind, orderedIds);
+    await reload();
+  };
+
   return (
     <TaxonomyContext.Provider
-      value={{ loading, courseTypes, categories, groceryCategories, label, iconFor, reload, create, rename, remove, move }}
+      value={{ loading, courseTypes, categories, groceryCategories, label, iconFor, reload, create, rename, remove, move, reorder }}
     >
       {children}
     </TaxonomyContext.Provider>

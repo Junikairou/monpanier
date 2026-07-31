@@ -67,6 +67,14 @@ export async function deleteTaxonomyItem(kind: TaxonomyKind, id: string): Promis
   if (error) throw error;
 }
 
+export async function setTaxonomyOrder(kind: TaxonomyKind, orderedIds: string[]): Promise<void> {
+  const results = await Promise.all(
+    orderedIds.map((id, position) => supabase.from(TABLE[kind]).update({ position }).eq('id', id)),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+}
+
 export async function swapTaxonomyPositions(
   kind: TaxonomyKind,
   a: { id: string; position: number },
