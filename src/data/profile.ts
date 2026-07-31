@@ -14,6 +14,7 @@ export interface Profile {
   active_slots: MealSlot[];
   onboarded: boolean;
   show_balance_hint: boolean;
+  show_nutrition_fields: boolean;
 }
 
 export async function getProfile(userId: string): Promise<Profile> {

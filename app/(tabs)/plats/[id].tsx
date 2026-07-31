@@ -143,6 +143,11 @@ export default function DishDetail() {
         <View style={[styles.hero, { backgroundColor: colors.sagePale }]}>
           <Text style={{ fontSize: 46 }}>{dish.image_emoji ?? '🍽️'}</Text>
         </View>
+        {dish.prep_minutes != null ? (
+          <Text style={{ textAlign: 'center', fontSize: 11.5, color: colors.inkSoft, marginBottom: 4 }}>
+            ⏱️ {dish.prep_minutes} min
+          </Text>
+        ) : null}
         {dish.calories != null ? (
           <Text style={{ textAlign: 'center', fontSize: 12.5, color: colors.inkSoft, marginBottom: 4 }}>
             🔥 {dish.calories} kcal

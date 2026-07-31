@@ -22,6 +22,7 @@ export default function ModifierDish() {
         fat: dish.fat_g != null ? String(dish.fat_g) : '',
         fiber: dish.fiber_g != null ? String(dish.fiber_g) : '',
         baseServings: String(dish.base_servings ?? 4),
+        prepMinutes: dish.prep_minutes != null ? String(dish.prep_minutes) : '',
         ingredients: ingredients.length
           ? ingredients.map((i) => ({
               name: i.name,

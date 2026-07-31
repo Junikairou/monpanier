@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
-import { Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
-import { listDishes, seedDemoDishes } from '../../../src/data/dishes';
+import { Checkbox, Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
+import { deleteDish, listDishes, seedDemoDishes } from '../../../src/data/dishes';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { Category, Dish } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
@@ -19,6 +19,9 @@ export default function PlatsIndex() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [filter, setFilter] = useState<Category | null>(null);
+  const [manageMode, setManageMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -45,9 +48,55 @@ export default function PlatsIndex() {
     }
   };
 
+  const toggleManage = () => {
+    setManageMode((m) => !m);
+    setSelected(new Set());
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const confirmDelete = () => {
+    if (selected.size === 0) return;
+    const run = async () => {
+      setDeleting(true);
+      try {
+        for (const id of selected) await deleteDish(id);
+        setSelected(new Set());
+        setManageMode(false);
+        load();
+      } finally {
+        setDeleting(false);
+      }
+    };
+    const message = `Supprimer ${selected.size} plat${selected.size > 1 ? 's' : ''} ? Cette action est définitive.`;
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) run();
+      return;
+    }
+    Alert.alert('Supprimer ?', message, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Supprimer', style: 'destructive', onPress: run },
+    ]);
+  };
+
   return (
     <Screen>
-      <ScreenHeader title="Tous les plats" subtitle={`${dishes.length} plat${dishes.length > 1 ? 's' : ''}`} />
+      <ScreenHeader
+        title="Tous les plats"
+        subtitle={`${dishes.length} plat${dishes.length > 1 ? 's' : ''}`}
+        right={
+          dishes.length > 0 ? (
+            <Pill label={manageMode ? 'Terminé' : 'Gérer'} variant={manageMode ? 'primary' : 'ghost'} onPress={toggleManage} />
+          ) : undefined
+        }
+      />
       <View style={styles.topActions}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
           <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
@@ -55,7 +104,7 @@ export default function PlatsIndex() {
             <Chip key={c.key} label={c.label} active={filter === c.key} onPress={() => setFilter(c.key)} />
           ))}
         </ScrollView>
-        <Pill label="+ Nouveau" variant="primary" onPress={() => router.push('/(tabs)/plats/new')} />
+        {!manageMode ? <Pill label="+ Nouveau" variant="primary" onPress={() => router.push('/(tabs)/plats/new')} /> : null}
       </View>
 
       {loading ? (
@@ -69,28 +118,45 @@ export default function PlatsIndex() {
           </View>
         </View>
       ) : (
-        <FlatList
-          data={visible}
-          keyExtractor={(d) => d.id}
-          contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10 }}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => router.push({ pathname: '/(tabs)/plats/[id]', params: { id: item.id } })}
-              style={[styles.row, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}
-            >
-              <View style={[styles.thumb, { backgroundColor: colors.sagePale }]}>
-                <Text style={{ fontSize: 22 }}>{item.image_emoji ?? '🍽️'}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                  {label('category', item.category)}
-                </Text>
-                <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
-              </View>
-              <Text style={{ color: colors.inkSoft, fontSize: 16 }}>›</Text>
-            </Pressable>
-          )}
-        />
+        <>
+          <FlatList
+            data={visible}
+            keyExtractor={(d) => d.id}
+            contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10, paddingBottom: manageMode ? 90 : 18 }}
+            renderItem={({ item }) => (
+              <Pressable
+                onPress={() =>
+                  manageMode
+                    ? toggleSelect(item.id)
+                    : router.push({ pathname: '/(tabs)/plats/[id]', params: { id: item.id } })
+                }
+                style={[styles.row, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}
+              >
+                {manageMode ? <Checkbox checked={selected.has(item.id)} onPress={() => toggleSelect(item.id)} /> : null}
+                <View style={[styles.thumb, { backgroundColor: colors.sagePale }]}>
+                  <Text style={{ fontSize: 22 }}>{item.image_emoji ?? '🍽️'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
+                    {label('category', item.category)}
+                  </Text>
+                  <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
+                </View>
+                {!manageMode ? <Text style={{ color: colors.inkSoft, fontSize: 16 }}>›</Text> : null}
+              </Pressable>
+            )}
+          />
+          {manageMode ? (
+            <View style={[styles.manageBar, { backgroundColor: colors.paper, borderColor: colors.line }]}>
+              <Pill
+                label={deleting ? '…' : `Supprimer (${selected.size})`}
+                variant="primary"
+                disabled={deleting || selected.size === 0}
+                onPress={confirmDelete}
+              />
+            </View>
+          ) : null}
+        </>
       )}
     </Screen>
   );
@@ -107,4 +173,13 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 10, borderRadius: radii.md },
   thumb: { width: 56, height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  manageBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 14,
+    borderTopWidth: 1,
+    alignItems: 'center',
+  },
 });

@@ -33,6 +33,7 @@ export interface Dish {
   fat_g: number | null;
   fiber_g: number | null;
   base_servings: number;
+  prep_minutes: number | null;
   image_emoji: string | null;
   image_url: string | null;
   created_at: string;

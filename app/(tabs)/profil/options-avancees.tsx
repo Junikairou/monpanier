@@ -54,6 +54,21 @@ export default function OptionsAvancees() {
           />
         </View>
 
+        <Text style={[styles.section, { color: colors.inkSoft, marginTop: 20 }]}>Recettes</Text>
+        <View style={[styles.row, { borderColor: colors.line }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13.5, color: colors.ink }}>Calories et nutriments</Text>
+            <Text style={{ fontSize: 10.5, color: colors.inkSoft, marginTop: 2 }}>
+              Affiche ces champs (optionnels) dans le formulaire de plat
+            </Text>
+          </View>
+          <Switch
+            value={profile.show_nutrition_fields}
+            onValueChange={(v) => patch({ show_nutrition_fields: v })}
+            trackColor={{ true: colors.forest }}
+          />
+        </View>
+
         <Text style={[styles.section, { color: colors.inkSoft, marginTop: 20 }]}>Repas à planifier</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {MEAL_SLOT_ORDER.map((slot: MealSlot) => {
