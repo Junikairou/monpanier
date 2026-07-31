@@ -55,6 +55,7 @@ export default function Courses() {
   const [planningEntries, setPlanningEntries] = useState<PlanningEntry[]>([]);
   const [dishIngredients, setDishIngredients] = useState<Record<string, Ingredient[]>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedOverride, setExpandedOverride] = useState<Set<string>>(new Set());
   const [manualOpen, setManualOpen] = useState(false);
   const [mName, setMName] = useState('');
@@ -77,6 +78,7 @@ export default function Courses() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [entries, groceryList] = await Promise.all([
         listPlanningRange(userId, startIso, endIso),
@@ -88,6 +90,10 @@ export default function Courses() {
       const dishIds = Array.from(new Set(entries.map((e) => e.dish_id).filter(Boolean) as string[]));
       const pairs = await Promise.all(dishIds.map(async (id) => [id, await listIngredients(id)] as const));
       setDishIngredients(Object.fromEntries(pairs));
+    } catch (e: any) {
+      setLoadError(e?.message ?? 'Erreur de chargement inconnue.');
+      setList({ auto: [], manual: [] });
+      setPlanningEntries([]);
     } finally {
       setLoading(false);
     }
@@ -217,17 +223,25 @@ export default function Courses() {
         title="Liste de courses"
         subtitle={`${totalCount} article${totalCount > 1 ? 's' : ''} · ${checkedCount} coché${checkedCount > 1 ? 's' : ''}`}
         right={
-          <Pressable
-            onPress={() => {
-              const today = new Date();
-              setAnchor(today);
-              setRangeFrom(toIso(today));
-              setRangeTo(toIso(addDays(today, 3)));
-            }}
-            style={[styles.arrowBtn, { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.paper, borderColor: colors.beige }]}
-          >
-            <Text style={{ fontSize: 13 }}>⟲</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <Pressable
+              onPress={() => load()}
+              style={[styles.arrowBtn, { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.paper, borderColor: colors.beige }]}
+            >
+              <Text style={{ fontSize: 13 }}>🔄</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                const today = new Date();
+                setAnchor(today);
+                setRangeFrom(toIso(today));
+                setRangeTo(toIso(addDays(today, 3)));
+              }}
+              style={[styles.arrowBtn, { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.paper, borderColor: colors.beige }]}
+            >
+              <Text style={{ fontSize: 13 }}>⟲</Text>
+            </Pressable>
+          </View>
         }
       />
 
@@ -310,6 +324,10 @@ export default function Courses() {
 
       {loading ? (
         <LoadingBlock />
+      ) : loadError ? (
+        <View style={{ padding: 18 }}>
+          <EmptyState text={`Erreur de chargement : ${loadError}`} />
+        </View>
       ) : totalCount === 0 ? (
         <EmptyState text="Rien de planifié sur cette période. Ajoute des plats à ton planning pour générer la liste." />
       ) : (

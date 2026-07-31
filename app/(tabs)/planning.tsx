@@ -52,9 +52,11 @@ export default function Planning() {
   const [dayMenuFor, setDayMenuFor] = useState<string | null>(null);
   const [weekMenuOpen, setWeekMenuOpen] = useState(false);
   const [conflictAction, setConflictAction] = useState<{ label: string; run: (mode: 'replace' | 'add') => Promise<void> } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [data, profile] = await Promise.all([
         listPlanningRange(userId, toIso(weekStart), toIso(addDays(weekStart, 6))),
@@ -63,6 +65,9 @@ export default function Planning() {
       setEntries(data);
       setActiveSlots(profile.active_slots?.length ? profile.active_slots : [...MEAL_SLOT_ORDER]);
       setShowBalanceHint(profile.show_balance_hint);
+    } catch (e: any) {
+      setLoadError(e?.message ?? 'Erreur de chargement inconnue.');
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -262,6 +267,12 @@ export default function Planning() {
           <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: viewMode === 'semaine' ? colors.ink : colors.inkSoft }}>Semaine</Text>
         </Pressable>
       </View>
+
+      {loadError ? (
+        <Text style={{ textAlign: 'center', fontSize: 11, color: colors.danger, marginBottom: 8 }}>
+          Erreur de chargement : {loadError}
+        </Text>
+      ) : null}
 
       {viewMode === 'jour' ? (
         <>
