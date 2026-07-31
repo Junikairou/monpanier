@@ -213,7 +213,23 @@ export default function Courses() {
 
   return (
     <Screen>
-      <ScreenHeader title="Liste de courses" subtitle={`${totalCount} article${totalCount > 1 ? 's' : ''} · ${checkedCount} coché${checkedCount > 1 ? 's' : ''}`} />
+      <ScreenHeader
+        title="Liste de courses"
+        subtitle={`${totalCount} article${totalCount > 1 ? 's' : ''} · ${checkedCount} coché${checkedCount > 1 ? 's' : ''}`}
+        right={
+          <Pressable
+            onPress={() => {
+              const today = new Date();
+              setAnchor(today);
+              setRangeFrom(toIso(today));
+              setRangeTo(toIso(addDays(today, 3)));
+            }}
+            style={[styles.arrowBtn, { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.paper, borderColor: colors.beige }]}
+          >
+            <Text style={{ fontSize: 13 }}>⟲</Text>
+          </Pressable>
+        }
+      />
 
       <View style={[styles.switchWrap, { backgroundColor: colors.beige }]}>
         <Pressable style={[styles.switchOpt, view === 'rayon' && { backgroundColor: colors.paper }]} onPress={() => setView('rayon')}>

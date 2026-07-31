@@ -5,6 +5,12 @@ export interface HouseholdMember {
   joined_at: string;
 }
 
+export interface HouseholdMemberProfile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 const householdIdCache = new Map<string, string>();
 
 export async function getMyHouseholdId(userId: string): Promise<string> {
@@ -24,6 +30,16 @@ export async function listHouseholdMembers(): Promise<HouseholdMember[]> {
   const { data, error } = await supabase.from('household_members').select('user_id, joined_at').order('joined_at');
   if (error) throw error;
   return data as HouseholdMember[];
+}
+
+export async function listHouseholdMemberProfiles(userId: string): Promise<HouseholdMemberProfile[]> {
+  const household_id = await getMyHouseholdId(userId);
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .eq('household_id', household_id);
+  if (error) throw error;
+  return data as HouseholdMemberProfile[];
 }
 
 export async function createHouseholdInvite(): Promise<string> {

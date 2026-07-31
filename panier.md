@@ -59,6 +59,22 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 
 Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 
+## Chantier en cours (demande du 2026-07-31, suite — retours après premiers tests)
+
+1. ✅ **Bug corrigé : planning/courses "pas synchronisés"** — cause réelle : le partage par foyer (migration 012) rendait `planning_entries`/`grocery_items` communs, mais `dishes`/`ingredients`/`recipe_steps` étaient restés visibles seulement par leur créateur. Un repas ajouté par une personne du foyer disparaissait donc pour les autres (le plat ne pouvait pas être lu), et ses ingrédients manquaient dans la liste de courses commune. **Migration 016 à exécuter** — rend les plats **lisibles par tout le foyer** (le planning/les courses partagés en dépendent), tout en gardant la création/modification/suppression réservée à leur auteur. "Mes plats" reste donc personnel pour éditer, mais visible par le foyer pour que le partage fonctionne. **Non testé** (pas d'identifiants) — à vérifier en priorité, idéalement avec deux comptes du même foyer.
+2. ✅ Bouton "retour à aujourd'hui" (⟲) ajouté dans l'en-tête de la liste de courses (comme dans Planning).
+3. ✅ Réglage "Taille du texte" (Normal/Grand/Très grand) dans Plus → Apparence. **Limite connue** : s'applique aux éléments d'interface communs (titres d'écran, boutons, champs, libellés) mais pas encore à tout le texte de chaque écran (des dizaines de tailles de texte codées en dur écran par écran) — une couverture complète nécessiterait de remplacer tous les `Text` par un composant commun, chantier à part si voulu.
+4. ✅ Refonte de l'onglet "Plus" façon grille de vignettes par catégorie, comme demandé :
+   - **Mon profil** (ligne cliquable en haut, photo/pseudo/e-mail) → page dédiée `/profil/mon-profil` : photo de profil (upload depuis l'appareil, nouveau), pseudo, e-mail (lecture seule), téléphone, changer le mot de passe (masqué si connecté par Google), **changer de compte** (redirige vers la déconnexion — l'app ne gère pas plusieurs comptes simultanés pour l'instant, donc équivalent à "se déconnecter"), se déconnecter, réinitialiser des données. **Suppression de compte : pas fait** (nécessite une fonction serveur avec clé secrète, hors de portée du client — à traiter plus tard si besoin).
+   - **Préférences** : Apparence (thème, langue, taille du texte, unités) ; Options avancées (indicateur repas équilibré + repas à planifier, anciennement dans Profil).
+   - **Social** : Foyer (personnes dans le foyer) ; Partage du foyer (générer un code, rejoindre, **liste des membres avec photo/pseudo** — nouveau, nécessite la visibilité du profil au sein du foyer) ; Amis (page d'attente, "bientôt", comme demandé).
+   - **Gestion** : Recettes → Catalogue de recettes (existant, relié) ; Personnalisation → types/catégories/rayons (existant, relié).
+   - **Avancé** : Paramètres, Historique, Feedback — pages d'attente ("bientôt disponible"), comme demandé.
+5. ✅ Réinitialisation sélective des données (`/profil/reinitialiser`) : case à cocher par catégorie (Mes plats / Planning / Courses / Modèle par défaut / Préférences), confirmation avant suppression définitive.
+6. ✅ Photo de profil : upload depuis la galerie (`expo-image-picker`, nouvelle dépendance), stockée dans Supabase Storage (bucket `avatars`, public en lecture). **Migration 016** crée le bucket et ses règles d'accès.
+
+**Migrations à exécuter, dans l'ordre : 011 à 016** (voir SQL envoyé dans le chat à chaque étape ; 016 est la plus importante de cette suite, corrige le bug de synchronisation). **Rien de tout ce chantier n'a pu être testé visuellement** (pas d'identifiants) — à tester en priorité, en particulier le bug de synchronisation et le partage de photo/plats entre deux comptes d'un même foyer.
+
 ## Pas fait / en attente
 
 - Communauté (partage de recettes) — explicitement mis de côté dès le départ
@@ -70,11 +86,12 @@ Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 
 ## Points d'attention techniques
 
-- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...015` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migrations 011 à 015 en attente d'exécution** (011 : `phone` sur `profiles` ; 012 : foyers/partage — voir avertissement dans le chantier ; 013 : personnalisation des types/rayons/catégories, dépend de 012 ; 014 : macros nutrition sur `dishes` ; 015 : portions par plat/repas) — à lancer dans Supabase SQL Editor, dans l'ordre. Migrations 009 et 010 déjà exécutées (2026-07-31).
+- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...016` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migration 016 en attente d'exécution** (corrige le bug de synchronisation planning/courses + photo de profil + visibilité des profils du foyer — voir chantier ci-dessus). Migrations 009 à 015 déjà exécutées (2026-07-31).
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.
-- Le thème (clair/sombre/auto/rose/bleu) est stocké **localement sur l'appareil uniquement** (AsyncStorage) — la colonne `profiles.theme_preference` en base existe mais n'est pas lue/écrite par l'app (pas de synchro multi-appareil du thème pour l'instant).
+- Le thème (clair/sombre/auto/rose/bleu) **et la taille du texte** sont stockés **localement sur l'appareil uniquement** (AsyncStorage) — la colonne `profiles.theme_preference` en base existe mais n'est pas lue/écrite par l'app (pas de synchro multi-appareil pour l'instant).
+- Photo de profil : bucket Supabase Storage `avatars` (public en lecture), créé par la migration 016 — un fichier par utilisateur (`<user_id>/avatar.<ext>`), écrasé à chaque nouvel upload.
 - **À vérifier dans le dashboard Supabase** (Authentication → URL Configuration) après le renommage : mettre à jour les Redirect URLs si `mijote://` ou `/mijote/` y étaient enregistrés en dur (sinon Google OAuth peut casser).
 - Outils installés sur la machine : `gh` (GitHub CLI, connecté), `vercel` CLI (plus utilisé mais toujours installé), Node.js, GitHub Pages CLI n/a.
 - Node/npm ne sont pas dans le PATH par défaut du terminal sandboxé — toujours rafraîchir le PATH avant les commandes (`$env:Path = ...`) ou utiliser les chemins complets.

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getMyHouseholdId } from './household';
 import type { Category, CourseType, Dish, Ingredient, RecipeStep } from '../types/models';
 
 export async function listDishes(): Promise<Dish[]> {
@@ -49,10 +50,12 @@ export interface NewDishInput {
 }
 
 export async function createDish(userId: string, input: NewDishInput): Promise<Dish> {
+  const household_id = await getMyHouseholdId(userId);
   const { data: dish, error } = await supabase
     .from('dishes')
     .insert({
       user_id: userId,
+      household_id,
       name: input.name,
       category: input.category,
       course_type: input.course_type,

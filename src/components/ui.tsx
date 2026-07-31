@@ -16,8 +16,18 @@ export function Screen({ children }: { children: React.ReactNode }) {
   return <View style={[styles.screen, { backgroundColor: colors.cream }]}>{children}</View>;
 }
 
-export function ScreenHeader({ title, subtitle, onBack }: { title: string; subtitle?: string; onBack?: () => void }) {
-  const { colors } = useTheme();
+export function ScreenHeader({
+  title,
+  subtitle,
+  onBack,
+  right,
+}: {
+  title: string;
+  subtitle?: string;
+  onBack?: () => void;
+  right?: React.ReactNode;
+}) {
+  const { colors, textScale } = useTheme();
   return (
     <View style={[styles.header, { borderColor: colors.line, backgroundColor: colors.cream }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -27,9 +37,10 @@ export function ScreenHeader({ title, subtitle, onBack }: { title: string; subti
           </Pressable>
         ) : null}
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: colors.ink }]}>{title}</Text>
-          {subtitle ? <Text style={[styles.headerSub, { color: colors.inkFaint }]}>{subtitle}</Text> : null}
+          <Text style={[styles.headerTitle, { color: colors.ink, fontSize: 21 * textScale }]}>{title}</Text>
+          {subtitle ? <Text style={[styles.headerSub, { color: colors.inkFaint, fontSize: 11.5 * textScale }]}>{subtitle}</Text> : null}
         </View>
+        {right}
       </View>
     </View>
   );
@@ -46,7 +57,7 @@ export function Pill({
   onPress?: () => void;
   disabled?: boolean;
 }) {
-  const { colors } = useTheme();
+  const { colors, textScale } = useTheme();
   const bg =
     variant === 'primary' ? colors.forest : variant === 'ghost' ? 'transparent' : colors.sagePale;
   const border = variant === 'primary' ? colors.forest : variant === 'ghost' ? colors.beigeDark : 'transparent';
@@ -61,7 +72,7 @@ export function Pill({
         { backgroundColor: bg, borderColor: border, opacity: disabled ? 0.5 : pressed ? 0.75 : 1 },
       ]}
     >
-      <Text style={[styles.pillText, { color: textColor }]}>{label}</Text>
+      <Text style={[styles.pillText, { color: textColor, fontSize: 12 * textScale }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -75,7 +86,7 @@ export function MiniButton({
   variant?: 'sage' | 'outline';
   onPress?: () => void;
 }) {
-  const { colors } = useTheme();
+  const { colors, textScale } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -86,7 +97,7 @@ export function MiniButton({
           : { backgroundColor: 'transparent', borderColor: colors.beigeDark, borderWidth: 1.2 },
       ]}
     >
-      <Text style={{ fontSize: 10, fontFamily: fonts.bodyMedium, color: variant === 'sage' ? colors.forestDark : colors.inkSoft }}>
+      <Text style={{ fontSize: 10 * textScale, fontFamily: fonts.bodyMedium, color: variant === 'sage' ? colors.forestDark : colors.inkSoft }}>
         {label}
       </Text>
     </Pressable>
@@ -102,7 +113,7 @@ export function Chip({
   active?: boolean;
   onPress?: () => void;
 }) {
-  const { colors } = useTheme();
+  const { colors, textScale } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -111,7 +122,7 @@ export function Chip({
         { backgroundColor: active ? colors.forest : colors.paper, borderColor: active ? colors.forest : colors.beigeDark },
       ]}
     >
-      <Text style={{ color: active ? '#FFFFFF' : colors.inkSoft, fontSize: 11.5, fontFamily: active ? fonts.bodySemiBold : fonts.bodyMedium }}>
+      <Text style={{ color: active ? '#FFFFFF' : colors.inkSoft, fontSize: 11.5 * textScale, fontFamily: active ? fonts.bodySemiBold : fonts.bodyMedium }}>
         {label}
       </Text>
     </Pressable>
@@ -131,15 +142,15 @@ export function Field({
   label,
   ...props
 }: { label: string } & TextInputProps) {
-  const { colors } = useTheme();
+  const { colors, textScale } = useTheme();
   return (
     <View style={{ marginBottom: spacing(3) }}>
-      <Text style={[styles.fieldLabel, { color: colors.inkFaint }]}>{label}</Text>
+      <Text style={[styles.fieldLabel, { color: colors.inkFaint, fontSize: 10.5 * textScale }]}>{label}</Text>
       <TextInput
         placeholderTextColor={colors.inkFaint}
         style={[
           styles.input,
-          { borderColor: colors.beigeDark, color: colors.ink, backgroundColor: colors.paper },
+          { borderColor: colors.beigeDark, color: colors.ink, backgroundColor: colors.paper, fontSize: 14 * textScale },
         ]}
         {...props}
       />
@@ -148,10 +159,10 @@ export function Field({
 }
 
 export function EmptyState({ text }: { text: string }) {
-  const { colors } = useTheme();
+  const { colors, textScale } = useTheme();
   return (
     <View style={styles.empty}>
-      <Text style={{ color: colors.inkFaint, fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13 }}>{text}</Text>
+      <Text style={{ color: colors.inkFaint, fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13 * textScale }}>{text}</Text>
     </View>
   );
 }
