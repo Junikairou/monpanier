@@ -124,8 +124,8 @@ export default function Planning() {
     load();
   };
 
-  const onSeeRecipe = (dishId: string) => {
-    router.push({ pathname: '/(tabs)/plats/[id]', params: { id: dishId } });
+  const onSeeRecipe = (dishId: string, entryId?: string) => {
+    router.push({ pathname: '/(tabs)/plats/[id]', params: entryId ? { id: dishId, entryId } : { id: dishId } });
   };
 
   const onAddFor = (date: string, slot: MealSlot) => {
@@ -346,19 +346,14 @@ export default function Planning() {
                 const slotList = slotEntries(slot);
                 const balance = showBalanceHint ? slotBalance(slot) : null;
                 return (
-                  <Card style={slotList.length === 0 ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.beigeDark, shadowOpacity: 0 } : undefined}>
+                  <Card>
                     <View style={styles.slotHeader}>
                       <Text style={[styles.slotLabel, { color: colors.inkFaint }]}>{MEAL_SLOT_EMOJI[slot]} {MEAL_SLOT_LABELS[slot]}</Text>
                     </View>
                     {slotList.length === 0 ? (
-                      <>
-                        <Text style={{ color: colors.inkFaint, fontStyle: 'italic', fontSize: 12, marginBottom: 7, fontFamily: fonts.body }}>
-                          Aucun plat prévu
-                        </Text>
-                        <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
-                          <MiniButton label="+ Planifier un plat" variant="sage" onPress={() => onAdd(slot)} />
-                        </View>
-                      </>
+                      <Text style={{ color: colors.inkFaint, fontStyle: 'italic', fontSize: 12, marginBottom: 7, fontFamily: fonts.body }}>
+                        Aucun plat prévu
+                      </Text>
                     ) : (
                       <>
                         {slotList.map((entry, idx) => (
@@ -378,49 +373,44 @@ export default function Planning() {
                                 </Pressable>
                               </View>
                             ) : entry.dish ? (
-                              <>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                  <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                                      {label('course_type', entry.dish.course_type)}
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
+                                    {label('course_type', entry.dish.course_type)}
+                                  </Text>
+                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                    <Pressable onPress={() => onSeeRecipe(entry.dish!.id, entry.id)} style={{ flexShrink: 1 }}>
+                                      <Text style={[styles.dishName, { color: colors.ink }]}>{entry.dish.name}</Text>
+                                    </Pressable>
+                                    <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium }}>
+                                      {entry.servings} pers.
                                     </Text>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                      <Pressable onPress={() => onSeeRecipe(entry.dish!.id)} style={{ flexShrink: 1 }}>
-                                        <Text style={[styles.dishName, { color: colors.ink }]}>{entry.dish.name}</Text>
-                                      </Pressable>
-                                      <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium }}>
-                                        {entry.servings} pers.
-                                      </Text>
-                                    </View>
-                                    {entry.dish.calories != null ? (
-                                      <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginBottom: 5 }}>🔥 {entry.dish.calories} kcal</Text>
-                                    ) : null}
                                   </View>
-                                  <Pressable
-                                    onPress={() => onRemove(entry.id)}
-                                    hitSlop={8}
-                                    style={[styles.removeBtn, { backgroundColor: colors.cream, borderColor: colors.beige }]}
-                                  >
-                                    <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕</Text>
-                                  </Pressable>
+                                  {entry.dish.calories != null ? (
+                                    <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginBottom: 5 }}>🔥 {entry.dish.calories} kcal</Text>
+                                  ) : null}
                                 </View>
-                                <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
-                                  <MiniButton label="📖 Voir recette" variant="sage" onPress={() => onSeeRecipe(entry.dish!.id)} />
-                                </View>
-                              </>
+                                <Pressable
+                                  onPress={() => onRemove(entry.id)}
+                                  hitSlop={8}
+                                  style={[styles.removeBtn, { backgroundColor: colors.cream, borderColor: colors.beige }]}
+                                >
+                                  <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕</Text>
+                                </Pressable>
+                              </View>
                             ) : null}
                           </View>
                         ))}
                         {balance ? (
-                          <Text style={{ fontSize: 10, color: balance.balanced ? colors.forest : colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: 8 }}>
+                          <Text style={{ fontSize: 10, color: balance.balanced ? colors.forest : colors.inkFaint, fontFamily: fonts.bodyMedium, marginTop: 8, marginBottom: 4 }}>
                             {balance.balanced ? '✅ Équilibré' : `⚠️ Il manque : ${balance.missing.map((t) => label('course_type', t)).join(', ')}`}
                           </Text>
                         ) : null}
-                        <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
-                          <MiniButton label="+ Ajouter un autre plat" variant="outline" onPress={() => onAdd(slot)} />
-                        </View>
                       </>
                     )}
+                    <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap', marginTop: slotList.length === 0 ? 0 : 8 }}>
+                      <MiniButton label="+ Ajouter un plat" variant="sage" onPress={() => onAdd(slot)} />
+                    </View>
                   </Card>
                 );
               }}

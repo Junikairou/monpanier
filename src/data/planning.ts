@@ -58,6 +58,12 @@ export async function setMealRecurring(
   if (error) throw error;
 }
 
+export async function getPlanningEntry(entryId: string): Promise<PlanningEntry> {
+  const { data, error } = await supabase.from('planning_entries').select('*, dish:dishes(*)').eq('id', entryId).single();
+  if (error) throw error;
+  return data as unknown as PlanningEntry;
+}
+
 export async function setEntryServings(entryId: string, servings: number): Promise<void> {
   const { error } = await supabase.from('planning_entries').update({ servings: Math.max(1, servings) }).eq('id', entryId);
   if (error) throw error;

@@ -150,6 +150,11 @@ export default function PlatsIndex() {
           {manageMode ? (
             <View style={[styles.manageBar, { backgroundColor: colors.paper, borderColor: colors.line }]}>
               <Pill
+                label={selected.size === visible.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+                variant="ghost"
+                onPress={() => setSelected(selected.size === visible.length ? new Set() : new Set(visible.map((d) => d.id)))}
+              />
+              <Pill
                 label={deleting ? '…' : `Supprimer (${selected.size})`}
                 variant="primary"
                 disabled={deleting || selected.size === 0}
@@ -181,6 +186,8 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 14,
     borderTopWidth: 1,
-    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
   },
 });

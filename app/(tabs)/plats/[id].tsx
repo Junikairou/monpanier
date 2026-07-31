@@ -6,7 +6,7 @@ import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { deleteDish, getDish, listIngredients, listRecipeSteps } from '../../../src/data/dishes';
-import { setMeal, setMealRecurring } from '../../../src/data/planning';
+import { getPlanningEntry, setEntryServings, setMeal, setMealRecurring } from '../../../src/data/planning';
 import { getProfile } from '../../../src/data/profile';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
@@ -35,7 +35,7 @@ export default function DishDetail() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, entryId } = useLocalSearchParams<{ id: string; entryId?: string }>();
   const { label } = useTaxonomies();
 
   const [dish, setDish] = useState<Dish | null>(null);
@@ -61,21 +61,22 @@ export default function DishDetail() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [d, ing, st, profile] = await Promise.all([
+      const [d, ing, st, profile, entry] = await Promise.all([
         getDish(id),
         listIngredients(id),
         listRecipeSteps(id),
         getProfile(session!.user.id),
+        entryId ? getPlanningEntry(entryId) : Promise.resolve(null),
       ]);
       setDish(d);
       setIngredients(ing);
       setSteps(st);
       setActiveSlots(profile.active_slots?.length ? profile.active_slots : [...MEAL_SLOT_ORDER]);
-      setPreviewServings(d.base_servings);
+      setPreviewServings(entry?.servings ?? d.base_servings);
     } finally {
       setLoading(false);
     }
-  }, [id, session]);
+  }, [id, session, entryId]);
 
   useEffect(() => {
     load();
@@ -183,16 +184,35 @@ export default function DishDetail() {
           {tab === 'ingredients' ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>👤</Text>
-              <Pressable onPress={() => setPreviewServings((n) => Math.max(1, (n ?? dish.base_servings) - 1))} hitSlop={6}>
+              <Pressable
+                onPress={() => {
+                  const next = Math.max(1, (previewServings ?? dish.base_servings) - 1);
+                  setPreviewServings(next);
+                  if (entryId) setEntryServings(entryId, next);
+                }}
+                hitSlop={6}
+              >
                 <Text style={{ color: colors.forest, fontSize: 15 }}>–</Text>
               </Pressable>
               <Text style={{ fontSize: 12, color: colors.ink, minWidth: 14, textAlign: 'center' }}>{previewServings ?? dish.base_servings}</Text>
-              <Pressable onPress={() => setPreviewServings((n) => (n ?? dish.base_servings) + 1)} hitSlop={6}>
+              <Pressable
+                onPress={() => {
+                  const next = (previewServings ?? dish.base_servings) + 1;
+                  setPreviewServings(next);
+                  if (entryId) setEntryServings(entryId, next);
+                }}
+                hitSlop={6}
+              >
                 <Text style={{ color: colors.forest, fontSize: 15 }}>+</Text>
               </Pressable>
             </View>
           ) : null}
         </View>
+        {tab === 'ingredients' ? (
+          <Text style={{ fontSize: 10, color: colors.inkFaint, textAlign: 'right', marginTop: -10, marginBottom: 10 }}>
+            {entryId ? 'Portions pour ce repas planifié' : 'Aperçu — ne modifie pas la recette'}
+          </Text>
+        ) : null}
 
         {tab === 'ingredients' ? (
           ingredients.length === 0 ? (
