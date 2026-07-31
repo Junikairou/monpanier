@@ -95,9 +95,14 @@ Points 5, 6, 9 à 12 : restent à faire, pas de blocage particulier restant.
 8. ✅ Catalogue de recettes : sélection multiple (cases à cocher) + ajout groupé en une fois.
 9. ✅ Partage du foyer : rôle **chef de foyer** (la première personne du foyer, ou celle arrivée en premier pour les foyers existants) / **membre**. Seul le chef peut retirer un membre (bouton ✕ visible seulement pour lui) ; la personne retirée récupère automatiquement son propre foyer solo (comme à l'inscription), aucune perte de données. **Migration 018 à exécuter.**
 
-**Reste non traité de ce lot (ambigu, à clarifier si toujours voulu) :** la remarque sur "image 4 trait en pointillé... image 5 disparu" a été interprétée comme le même problème que "présentation pas uniforme entre Petit déj et Déjeuner" (point 6 ci-dessus, cartes maintenant identiques qu'elles aient un plat ou non) — à confirmer que c'est bien réglé, sinon préciser ce qui manque encore.
+## Chantier en cours (2026-08-01, suite)
 
-**Point non résolu, à confirmer après test :** la vue "Semaine" du planning (cartes glissantes) permet déjà en théorie de glisser horizontalement pour voir les 7 jours (`ScrollView` sur tous les jours) — si le souci persiste, préciser ce qui bloque exactement (jours avant aujourd'hui inaccessibles ? geste qui ne répond pas ? autre chose ?).
+1. ✅ **Bug corrigé : navigation "retour" cassée** — `plats/[id].tsx` (fiche recette), `plats/modifier.tsx` et le catalogue vivaient dans le dossier de l'onglet "Plats"/"Plus". Y accéder depuis un AUTRE onglet (Planning, Courses) faisait basculer sur cet onglet, donc "retour" ramenait vers "Mes plats" au lieu de l'écran de départ. Déplacés à la racine (`app/plat/[id].tsx`, `app/plat/modifier.tsx`, `app/catalogue.tsx`), indépendants des onglets — le retour ramène maintenant toujours au bon endroit, peu importe d'où on vient.
+2. ✅ Planning : le nombre de personnes ("N pers.") est repositionné à droite du nom du plat, juste avant le bouton ✕ (au lieu d'être collé au nom).
+3. ✅ Semaine du planning : glisser avec la souris fonctionne maintenant aussi sur ordinateur (avant : seulement au doigt sur mobile).
+4. ✅ "Tous les plats" : bouton "+ Nouveau" déplacé en bas (bouton flottant), ouvre maintenant un choix "Piocher dans le catalogue" / "Créer une nouvelle recette" au lieu d'aller direct sur le formulaire vierge.
+
+**Migration 018 à exécuter** (rôles chef/membre — si pas déjà fait).
 
 **Migration 018 à exécuter** (rôles chef/membre du foyer, voir SQL dans le chat).
 
