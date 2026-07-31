@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
@@ -40,6 +40,7 @@ export default function Planning() {
   const { label } = useTaxonomies();
   const { width: windowWidth } = useWindowDimensions();
   const weekScrollRef = useRef<ScrollView>(null);
+  const dragState = useRef({ dragging: false, startX: 0, startScroll: 0 });
 
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [selectedDate, setSelectedDate] = useState(() => toIso(new Date()));
@@ -125,7 +126,7 @@ export default function Planning() {
   };
 
   const onSeeRecipe = (dishId: string, entryId?: string) => {
-    router.push({ pathname: '/(tabs)/plats/[id]', params: entryId ? { id: dishId, entryId } : { id: dishId } });
+    router.push({ pathname: '/plat/[id]', params: entryId ? { id: dishId, entryId } : { id: dishId } });
   };
 
   const onAddFor = (date: string, slot: MealSlot) => {
@@ -136,6 +137,32 @@ export default function Planning() {
     setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, is_cooked: next } : e)));
     await setCooked(entryId, next);
   };
+
+  const getScrollNode = (): any =>
+    (weekScrollRef.current as any)?.getScrollableNode?.() ?? (weekScrollRef.current as any);
+
+  const webDragHandlers =
+    Platform.OS === 'web'
+      ? {
+          onMouseDown: (e: any) => {
+            const node = getScrollNode();
+            if (!node) return;
+            dragState.current = { dragging: true, startX: e.pageX, startScroll: node.scrollLeft };
+          },
+          onMouseMove: (e: any) => {
+            if (!dragState.current.dragging) return;
+            const node = getScrollNode();
+            if (!node) return;
+            node.scrollLeft = dragState.current.startScroll - (e.pageX - dragState.current.startX);
+          },
+          onMouseUp: () => {
+            dragState.current.dragging = false;
+          },
+          onMouseLeave: () => {
+            dragState.current.dragging = false;
+          },
+        }
+      : {};
 
   const goPrevWeek = () => setWeekStart(addDays(weekStart, -7));
   const goNextWeek = () => setWeekStart(addDays(weekStart, 7));
@@ -373,30 +400,28 @@ export default function Planning() {
                                 </Pressable>
                               </View>
                             ) : entry.dish ? (
-                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <View style={{ flex: 1 }}>
-                                  <Text style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                                    {label('course_type', entry.dish.course_type)}
+                              <View>
+                                <Text style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
+                                  {label('course_type', entry.dish.course_type)}
+                                </Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Pressable onPress={() => onSeeRecipe(entry.dish!.id, entry.id)} style={{ flex: 1, flexShrink: 1 }}>
+                                    <Text style={[styles.dishName, { color: colors.ink }]} numberOfLines={1}>{entry.dish.name}</Text>
+                                  </Pressable>
+                                  <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginLeft: 8 }}>
+                                    {entry.servings} pers.
                                   </Text>
-                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                    <Pressable onPress={() => onSeeRecipe(entry.dish!.id, entry.id)} style={{ flexShrink: 1 }}>
-                                      <Text style={[styles.dishName, { color: colors.ink }]}>{entry.dish.name}</Text>
-                                    </Pressable>
-                                    <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium }}>
-                                      {entry.servings} pers.
-                                    </Text>
-                                  </View>
-                                  {entry.dish.calories != null ? (
-                                    <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginBottom: 5 }}>🔥 {entry.dish.calories} kcal</Text>
-                                  ) : null}
+                                  <Pressable
+                                    onPress={() => onRemove(entry.id)}
+                                    hitSlop={8}
+                                    style={[styles.removeBtn, { backgroundColor: colors.cream, borderColor: colors.beige, marginLeft: 8 }]}
+                                  >
+                                    <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕</Text>
+                                  </Pressable>
                                 </View>
-                                <Pressable
-                                  onPress={() => onRemove(entry.id)}
-                                  hitSlop={8}
-                                  style={[styles.removeBtn, { backgroundColor: colors.cream, borderColor: colors.beige }]}
-                                >
-                                  <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕</Text>
-                                </Pressable>
+                                {entry.dish.calories != null ? (
+                                  <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>🔥 {entry.dish.calories} kcal</Text>
+                                ) : null}
                               </View>
                             ) : null}
                           </View>
@@ -437,6 +462,8 @@ export default function Planning() {
               directionalLockEnabled
               decelerationRate="fast"
               contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24, gap: CARD_GAP }}
+              style={Platform.OS === 'web' ? ({ cursor: 'grab' } as any) : undefined}
+              {...webDragHandlers}
             >
               {days.map((d) => {
                 const iso = toIso(d);

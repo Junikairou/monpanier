@@ -156,7 +156,7 @@ export default function Courses() {
   }, [planningEntries, dishIngredients]);
 
   const goToDish = (dishId: string) => {
-    router.push({ pathname: '/(tabs)/plats/[id]', params: { id: dishId } });
+    router.push({ pathname: '/plat/[id]', params: { id: dishId } });
   };
 
   const dayBadge = (dates: string[]) => {

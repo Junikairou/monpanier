@@ -33,7 +33,7 @@ const SECTIONS: { title: string; tiles: TileDef[] }[] = [
   {
     title: 'Gestion',
     tiles: [
-      { label: 'Recettes', icon: 'restaurant-outline', route: '/(tabs)/profil/catalogue' },
+      { label: 'Recettes', icon: 'restaurant-outline', route: '/catalogue' },
       { label: 'Personnalisation', icon: 'pricetags-outline', route: '/personnalisation' },
     ],
   },

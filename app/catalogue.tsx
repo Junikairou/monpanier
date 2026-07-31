@@ -1,14 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import { FlatList, View } from 'react-native';
-import { Text } from '../../../src/components/ScaledText';
+import { Text } from '../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useAuth } from '../../../src/lib/auth';
-import { useTheme } from '../../../src/theme/ThemeProvider';
-import { Card, Checkbox, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
-import { createDish, DEMO_DISHES, listDishes } from '../../../src/data/dishes';
-import { useTaxonomies } from '../../../src/lib/taxonomies';
-import { Dish } from '../../../src/types/models';
-import { fonts } from '../../../src/theme/tokens';
+import { useAuth } from '../src/lib/auth';
+import { useTheme } from '../src/theme/ThemeProvider';
+import { Card, Checkbox, LoadingBlock, Pill, Screen, ScreenHeader } from '../src/components/ui';
+import { createDish, DEMO_DISHES, listDishes } from '../src/data/dishes';
+import { useTaxonomies } from '../src/lib/taxonomies';
+import { Dish } from '../src/types/models';
+import { fonts } from '../src/theme/tokens';
 
 export default function Catalogue() {
   const { colors } = useTheme();

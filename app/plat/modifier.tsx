@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { LoadingBlock, Screen, ScreenHeader } from '../../../src/components/ui';
-import { DishForm, DishFormInitial } from '../../../src/components/DishForm';
-import { getDish, listIngredients, listRecipeSteps, updateDish } from '../../../src/data/dishes';
+import { LoadingBlock, Screen, ScreenHeader } from '../../src/components/ui';
+import { DishForm, DishFormInitial } from '../../src/components/DishForm';
+import { getDish, listIngredients, listRecipeSteps, updateDish } from '../../src/data/dishes';
 
 export default function ModifierDish() {
   const router = useRouter();

@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text, TextInput } from '../../../src/components/ScaledText';
+import { Text, TextInput } from '../../src/components/ScaledText';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from '../../../src/lib/auth';
-import { useTheme } from '../../../src/theme/ThemeProvider';
-import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
-import { deleteDish, getDish, listIngredients, listRecipeSteps } from '../../../src/data/dishes';
-import { getPlanningEntry, setEntryServings, setMeal, setMealRecurring } from '../../../src/data/planning';
-import { getProfile } from '../../../src/data/profile';
-import { useTaxonomies } from '../../../src/lib/taxonomies';
-import { CalendarPicker } from '../../../src/components/CalendarPicker';
-import { ActionSheet } from '../../../src/components/ActionSheet';
+import { useAuth } from '../../src/lib/auth';
+import { useTheme } from '../../src/theme/ThemeProvider';
+import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../src/components/ui';
+import { deleteDish, getDish, listIngredients, listRecipeSteps } from '../../src/data/dishes';
+import { getPlanningEntry, setEntryServings, setMeal, setMealRecurring } from '../../src/data/planning';
+import { getProfile } from '../../src/data/profile';
+import { useTaxonomies } from '../../src/lib/taxonomies';
+import { CalendarPicker } from '../../src/components/CalendarPicker';
+import { ActionSheet } from '../../src/components/ActionSheet';
 import {
   Dish,
   Ingredient,
@@ -18,9 +18,9 @@ import {
   MEAL_SLOT_ORDER,
   MealSlot,
   RecipeStep,
-} from '../../../src/types/models';
-import { formatDayCaption, toIso } from '../../../src/lib/dates';
-import { fonts } from '../../../src/theme/tokens';
+} from '../../src/types/models';
+import { formatDayCaption, toIso } from '../../src/lib/dates';
+import { fonts } from '../../src/theme/tokens';
 
 type Frequency = 'once' | 1 | 2 | 7 | 14 | 'custom';
 const FREQUENCY_LABELS: Record<Exclude<Frequency, 'custom'>, string> = {
@@ -128,7 +128,7 @@ export default function DishDetail() {
   if (loading || !dish) {
     return (
       <Screen>
-        <ScreenHeader title="Chargement…" />
+        <ScreenHeader title="Chargement…" onBack={() => router.back()} />
         <LoadingBlock />
       </Screen>
     );
@@ -305,7 +305,7 @@ export default function DishDetail() {
               </View>
             </View>
           )}
-          <Pill label="✏️ Modifier la recette" variant="ghost" onPress={() => router.push({ pathname: '/(tabs)/plats/modifier', params: { id } })} />
+          <Pill label="✏️ Modifier la recette" variant="ghost" onPress={() => router.push({ pathname: '/plat/modifier', params: { id } })} />
           <Pill label="Supprimer ce plat" variant="ghost" onPress={onDelete} />
         </View>
       </ScrollView>

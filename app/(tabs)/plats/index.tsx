@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Checkbox, Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
+import { ActionSheet } from '../../../src/components/ActionSheet';
 import { deleteDish, listDishes, seedDemoDishes } from '../../../src/data/dishes';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { Category, Dish } from '../../../src/types/models';
@@ -23,6 +24,7 @@ export default function PlatsIndex() {
   const [manageMode, setManageMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -105,7 +107,6 @@ export default function PlatsIndex() {
             <Chip key={c.key} label={c.label} active={filter === c.key} onPress={() => setFilter(c.key)} />
           ))}
         </ScrollView>
-        {!manageMode ? <Pill label="+ Nouveau" variant="primary" onPress={() => router.push('/(tabs)/plats/new')} /> : null}
       </View>
 
       {loading ? (
@@ -114,7 +115,7 @@ export default function PlatsIndex() {
         <View style={{ padding: 18 }}>
           <EmptyState text="Aucun plat pour l'instant." />
           <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 8 }}>
-            <Pill label="+ Créer un plat" variant="primary" onPress={() => router.push('/(tabs)/plats/new')} />
+            <Pill label="+ Créer un plat" variant="primary" onPress={() => setAddMenuOpen(true)} />
             <Pill label={seeding ? '…' : 'Ajouter des exemples'} onPress={onSeed} disabled={seeding} />
           </View>
         </View>
@@ -129,7 +130,7 @@ export default function PlatsIndex() {
                 onPress={() =>
                   manageMode
                     ? toggleSelect(item.id)
-                    : router.push({ pathname: '/(tabs)/plats/[id]', params: { id: item.id } })
+                    : router.push({ pathname: '/plat/[id]', params: { id: item.id } })
                 }
                 style={[styles.row, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}
               >
@@ -161,9 +162,23 @@ export default function PlatsIndex() {
                 onPress={confirmDelete}
               />
             </View>
-          ) : null}
+          ) : (
+            <Pressable onPress={() => setAddMenuOpen(true)} style={[styles.fab, { backgroundColor: colors.forest, shadowColor: colors.forest }]}>
+              <Text style={{ color: '#FFF', fontSize: 22, marginTop: -2 }}>＋</Text>
+            </Pressable>
+          )}
         </>
       )}
+
+      <ActionSheet
+        visible={addMenuOpen}
+        title="Nouveau plat"
+        actions={[
+          { label: '📖 Piocher dans le catalogue', onPress: () => router.push('/catalogue') },
+          { label: '✏️ Créer une nouvelle recette', onPress: () => router.push('/(tabs)/plats/new') },
+        ]}
+        onClose={() => setAddMenuOpen(false)}
+      />
     </Screen>
   );
 }
@@ -179,6 +194,20 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 10, borderRadius: radii.md },
   thumb: { width: 56, height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  fab: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
   manageBar: {
     position: 'absolute',
     bottom: 0,
