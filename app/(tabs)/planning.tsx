@@ -432,6 +432,8 @@ export default function Planning() {
               ref={weekScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
+              directionalLockEnabled
+              decelerationRate="fast"
               contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24, gap: CARD_GAP }}
             >
               {days.map((d) => {
