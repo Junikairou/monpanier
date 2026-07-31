@@ -9,7 +9,7 @@ import { listDishes } from '../src/data/dishes';
 import { replaceMeal, setMeal } from '../src/data/planning';
 import { replaceTemplateMeal, setTemplateMeal } from '../src/data/template';
 import { useTaxonomies } from '../src/lib/taxonomies';
-import { Category, Dish, MEAL_SLOT_LABELS, MealSlot } from '../src/types/models';
+import { Category, Dish, MealSlot } from '../src/types/models';
 import { fonts } from '../src/theme/tokens';
 
 const WEEKDAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -73,7 +73,7 @@ export default function ChoisirPlat() {
   return (
     <Screen>
       <ScreenHeader
-        title={`${params.entryId ? 'Remplacer' : 'Ajouter'} — ${MEAL_SLOT_LABELS[params.slot]}`}
+        title={`${params.entryId ? 'Remplacer' : 'Ajouter'} — ${label('meal_slot', params.slot)}`}
         subtitle={isTemplate ? WEEKDAY_NAMES[Number(params.weekday)] : params.date}
         onBack={() => router.back()}
       />

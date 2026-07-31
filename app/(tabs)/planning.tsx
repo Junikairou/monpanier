@@ -10,18 +10,10 @@ import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
 import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked } from '../../src/data/planning';
 import { applyTemplateToWeek, saveTemplateFromWeek } from '../../src/data/template';
-import { getProfile } from '../../src/data/profile';
+import { getProfile, updateProfile } from '../../src/data/profile';
 import { useTaxonomies } from '../../src/lib/taxonomies';
-import { CourseType, MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, PlanningEntry } from '../../src/types/models';
+import { CourseType, MealSlot, PlanningEntry } from '../../src/types/models';
 import { fonts, radii } from '../../src/theme/tokens';
-
-const MEAL_SLOT_EMOJI: Record<MealSlot, string> = {
-  petit_dej: '🍳',
-  dejeuner: '🌞',
-  gouter: '🍪',
-  diner: '🌙',
-  collation: '🌰',
-};
 
 function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void }) {
   const { colors } = useTheme();
@@ -37,7 +29,9 @@ export default function Planning() {
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
-  const { label } = useTaxonomies();
+  const { label, mealSlots } = useTaxonomies();
+  const allSlotKeys = mealSlots.map((m) => m.key);
+  const slotIcon = (key: MealSlot) => mealSlots.find((m) => m.key === key)?.icon ?? '';
   const { width: windowWidth } = useWindowDimensions();
   const weekScrollRef = useRef<ScrollView>(null);
   const dragState = useRef({ dragging: false, startX: 0, startScroll: 0 });
@@ -46,7 +40,8 @@ export default function Planning() {
   const [selectedDate, setSelectedDate] = useState(() => toIso(new Date()));
   const [entries, setEntries] = useState<PlanningEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
+  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([]);
+  const [addSlotMenuOpen, setAddSlotMenuOpen] = useState(false);
   const [showBalanceHint, setShowBalanceHint] = useState(true);
   const [viewMode, setViewMode] = useState<'jour' | 'semaine'>('jour');
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -65,7 +60,7 @@ export default function Planning() {
         getProfile(userId),
       ]);
       setEntries(data);
-      setActiveSlots(profile.active_slots?.length ? profile.active_slots : [...MEAL_SLOT_ORDER]);
+      setActiveSlots(profile.active_slots?.length ? profile.active_slots : allSlotKeys);
       setShowBalanceHint(profile.show_balance_hint);
     } catch (e: any) {
       setLoadError(e?.message ?? 'Erreur de chargement inconnue.');
@@ -73,7 +68,7 @@ export default function Planning() {
     } finally {
       setLoading(false);
     }
-  }, [userId, weekStart]);
+  }, [userId, weekStart, mealSlots]);
 
   useFocusEffect(
     useCallback(() => {
@@ -136,6 +131,16 @@ export default function Planning() {
   const onToggleCooked = async (entryId: string, next: boolean) => {
     setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, is_cooked: next } : e)));
     await setCooked(entryId, next);
+  };
+
+  const inactiveSlots = mealSlots.filter((m) => !activeSlots.includes(m.key));
+
+  const setSlotActive = async (key: MealSlot, active: boolean) => {
+    const next = active ? [...activeSlots, key] : activeSlots.filter((s) => s !== key);
+    if (next.length === 0) return;
+    setActiveSlots(next);
+    setAddSlotMenuOpen(false);
+    await updateProfile(userId, { active_slots: next });
   };
 
   const getScrollNode = (): any =>
@@ -365,17 +370,29 @@ export default function Planning() {
             <LoadingBlock />
           ) : (
             <FlatList
-              data={MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s))}
+              data={allSlotKeys.filter((s) => activeSlots.includes(s))}
               keyExtractor={(s) => s}
               contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10 }}
               refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
+              ListFooterComponent={
+                inactiveSlots.length > 0 ? (
+                  <Pressable onPress={() => setAddSlotMenuOpen(true)} style={{ alignSelf: 'center', marginTop: 2, paddingVertical: 8, paddingHorizontal: 14 }}>
+                    <Text style={{ color: colors.honey, fontSize: 12, fontFamily: fonts.bodyMedium }}>+ Activer un repas</Text>
+                  </Pressable>
+                ) : null
+              }
               renderItem={({ item: slot }) => {
                 const slotList = slotEntries(slot);
                 const balance = showBalanceHint ? slotBalance(slot) : null;
                 return (
                   <Card>
                     <View style={styles.slotHeader}>
-                      <Text style={[styles.slotLabel, { color: colors.inkFaint }]}>{MEAL_SLOT_EMOJI[slot]} {MEAL_SLOT_LABELS[slot]}</Text>
+                      <Text style={[styles.slotLabel, { color: colors.inkFaint }]}>{slotIcon(slot)} {label('meal_slot', slot)}</Text>
+                      {activeSlots.length > 1 ? (
+                        <Pressable onPress={() => setSlotActive(slot, false)} hitSlop={8}>
+                          <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕ Retirer</Text>
+                        </Pressable>
+                      ) : null}
                     </View>
                     {slotList.length === 0 ? (
                       <Text style={{ color: colors.inkFaint, fontStyle: 'italic', fontSize: 12, marginBottom: 7, fontFamily: fonts.body }}>
@@ -475,12 +492,12 @@ export default function Planning() {
                       <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: today ? colors.paper : colors.ink }}>{d.getDate()}</Text>
                     </Pressable>
 
-                    {MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s)).map((slot) => {
+                    {allSlotKeys.filter((s) => activeSlots.includes(s)).map((slot) => {
                       const slotList = entries.filter((e) => e.date === iso && e.slot === slot);
                       return (
                         <View key={slot} style={[styles.dayColSlot, { borderColor: colors.line, backgroundColor: colors.paper }]}>
                           <Text style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 0.4, color: colors.inkFaint, fontFamily: fonts.bodySemiBold, marginBottom: 4 }}>
-                            {MEAL_SLOT_EMOJI[slot]} {MEAL_SLOT_LABELS[slot]}
+                            {slotIcon(slot)} {label('meal_slot', slot)}
                           </Text>
                           {slotList.length === 0 ? (
                             <Pressable onPress={() => onAddFor(iso, slot)}>
@@ -554,6 +571,16 @@ export default function Planning() {
             : []
         }
         onClose={() => setConflictAction(null)}
+      />
+
+      <ActionSheet
+        visible={addSlotMenuOpen}
+        title="Activer un repas"
+        actions={inactiveSlots.map((m) => ({
+          label: `${m.icon ?? ''} ${m.label}`.trim(),
+          onPress: () => setSlotActive(m.key, true),
+        }))}
+        onClose={() => setAddSlotMenuOpen(false)}
       />
     </Screen>
   );

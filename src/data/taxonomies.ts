@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { getMyHouseholdId } from './household';
 
-export type TaxonomyKind = 'course_type' | 'category' | 'grocery_category';
+export type TaxonomyKind = 'course_type' | 'category' | 'grocery_category' | 'meal_slot';
 
 export interface TaxonomyItem {
   id: string;
@@ -16,6 +16,7 @@ const TABLE: Record<TaxonomyKind, string> = {
   course_type: 'course_types',
   category: 'dish_categories',
   grocery_category: 'grocery_categories',
+  meal_slot: 'meal_slots',
 };
 
 function slugify(label: string): string {

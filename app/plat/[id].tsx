@@ -14,8 +14,6 @@ import { ActionSheet } from '../../src/components/ActionSheet';
 import {
   Dish,
   Ingredient,
-  MEAL_SLOT_LABELS,
-  MEAL_SLOT_ORDER,
   MealSlot,
   RecipeStep,
 } from '../../src/types/models';
@@ -36,7 +34,8 @@ export default function DishDetail() {
   const { session } = useAuth();
   const router = useRouter();
   const { id, entryId } = useLocalSearchParams<{ id: string; entryId?: string }>();
-  const { label } = useTaxonomies();
+  const { label, mealSlots } = useTaxonomies();
+  const allSlotKeys = mealSlots.map((m) => m.key);
 
   const [dish, setDish] = useState<Dish | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -47,7 +46,7 @@ export default function DishDetail() {
   const [planDate, setPlanDate] = useState(toIso(new Date()));
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const [planSlot, setPlanSlot] = useState<MealSlot>('diner');
-  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
+  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
   const [frequency, setFrequency] = useState<Frequency>('once');
@@ -71,12 +70,13 @@ export default function DishDetail() {
       setDish(d);
       setIngredients(ing);
       setSteps(st);
-      setActiveSlots(profile.active_slots?.length ? profile.active_slots : [...MEAL_SLOT_ORDER]);
+      setActiveSlots(profile.active_slots?.length ? profile.active_slots : allSlotKeys);
       setPreviewServings(entry?.servings ?? d.base_servings);
     } finally {
       setLoading(false);
     }
-  }, [id, session, entryId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, session, entryId, mealSlots]);
 
   useEffect(() => {
     load();
@@ -98,7 +98,7 @@ export default function DishDetail() {
     try {
       if (frequency === 'once') {
         await setMeal(session!.user.id, planDate, planSlot, dish!);
-        setConfirmMsg(`Ajouté au ${MEAL_SLOT_LABELS[planSlot].toLowerCase()} du ${planDate}`);
+        setConfirmMsg(`Ajouté au ${label('meal_slot', planSlot).toLowerCase()} du ${planDate}`);
       } else {
         const intervalDays = frequency === 'custom' ? Math.max(1, Number(customDays) || 1) : frequency;
         await setMealRecurring(session!.user.id, dish!, planSlot, planDate, intervalDays, endDate!);
@@ -263,8 +263,8 @@ export default function DishDetail() {
 
               <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Repas</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                {MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s)).map((slot) => (
-                  <Chip key={slot} label={MEAL_SLOT_LABELS[slot]} active={planSlot === slot} onPress={() => setPlanSlot(slot)} />
+                {allSlotKeys.filter((s) => activeSlots.includes(s)).map((slot) => (
+                  <Chip key={slot} label={label('meal_slot', slot)} active={planSlot === slot} onPress={() => setPlanSlot(slot)} />
                 ))}
               </ScrollView>
 

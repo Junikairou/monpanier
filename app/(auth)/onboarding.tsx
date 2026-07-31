@@ -7,15 +7,18 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { Pill, Screen } from '../../src/components/ui';
 import { fonts } from '../../src/theme/tokens';
 import { getProfile, updateProfile } from '../../src/data/profile';
-import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot } from '../../src/types/models';
+import { useTaxonomies } from '../../src/lib/taxonomies';
+import { MealSlot } from '../../src/types/models';
 
 export default function Onboarding() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const router = useRouter();
+  const { mealSlots, label } = useTaxonomies();
+  const allSlotKeys = mealSlots.map((m) => m.key);
 
   const [householdSize, setHouseholdSize] = useState(1);
-  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
+  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,9 +28,10 @@ export default function Onboarding() {
     getProfile(session.user.id)
       .then((p) => {
         setHouseholdSize(p.household_size ?? 1);
-        setActiveSlots(p.active_slots?.length ? p.active_slots : [...MEAL_SLOT_ORDER]);
+        setActiveSlots(p.active_slots?.length ? p.active_slots : allSlotKeys);
       })
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   if (!session) return <Redirect href="/(auth)/sign-in" />;
@@ -44,7 +48,7 @@ export default function Onboarding() {
     try {
       await updateProfile(session.user.id, {
         household_size: householdSize,
-        active_slots: activeSlots.length ? activeSlots : [...MEAL_SLOT_ORDER],
+        active_slots: activeSlots.length ? activeSlots : allSlotKeys,
         onboarded: true,
       });
       router.replace('/(tabs)/planning');
@@ -84,7 +88,7 @@ export default function Onboarding() {
         <Text style={[styles.subtitle, { color: colors.inkSoft, marginBottom: 12 }]}>
           Décoche ceux que tu ne prends pas — tu pourras changer ça plus tard dans ton profil
         </Text>
-        {MEAL_SLOT_ORDER.map((slot) => {
+        {mealSlots.map(({ key: slot }) => {
           const active = activeSlots.includes(slot);
           return (
             <Pressable
@@ -92,7 +96,7 @@ export default function Onboarding() {
               onPress={() => toggleSlot(slot)}
               style={[styles.slotRow, { borderColor: colors.line, backgroundColor: active ? colors.sagePale : 'transparent' }]}
             >
-              <Text style={{ fontSize: 14, color: colors.ink }}>{MEAL_SLOT_LABELS[slot]}</Text>
+              <Text style={{ fontSize: 14, color: colors.ink }}>{label('meal_slot', slot)}</Text>
               <View style={[styles.check, { borderColor: active ? colors.forest : colors.line, backgroundColor: active ? colors.forest : 'transparent' }]}>
                 {active ? <Text style={{ color: colors.paper, fontSize: 12 }}>✓</Text> : null}
               </View>

@@ -1,23 +1,13 @@
 // Les valeurs possibles sont personnalisables par foyer (voir Plus >
-// Personnalisation) : Category/CourseType/GroceryCategory sont donc des
-// identifiants libres (`string`), pas des unions figées. Les listes et
+// Personnalisation) : Category/CourseType/GroceryCategory/MealSlot sont donc
+// des identifiants libres (`string`), pas des unions figées. Les listes et
 // libellés affichés viennent de useTaxonomies() (src/lib/taxonomies.tsx),
-// pas des anciennes constantes ci-dessous.
+// pas de constantes figées.
 export type Category = string;
 
 export type CourseType = string;
 
-export type MealSlot = 'petit_dej' | 'dejeuner' | 'gouter' | 'diner' | 'collation';
-
-export const MEAL_SLOT_LABELS: Record<MealSlot, string> = {
-  petit_dej: 'Petit déj',
-  dejeuner: 'Déjeuner',
-  gouter: 'Goûter',
-  diner: 'Dîner',
-  collation: 'Collation',
-};
-
-export const MEAL_SLOT_ORDER: MealSlot[] = ['petit_dej', 'dejeuner', 'gouter', 'diner', 'collation'];
+export type MealSlot = string;
 
 export type GroceryCategory = string;
 

@@ -131,6 +131,15 @@ Lot 1 (terminé, cette conversation) :
 
 **Non testé visuellement** (pas d'identifiants) — compilation et écran de connexion vérifiés sans erreur. Point d'attention à confirmer par l'utilisateur : cliquer sur un jour de la frise ouvre désormais le calendrier systématiquement (au lieu de juste changer de jour) — à valider que ce comportement convient à l'usage.
 
+## Chantier en cours (2026-08-01, lot 2)
+
+1. ✅ **Repas à planifier personnalisables** (comme les catégories de plat) — nouvelle taxonomie `meal_slot` par foyer (table `meal_slots`), gérable depuis Plus > Personnalisation (nouvel onglet "Repas à planifier") : créer/renommer/réordonner/supprimer des créneaux de repas au-delà des 5 actuels (petit-déj/déjeuner/goûter/dîner/collation). Remplace les listes figées `MEAL_SLOT_ORDER`/`MEAL_SLOT_LABELS` partout dans le code (planning, courses, fiche recette, modèle de semaine, onboarding, options avancées, réinitialisation). **Migration 019 à exécuter** (SQL envoyé dans le chat).
+2. ✅ Raccourci dans le Planning (vue Jour) pour gérer les repas actifs sans passer par Options avancées : bouton "✕ Retirer" sur chaque repas actif (si plus d'un actif) et bouton "+ Activer un repas" en bas de la liste qui propose les repas inactifs.
+
+**⚠️ Migration 019 — à lire avant d'exécuter :** redéfinit la fonction `handle_new_user` (comme la migration 013) pour ajouter la création des créneaux de repas par défaut à l'inscription ; reprend la version de la migration 018 (rôles chef/membre) en y ajoutant `meal_slots`. Chaque foyer existant reçoit automatiquement les 5 créneaux actuels. **Non testé en conditions réelles** (pas d'identifiants) — à tester soigneusement avant de compter dessus, idéalement en vérifiant qu'un nouveau compte reçoit bien ses 5 créneaux et que Personnalisation > Repas à planifier fonctionne (créer/renommer/supprimer).
+
+Reste du lot 2 en cours : confirmation avant de quitter sans sauvegarder, suggestion auto de rayon, animations, saisie rapide d'étape de recette, mode Complet/Simple à l'inscription, tutoriel des onglets.
+
 Backlog (lot 2, prochaine conversation) :
 6. ⬜ Ajouter un repas directement dans le planning sans passer par "Options avancées".
 7. ⬜ Possibilité d'ajouter des repas à planifier en plus des créneaux existants (petit-déj/déjeuner/dîner...).

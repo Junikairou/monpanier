@@ -14,6 +14,7 @@ const TABS: { key: TaxonomyKind; title: string; hasIcon: boolean }[] = [
   { key: 'category', title: 'Catégories de plat', hasIcon: true },
   { key: 'course_type', title: 'Types de plat', hasIcon: true },
   { key: 'grocery_category', title: 'Rayons (courses)', hasIcon: true },
+  { key: 'meal_slot', title: 'Repas à planifier', hasIcon: true },
 ];
 
 const ROW_HEIGHT = 52;
@@ -44,7 +45,11 @@ export default function Personnalisation() {
   const [baseOrder, setBaseOrder] = useState<TaxonomyItem[]>([]);
 
   const current = TABS.find((t) => t.key === tab)!;
-  const items = tab === 'category' ? taxo.categories : tab === 'course_type' ? taxo.courseTypes : taxo.groceryCategories;
+  const items =
+    tab === 'category' ? taxo.categories
+      : tab === 'course_type' ? taxo.courseTypes
+      : tab === 'meal_slot' ? taxo.mealSlots
+      : taxo.groceryCategories;
 
   const baseIndex = dragId ? baseOrder.findIndex((i) => i.id === dragId) : -1;
   const targetIndex = dragId ? Math.min(baseOrder.length - 1, Math.max(0, baseIndex + Math.round(dragDy / ROW_HEIGHT))) : -1;

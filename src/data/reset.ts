@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { getMyHouseholdId } from './household';
 import { updateProfile } from './profile';
-import { MEAL_SLOT_ORDER } from '../types/models';
+import { listTaxonomy } from './taxonomies';
 
 export interface ResetOptions {
   plats: boolean;
@@ -31,9 +31,10 @@ export async function resetData(userId: string, options: ResetOptions): Promise<
     if (error) throw error;
   }
   if (options.preferences) {
+    const mealSlots = await listTaxonomy('meal_slot');
     await updateProfile(userId, {
       household_size: 1,
-      active_slots: [...MEAL_SLOT_ORDER],
+      active_slots: mealSlots.map((m) => m.key),
       show_balance_hint: true,
       units: 'metric',
       language: 'fr',

@@ -15,19 +15,11 @@ import {
 } from '../../../src/data/groceries';
 import { listIngredients } from '../../../src/data/dishes';
 import { listPlanningRange } from '../../../src/data/planning';
-import { GroceryItem, Ingredient, MealSlot, PlanningEntry } from '../../../src/types/models';
+import { GroceryItem, Ingredient, PlanningEntry } from '../../../src/types/models';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
 import { addDays, dayLabel, formatWeekOf, isToday, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
-
-const SLOT_SHORT: Record<MealSlot, string> = {
-  petit_dej: 'P-déj',
-  dejeuner: 'Déj.',
-  gouter: 'Goûter',
-  diner: 'Dîner',
-  collation: 'Collation',
-};
 
 function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void }) {
   const { colors } = useTheme();
@@ -43,7 +35,7 @@ export default function Courses() {
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
-  const { groceryCategories } = useTaxonomies();
+  const { groceryCategories, label } = useTaxonomies();
 
   const [period, setPeriod] = useState<'jour' | 'semaine' | 'plage'>('semaine');
   const [anchor, setAnchor] = useState(() => new Date());
@@ -405,7 +397,7 @@ export default function Courses() {
                 const scaleFactor = occurrences.reduce((sum, o) => sum + o.servings / (dish.base_servings || 1), 0);
                 const badgeText =
                   period === 'jour'
-                    ? `${shortDayLabel(new Date(occurrences[0].date))} · ${SLOT_SHORT[occurrences[0].slot]}`
+                    ? `${shortDayLabel(new Date(occurrences[0].date))} · ${label('meal_slot', occurrences[0].slot)}`
                     : occurrences.length > 1
                       ? uniqueDays.map((d) => `${shortDayLabel(new Date(d))} ${new Date(d).getDate()}`).join(', ')
                       : `${shortDayLabel(new Date(occurrences[0].date))} ${new Date(occurrences[0].date).getDate()}`;

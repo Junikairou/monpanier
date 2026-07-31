@@ -8,27 +8,22 @@ import { Card, LoadingBlock, MiniButton, Screen, ScreenHeader } from '../src/com
 import { getProfile } from '../src/data/profile';
 import { clearTemplate, listTemplate, removeTemplateEntry } from '../src/data/template';
 import { useTaxonomies } from '../src/lib/taxonomies';
-import { MEAL_SLOT_LABELS, MEAL_SLOT_ORDER, MealSlot, TemplateEntry } from '../src/types/models';
+import { MealSlot, TemplateEntry } from '../src/types/models';
 import { fonts } from '../src/theme/tokens';
 
 const WEEKDAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-const MEAL_SLOT_EMOJI: Record<MealSlot, string> = {
-  petit_dej: '🍳',
-  dejeuner: '🌞',
-  gouter: '🍪',
-  diner: '🌙',
-  collation: '🌰',
-};
 
 export default function ModeleSemaine() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
-  const { label } = useTaxonomies();
+  const { label, mealSlots } = useTaxonomies();
+  const allSlotKeys = mealSlots.map((m) => m.key);
+  const slotIcon = (key: MealSlot) => mealSlots.find((m) => m.key === key)?.icon ?? '';
 
   const [entries, setEntries] = useState<TemplateEntry[]>([]);
-  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([...MEAL_SLOT_ORDER]);
+  const [activeSlots, setActiveSlots] = useState<MealSlot[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -36,11 +31,12 @@ export default function ModeleSemaine() {
     try {
       const [data, profile] = await Promise.all([listTemplate(userId), getProfile(userId)]);
       setEntries(data);
-      setActiveSlots(profile.active_slots?.length ? profile.active_slots : [...MEAL_SLOT_ORDER]);
+      setActiveSlots(profile.active_slots?.length ? profile.active_slots : allSlotKeys);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, mealSlots]);
 
   useFocusEffect(
     useCallback(() => {
@@ -84,7 +80,7 @@ export default function ModeleSemaine() {
             ) : null
           }
           renderItem={({ item: weekday }) => {
-            const daySlots = MEAL_SLOT_ORDER.filter((s) => activeSlots.includes(s));
+            const daySlots = allSlotKeys.filter((s) => activeSlots.includes(s));
             return (
               <Card>
                 <Text style={{ fontSize: 13.5, fontFamily: fonts.bodySemiBold, color: colors.ink, marginBottom: 8 }}>
@@ -95,7 +91,7 @@ export default function ModeleSemaine() {
                   return (
                     <View key={slot} style={{ marginBottom: 8 }}>
                       <Text style={{ fontSize: 9.5, fontFamily: fonts.bodySemiBold, letterSpacing: 0.5, textTransform: 'uppercase', color: colors.inkFaint, marginBottom: 3 }}>
-                        {MEAL_SLOT_EMOJI[slot]} {MEAL_SLOT_LABELS[slot]}
+                        {slotIcon(slot)} {label('meal_slot', slot)}
                       </Text>
                       {list.length === 0 ? (
                         <View style={{ flexDirection: 'row', gap: 5 }}>
