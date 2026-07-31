@@ -35,18 +35,30 @@ export async function getGroceryListForRange(
 ): Promise<GroceryList> {
   const { data: entries, error: entriesErr } = await supabase
     .from('planning_entries')
-    .select('dish_id, date')
+    .select('dish_id, date, servings')
     .gte('date', startIso)
     .lte('date', endIso)
     .not('dish_id', 'is', null);
   if (entriesErr) throw entriesErr;
 
-  const dishOccurrences = (entries ?? []) as { dish_id: string; date: string }[];
+  const dishOccurrences = (entries ?? []) as { dish_id: string; date: string; servings: number }[];
   const uniqueDishIds = Array.from(new Set(dishOccurrences.map((e) => e.dish_id)));
-  const occurrenceCount = new Map<string, number>();
+
+  const baseServingsById = new Map<string, number>();
+  if (uniqueDishIds.length) {
+    const { data: dishRows, error: dishErr } = await supabase.from('dishes').select('id, base_servings').in('id', uniqueDishIds);
+    if (dishErr) throw dishErr;
+    for (const d of dishRows ?? []) baseServingsById.set(d.id, d.base_servings || 1);
+  }
+
+  // Facteur d'échelle par plat = somme, sur toutes ses occurrences dans la
+  // période, de (portions du repas planifié / portions de base de la recette).
+  const scaleFactor = new Map<string, number>();
   const occurrenceDates = new Map<string, string[]>();
   for (const e of dishOccurrences) {
-    occurrenceCount.set(e.dish_id, (occurrenceCount.get(e.dish_id) ?? 0) + 1);
+    const base = baseServingsById.get(e.dish_id) || 1;
+    const factor = (e.servings || base) / base;
+    scaleFactor.set(e.dish_id, (scaleFactor.get(e.dish_id) ?? 0) + factor);
     occurrenceDates.set(e.dish_id, [...(occurrenceDates.get(e.dish_id) ?? []), e.date]);
   }
 
@@ -63,19 +75,19 @@ export async function getGroceryListForRange(
     if (ingErr) throw ingErr;
 
     for (const ing of ingredients ?? []) {
-      const times = occurrenceCount.get(ing.dish_id) ?? 1;
+      const factor = scaleFactor.get(ing.dish_id) ?? 1;
       const dates = occurrenceDates.get(ing.dish_id) ?? [];
       const key = mergeKey(ing.name, ing.unit);
       const existing = merged.get(key);
       if (existing) {
-        existing.quantity += Number(ing.quantity) * times;
+        existing.quantity += Number(ing.quantity) * factor;
         existing.source_dish_ids.add(ing.dish_id);
         dates.forEach((d) => existing.dates.add(d));
       } else {
         merged.set(key, {
           name: ing.name,
           unit: ing.unit,
-          quantity: Number(ing.quantity) * times,
+          quantity: Number(ing.quantity) * factor,
           grocery_category: ing.grocery_category,
           source_dish_ids: new Set([ing.dish_id]),
           dates: new Set(dates),
@@ -100,7 +112,7 @@ export async function getGroceryListForRange(
     key,
     name: m.name,
     unit: m.unit,
-    quantity: m.quantity,
+    quantity: Math.round(m.quantity * 100) / 100,
     grocery_category: m.grocery_category,
     source_dish_ids: Array.from(m.source_dish_ids),
     dates: Array.from(m.dates).sort(),

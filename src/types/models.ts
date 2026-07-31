@@ -32,6 +32,7 @@ export interface Dish {
   carbs_g: number | null;
   fat_g: number | null;
   fiber_g: number | null;
+  base_servings: number;
   image_emoji: string | null;
   image_url: string | null;
   created_at: string;
@@ -61,6 +62,7 @@ export interface PlanningEntry {
   dish_id: string | null;
   is_restaurant: boolean;
   is_cooked: boolean;
+  servings: number;
   dish?: Dish;
 }
 
@@ -71,6 +73,7 @@ export interface TemplateEntry {
   slot: MealSlot;
   dish_id: string | null;
   is_restaurant: boolean;
+  servings: number;
   dish?: Dish;
 }
 

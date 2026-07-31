@@ -25,6 +25,7 @@ export async function setMeal(
   date: string,
   slot: MealSlot,
   dish: Dish,
+  servings?: number,
 ): Promise<void> {
   const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('planning_entries').insert({
@@ -33,6 +34,7 @@ export async function setMeal(
     date,
     slot,
     dish_id: dish.id,
+    servings: servings ?? dish.base_servings,
   });
   if (error) throw error;
 }
@@ -44,14 +46,20 @@ export async function setMealRecurring(
   startIso: string,
   intervalDays: number,
   endIso: string,
+  servings?: number,
 ): Promise<void> {
   const household_id = await getMyHouseholdId(userId);
-  const rows: { user_id: string; household_id: string; date: string; slot: MealSlot; dish_id: string }[] = [];
+  const rows: { user_id: string; household_id: string; date: string; slot: MealSlot; dish_id: string; servings: number }[] = [];
   for (let d = new Date(startIso); toIso(d) <= endIso; d = addDays(d, intervalDays)) {
-    rows.push({ user_id: userId, household_id, date: toIso(d), slot, dish_id: dish.id });
+    rows.push({ user_id: userId, household_id, date: toIso(d), slot, dish_id: dish.id, servings: servings ?? dish.base_servings });
   }
   if (rows.length === 0) return;
   const { error } = await supabase.from('planning_entries').insert(rows);
+  if (error) throw error;
+}
+
+export async function setEntryServings(entryId: string, servings: number): Promise<void> {
+  const { error } = await supabase.from('planning_entries').update({ servings: Math.max(1, servings) }).eq('id', entryId);
   if (error) throw error;
 }
 
@@ -120,6 +128,7 @@ export async function copyDay(
     slot: e.slot,
     dish_id: e.dish_id,
     is_restaurant: e.is_restaurant,
+    servings: e.servings,
   }));
   const { error } = await supabase.from('planning_entries').insert(rows);
   if (error) throw error;
@@ -159,6 +168,7 @@ export async function copyWeek(
       slot: e.slot,
       dish_id: e.dish_id,
       is_restaurant: e.is_restaurant,
+      servings: e.servings,
     };
   });
   const { error } = await supabase.from('planning_entries').insert(rows);

@@ -7,7 +7,7 @@ import { Card, Checkbox, LoadingBlock, MiniButton, Screen } from '../../src/comp
 import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
-import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked, setRestaurantMeal } from '../../src/data/planning';
+import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked, setEntryServings, setRestaurantMeal } from '../../src/data/planning';
 import { applyTemplateToWeek, saveTemplateFromWeek } from '../../src/data/template';
 import { getProfile } from '../../src/data/profile';
 import { useTaxonomies } from '../../src/lib/taxonomies';
@@ -138,6 +138,12 @@ export default function Planning() {
   const onToggleCooked = async (entryId: string, next: boolean) => {
     setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, is_cooked: next } : e)));
     await setCooked(entryId, next);
+  };
+
+  const onChangeServings = async (entryId: string, next: number) => {
+    if (next < 1) return;
+    setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, servings: next } : e)));
+    await setEntryServings(entryId, next);
   };
 
   const goPrevWeek = () => setWeekStart(addDays(weekStart, -7));
@@ -393,6 +399,16 @@ export default function Planning() {
                                     style={[styles.removeBtn, { backgroundColor: colors.cream, borderColor: colors.beige }]}
                                   >
                                     <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕</Text>
+                                  </Pressable>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                                  <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>👤 Portions</Text>
+                                  <Pressable onPress={() => onChangeServings(entry.id, entry.servings - 1)} hitSlop={6}>
+                                    <Text style={{ color: colors.forest, fontSize: 15 }}>–</Text>
+                                  </Pressable>
+                                  <Text style={{ fontSize: 12, color: colors.ink, minWidth: 14, textAlign: 'center' }}>{entry.servings}</Text>
+                                  <Pressable onPress={() => onChangeServings(entry.id, entry.servings + 1)} hitSlop={6}>
+                                    <Text style={{ color: colors.forest, fontSize: 15 }}>+</Text>
                                   </Pressable>
                                 </View>
                                 <View style={{ flexDirection: 'row', gap: 5 }}>

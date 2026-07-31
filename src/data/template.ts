@@ -27,6 +27,7 @@ export async function setTemplateMeal(
     weekday,
     slot,
     dish_id: dish.id,
+    servings: dish.base_servings,
   });
   if (error) throw error;
 }
@@ -76,6 +77,7 @@ export async function saveTemplateFromWeek(userId: string, weekStartIso: string)
     slot: e.slot,
     dish_id: e.dish_id,
     is_restaurant: e.is_restaurant,
+    servings: e.servings,
   }));
   const { error } = await supabase.from('planning_template_entries').insert(rows);
   if (error) throw error;
@@ -102,6 +104,7 @@ export async function applyTemplateToWeek(userId: string, weekStartIso: string, 
     slot: e.slot,
     dish_id: e.dish_id,
     is_restaurant: e.is_restaurant,
+    servings: e.servings,
   }));
   const { error } = await supabase.from('planning_entries').insert(rows);
   if (error) throw error;

@@ -339,6 +339,7 @@ export default function Courses() {
                 const allChecked = rows.length > 0 && rows.every((r) => r?.checked);
                 const collapsed = allChecked && !expandedOverride.has(dishId);
                 const uniqueDays = Array.from(new Set(occurrences.map((o) => o.date))).sort();
+                const scaleFactor = occurrences.reduce((sum, o) => sum + o.servings / (dish.base_servings || 1), 0);
                 const badgeText =
                   period === 'jour'
                     ? `${shortDayLabel(new Date(occurrences[0].date))} · ${SLOT_SHORT[occurrences[0].slot]}`
@@ -401,7 +402,7 @@ export default function Courses() {
                                 ) : null}
                               </View>
                               <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>
-                                {ing.quantity * occurrences.length} {ing.unit}
+                                {Math.round(ing.quantity * scaleFactor * 100) / 100} {ing.unit}
                               </Text>
                             </View>
                           );

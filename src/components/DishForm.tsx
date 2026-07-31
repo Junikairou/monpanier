@@ -18,6 +18,7 @@ export interface DishFormInitial {
   carbs: string;
   fat: string;
   fiber: string;
+  baseServings: string;
   ingredients: IngredientDraft[];
   steps: string[];
 }
@@ -38,6 +39,7 @@ const EMPTY: DishFormInitial = {
   carbs: '',
   fat: '',
   fiber: '',
+  baseServings: '4',
   ingredients: [{ name: '', quantity: '', unit: '', grocery_category: 'autre' }],
   steps: [''],
 };
@@ -55,6 +57,7 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
   const [carbs, setCarbs] = useState(initial.carbs);
   const [fat, setFat] = useState(initial.fat);
   const [fiber, setFiber] = useState(initial.fiber);
+  const [baseServings, setBaseServings] = useState(initial.baseServings);
   const [ingredients, setIngredients] = useState<IngredientDraft[]>(initial.ingredients);
   const [steps, setSteps] = useState<string[]>(initial.steps);
   const [saving, setSaving] = useState(false);
@@ -81,6 +84,7 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
         carbs_g: carbs.trim() ? Number(carbs.replace(',', '.')) || null : null,
         fat_g: fat.trim() ? Number(fat.replace(',', '.')) || null : null,
         fiber_g: fiber.trim() ? Number(fiber.replace(',', '.')) || null : null,
+        base_servings: Math.max(1, Number(baseServings) || 4),
         image_emoji: emoji.trim() || '🍽️',
         ingredients: ingredients
           .filter((i) => i.name.trim())
@@ -141,6 +145,14 @@ export function DishForm({ initial = EMPTY, submitLabel, onSubmit }: DishFormPro
           <Field label="Fibres" value={fiber} onChangeText={setFiber} keyboardType="numeric" placeholder="8" />
         </View>
       </View>
+
+      <Field
+        label="Cette recette est prévue pour combien de personnes ?"
+        value={baseServings}
+        onChangeText={setBaseServings}
+        keyboardType="numeric"
+        placeholder="4"
+      />
 
       <Text style={[styles.section, { color: colors.ink }]}>Ingrédients</Text>
       {ingredients.map((ing, i) => (

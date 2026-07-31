@@ -42,6 +42,7 @@ export interface NewDishInput {
   carbs_g?: number | null;
   fat_g?: number | null;
   fiber_g?: number | null;
+  base_servings?: number;
   image_emoji: string;
   ingredients: { name: string; quantity: number; unit: string; grocery_category: string }[];
   steps: string[];
@@ -60,6 +61,7 @@ export async function createDish(userId: string, input: NewDishInput): Promise<D
       carbs_g: input.carbs_g,
       fat_g: input.fat_g,
       fiber_g: input.fiber_g,
+      base_servings: input.base_servings ?? 4,
       image_emoji: input.image_emoji || '🍽️',
     })
     .select()
@@ -99,6 +101,7 @@ export async function updateDish(id: string, input: NewDishInput): Promise<void>
       carbs_g: input.carbs_g,
       fat_g: input.fat_g,
       fiber_g: input.fiber_g,
+      base_servings: input.base_servings ?? 4,
       image_emoji: input.image_emoji || '🍽️',
     })
     .eq('id', id);

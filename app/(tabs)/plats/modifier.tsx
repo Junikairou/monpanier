@@ -21,6 +21,7 @@ export default function ModifierDish() {
         carbs: dish.carbs_g != null ? String(dish.carbs_g) : '',
         fat: dish.fat_g != null ? String(dish.fat_g) : '',
         fiber: dish.fiber_g != null ? String(dish.fiber_g) : '',
+        baseServings: String(dish.base_servings ?? 4),
         ingredients: ingredients.length
           ? ingredients.map((i) => ({
               name: i.name,
