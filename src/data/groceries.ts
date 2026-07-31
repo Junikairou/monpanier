@@ -12,6 +12,7 @@ export interface ComputedGroceryItem {
   quantity: number;
   grocery_category: GroceryCategory;
   source_dish_ids: string[];
+  dates: string[];
   checked: boolean;
 }
 
@@ -33,21 +34,25 @@ export async function getGroceryListForRange(
 ): Promise<GroceryList> {
   const { data: entries, error: entriesErr } = await supabase
     .from('planning_entries')
-    .select('dish_id')
+    .select('dish_id, date')
     .eq('user_id', userId)
     .gte('date', startIso)
     .lte('date', endIso)
     .not('dish_id', 'is', null);
   if (entriesErr) throw entriesErr;
 
-  const dishOccurrences = (entries ?? []).map((e) => e.dish_id as string);
-  const uniqueDishIds = Array.from(new Set(dishOccurrences));
+  const dishOccurrences = (entries ?? []) as { dish_id: string; date: string }[];
+  const uniqueDishIds = Array.from(new Set(dishOccurrences.map((e) => e.dish_id)));
   const occurrenceCount = new Map<string, number>();
-  for (const id of dishOccurrences) occurrenceCount.set(id, (occurrenceCount.get(id) ?? 0) + 1);
+  const occurrenceDates = new Map<string, string[]>();
+  for (const e of dishOccurrences) {
+    occurrenceCount.set(e.dish_id, (occurrenceCount.get(e.dish_id) ?? 0) + 1);
+    occurrenceDates.set(e.dish_id, [...(occurrenceDates.get(e.dish_id) ?? []), e.date]);
+  }
 
   const merged = new Map<
     string,
-    { name: string; unit: string; quantity: number; grocery_category: GroceryCategory; source_dish_ids: Set<string> }
+    { name: string; unit: string; quantity: number; grocery_category: GroceryCategory; source_dish_ids: Set<string>; dates: Set<string> }
   >();
 
   if (uniqueDishIds.length) {
@@ -59,11 +64,13 @@ export async function getGroceryListForRange(
 
     for (const ing of ingredients ?? []) {
       const times = occurrenceCount.get(ing.dish_id) ?? 1;
+      const dates = occurrenceDates.get(ing.dish_id) ?? [];
       const key = mergeKey(ing.name, ing.unit);
       const existing = merged.get(key);
       if (existing) {
         existing.quantity += Number(ing.quantity) * times;
         existing.source_dish_ids.add(ing.dish_id);
+        dates.forEach((d) => existing.dates.add(d));
       } else {
         merged.set(key, {
           name: ing.name,
@@ -71,6 +78,7 @@ export async function getGroceryListForRange(
           quantity: Number(ing.quantity) * times,
           grocery_category: ing.grocery_category,
           source_dish_ids: new Set([ing.dish_id]),
+          dates: new Set(dates),
         });
       }
     }
@@ -96,6 +104,7 @@ export async function getGroceryListForRange(
     quantity: m.quantity,
     grocery_category: m.grocery_category,
     source_dish_ids: Array.from(m.source_dish_ids),
+    dates: Array.from(m.dates).sort(),
     checked: checkedByKey.get(key) ?? false,
   }));
   auto.sort((a, b) => a.name.localeCompare(b.name));

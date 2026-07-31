@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
@@ -67,16 +67,17 @@ export default function DishDetail() {
   };
 
   const onDelete = () => {
+    const run = async () => {
+      await deleteDish(id);
+      router.back();
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Supprimer ce plat ? Cette action est définitive.')) run();
+      return;
+    }
     Alert.alert('Supprimer ce plat ?', 'Cette action est définitive.', [
       { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Supprimer',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteDish(id);
-          router.back();
-        },
-      },
+      { text: 'Supprimer', style: 'destructive', onPress: run },
     ]);
   };
 
@@ -91,7 +92,11 @@ export default function DishDetail() {
 
   return (
     <Screen>
-      <ScreenHeader title={dish.name} subtitle={`${COURSE_TYPE_LABELS[dish.course_type]} · ${CATEGORY_LABELS[dish.category]}`} />
+      <ScreenHeader
+        title={dish.name}
+        subtitle={`${COURSE_TYPE_LABELS[dish.course_type]} · ${CATEGORY_LABELS[dish.category]}`}
+        onBack={() => router.back()}
+      />
       <ScrollView contentContainerStyle={{ padding: 18 }}>
         <View style={[styles.hero, { backgroundColor: colors.sagePale }]}>
           <Text style={{ fontSize: 46 }}>{dish.image_emoji ?? '🍽️'}</Text>

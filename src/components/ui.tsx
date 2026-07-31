@@ -16,12 +16,21 @@ export function Screen({ children }: { children: React.ReactNode }) {
   return <View style={[styles.screen, { backgroundColor: colors.cream }]}>{children}</View>;
 }
 
-export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+export function ScreenHeader({ title, subtitle, onBack }: { title: string; subtitle?: string; onBack?: () => void }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.header, { borderColor: colors.line, backgroundColor: colors.cream }]}>
-      <Text style={[styles.headerTitle, { color: colors.ink }]}>{title}</Text>
-      {subtitle ? <Text style={[styles.headerSub, { color: colors.inkFaint }]}>{subtitle}</Text> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {onBack ? (
+          <Pressable onPress={onBack} hitSlop={10} style={[styles.backBtn, { borderColor: colors.beigeDark }]}>
+            <Text style={{ fontSize: 15, color: colors.inkSoft }}>‹</Text>
+          </Pressable>
+        ) : null}
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.headerTitle, { color: colors.ink }]}>{title}</Text>
+          {subtitle ? <Text style={[styles.headerSub, { color: colors.inkFaint }]}>{subtitle}</Text> : null}
+        </View>
+      </View>
     </View>
   );
 }
@@ -177,6 +186,7 @@ export function Checkbox({ checked, onPress }: { checked: boolean; onPress: () =
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: { paddingTop: 56, paddingBottom: 14, paddingHorizontal: 18, borderBottomWidth: 1 },
+  backBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 21, fontFamily: fonts.display },
   headerSub: { fontSize: 11.5, marginTop: 2, fontFamily: fonts.body },
   pill: {

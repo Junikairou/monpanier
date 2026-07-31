@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Checkbox, EmptyState, Field, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
@@ -43,6 +43,7 @@ function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void 
 export default function Courses() {
   const { colors } = useTheme();
   const { session } = useAuth();
+  const router = useRouter();
   const userId = session!.user.id;
 
   const [period, setPeriod] = useState<'jour' | 'semaine' | 'plage'>('semaine');
@@ -149,6 +150,20 @@ export default function Courses() {
     }));
   }, [planningEntries, dishIngredients]);
 
+  const goToDish = (dishId: string) => {
+    router.push({ pathname: '/(tabs)/plats/[id]', params: { id: dishId } });
+  };
+
+  const dayBadge = (dates: string[]) => {
+    if (period === 'jour' || dates.length === 0) return null;
+    const label = dates.map((d) => `${dayLabel(new Date(d))} ${new Date(d).getDate()}`).join(', ');
+    return (
+      <View style={[styles.dayTag, { backgroundColor: colors.beige }]}>
+        <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{label}</Text>
+      </View>
+    );
+  };
+
   const qtyTag = (qty: string) => (
     <View style={[styles.qtyTag, { backgroundColor: colors.beige }]}>
       <Text style={{ fontSize: 10.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{qty}</Text>
@@ -156,24 +171,23 @@ export default function Courses() {
   );
 
   const dishOriginBadges = (sourceDishIds: string[]) => {
-    if (sourceDishIds.length === 0) return null;
-    const names = sourceDishIds.map((id) => dishById[id]?.name).filter(Boolean) as string[];
-    if (names.length === 0) return null;
+    const known = sourceDishIds.filter((id) => dishById[id]);
+    if (known.length === 0) return null;
     return (
       <>
-        {sourceDishIds.length > 1 ? (
+        {known.length > 1 ? (
           <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
             <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
-              🔗 dans {sourceDishIds.length} plats
+              🔗 dans {known.length} plats
             </Text>
           </View>
         ) : (
           <Text style={{ fontSize: 9.5, color: colors.inkFaint }}>dans :</Text>
         )}
-        {names.map((name, i) => (
-          <View key={i} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
-            <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{name}</Text>
-          </View>
+        {known.map((id) => (
+          <Pressable key={id} onPress={() => goToDish(id)} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+            <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[id].name}</Text>
+          </Pressable>
         ))}
       </>
     );
@@ -302,7 +316,10 @@ export default function Courses() {
                           () => onToggleAuto(item),
                           item.name,
                           `${item.quantity} ${item.unit}`,
-                          dishOriginBadges(item.source_dish_ids),
+                          <>
+                            {dayBadge(item.dates)}
+                            {dishOriginBadges(item.source_dish_ids)}
+                          </>,
                         ),
                       )}
                     </View>
@@ -322,26 +339,35 @@ export default function Courses() {
                 const rows = ingredients.map((ing) => itemByKey.get(`${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`));
                 const allChecked = rows.length > 0 && rows.every((r) => r?.checked);
                 const collapsed = allChecked && !expandedOverride.has(dishId);
+                const uniqueDays = Array.from(new Set(occurrences.map((o) => o.date))).sort();
                 const badgeText =
-                  occurrences.length > 1
-                    ? `×${occurrences.length}`
-                    : `${shortDayLabel(new Date(occurrences[0].date))} · ${SLOT_SHORT[occurrences[0].slot]}`;
+                  period === 'jour'
+                    ? `${shortDayLabel(new Date(occurrences[0].date))} · ${SLOT_SHORT[occurrences[0].slot]}`
+                    : occurrences.length > 1
+                      ? uniqueDays.map((d) => `${shortDayLabel(new Date(d))} ${new Date(d).getDate()}`).join(', ')
+                      : `${shortDayLabel(new Date(occurrences[0].date))} ${new Date(occurrences[0].date).getDate()}`;
 
                 return (
-                  <Pressable
+                  <View
                     key={dishId}
-                    onPress={() => {
-                      if (!allChecked) return;
-                      setExpandedOverride((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(dishId)) next.delete(dishId);
-                        else next.add(dishId);
-                        return next;
-                      });
-                    }}
                     style={[styles.dishSection, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: allChecked ? 0.6 : 1 }]}
                   >
-                    <View style={[styles.dishSectionHeader, { borderColor: colors.beige }]}>
+                    <Pressable
+                      onPress={() => {
+                        if (!allChecked) {
+                          goToDish(dishId);
+                          return;
+                        }
+                        setExpandedOverride((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(dishId)) next.delete(dishId);
+                          else next.add(dishId);
+                          return next;
+                        });
+                      }}
+                      onLongPress={() => goToDish(dishId)}
+                      style={[styles.dishSectionHeader, { borderColor: colors.beige }]}
+                    >
                       <Text style={{ fontSize: 16 }}>{dish.image_emoji}</Text>
                       <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: colors.ink, flex: 1 }}>
                         {dish.name} {allChecked ? '✓' : ''}
@@ -349,7 +375,7 @@ export default function Courses() {
                       <View style={[styles.dayTag, { backgroundColor: colors.beige }]}>
                         <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{badgeText}</Text>
                       </View>
-                    </View>
+                    </Pressable>
                     {collapsed
                       ? null
                       : ingredients.map((ing, idx) => {
@@ -381,7 +407,7 @@ export default function Courses() {
                             </View>
                           );
                         })}
-                  </Pressable>
+                  </View>
                 );
               })
             )}

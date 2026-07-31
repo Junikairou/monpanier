@@ -35,6 +35,23 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 - Profil : thème clair/sombre/auto/**rose/bleu**, langue (préférence enregistrée, pas de traduction complète), unités, taille du foyer, repas à planifier
 - PWA installable (manifest + icônes — icône encore générique Expo, pas personnalisée)
 
+## Chantier en cours (demande du 2026-07-31, retours utilisateur)
+
+1. ✅ Bug : "Supprimer ce plat" ne faisait rien sur le web — `Alert.alert` est un no-op sur React Native Web ; remplacé par `window.confirm` sur web, `Alert.alert` conservé sur natif.
+2. ✅ Bouton retour (‹) ajouté sur la fiche recette (`ScreenHeader` a maintenant un `onBack` optionnel).
+3. ✅ Liste de courses : cliquer sur un plat (vue "Par plat" ou pastille plat en "Par catégorie") ouvre sa fiche recette.
+4. ✅ Liste de courses : affichage du/des jour(s) de consommation prévu par ingrédient/plat en vues Semaine et Plage (masqué en vue Jour, redondant).
+5. ⏳ Récurrence à l'ajout au planning (une fois / tous les jours / toutes les 2 semaines…).
+6. ⏳ Infos nutritionnelles détaillées par plat (protéines/glucides/fibres…), au-delà des calories actuelles.
+7. ⏳ Nombre de personnes par repas planifié → recalcul des quantités dans la liste de courses (cas : deux plats différents le même soir pour des groupes de tailles différentes).
+8. ⏳ Partage de l'app entre membres d'un même foyer (planning/courses communs).
+9. ⏳ Modifier une recette existante (actuellement seulement création + suppression).
+10. ⏳ Icône de l'onglet "Profil" en bas → remplacer par "⋯" pour signifier "Plus".
+11. ⏳ Catalogue de recettes prédéfinies dans "Plus", ajoutables à "Mes plats".
+12. ⏳ Section "Personnalisation/Gestion" dans "Plus" : CRUD par l'utilisateur sur types de plat, rayons (catégories courses), catégories de plat (actuellement listes figées dans le code).
+
+**Points 5 à 12 : en attente de clarifications avec l'utilisateur avant implémentation** (portée large, plusieurs choix structurants).
+
 ## Pas fait / en attente
 
 - Communauté (partage de recettes) — explicitement mis de côté dès le départ
