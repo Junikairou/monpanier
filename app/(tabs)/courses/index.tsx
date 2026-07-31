@@ -245,6 +245,10 @@ export default function Courses() {
         }
       />
 
+      <Text style={{ textAlign: 'center', fontSize: 9.5, color: colors.inkFaint, marginTop: 2 }}>
+        🔍 {startIso} → {endIso} · {planningEntries.filter((e) => e.dish_id).length} repas avec plat · {list.auto.length} article(s) auto
+      </Text>
+
       <View style={[styles.switchWrap, { backgroundColor: colors.beige }]}>
         <Pressable style={[styles.switchOpt, view === 'rayon' && { backgroundColor: colors.paper }]} onPress={() => setView('rayon')}>
           <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: view === 'rayon' ? colors.ink : colors.inkSoft }}>🏷 Par catégorie</Text>
