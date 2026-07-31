@@ -37,6 +37,24 @@ export async function setMeal(
   if (error) throw error;
 }
 
+export async function setMealRecurring(
+  userId: string,
+  dish: Dish,
+  slot: MealSlot,
+  startIso: string,
+  intervalDays: number,
+  endIso: string,
+): Promise<void> {
+  const household_id = await getMyHouseholdId(userId);
+  const rows: { user_id: string; household_id: string; date: string; slot: MealSlot; dish_id: string }[] = [];
+  for (let d = new Date(startIso); toIso(d) <= endIso; d = addDays(d, intervalDays)) {
+    rows.push({ user_id: userId, household_id, date: toIso(d), slot, dish_id: dish.id });
+  }
+  if (rows.length === 0) return;
+  const { error } = await supabase.from('planning_entries').insert(rows);
+  if (error) throw error;
+}
+
 export async function setRestaurantMeal(userId: string, date: string, slot: MealSlot): Promise<void> {
   const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('planning_entries').insert({

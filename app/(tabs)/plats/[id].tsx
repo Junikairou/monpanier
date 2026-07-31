@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { deleteDish, getDish, listIngredients, listRecipeSteps } from '../../../src/data/dishes';
-import { setMeal } from '../../../src/data/planning';
+import { setMeal, setMealRecurring } from '../../../src/data/planning';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
+import { CalendarPicker } from '../../../src/components/CalendarPicker';
 import {
   Dish,
   Ingredient,
@@ -35,6 +36,11 @@ export default function DishDetail() {
   const [planSlot, setPlanSlot] = useState<MealSlot>('diner');
   const [saving, setSaving] = useState(false);
   const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
+  const [frequency, setFrequency] = useState<'once' | 1 | 2 | 7 | 14 | 'custom'>('once');
+  const [customDays, setCustomDays] = useState('3');
+  const [endDate, setEndDate] = useState<string | null>(null);
+  const [endPickerOpen, setEndPickerOpen] = useState(false);
+  const [recurError, setRecurError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,10 +61,27 @@ export default function DishDetail() {
   const nextDays = Array.from({ length: 10 }, (_, i) => addDays(new Date(), i));
 
   const confirmAdd = async () => {
+    if (frequency !== 'once') {
+      if (!endDate) {
+        setRecurError('Choisis une date de fin pour la répétition.');
+        return;
+      }
+      if (endDate < planDate) {
+        setRecurError('La date de fin doit être après le jour de départ.');
+        return;
+      }
+    }
+    setRecurError(null);
     setSaving(true);
     try {
-      await setMeal(session!.user.id, planDate, planSlot, dish!);
-      setConfirmMsg(`Ajouté au ${MEAL_SLOT_LABELS[planSlot].toLowerCase()} du ${planDate}`);
+      if (frequency === 'once') {
+        await setMeal(session!.user.id, planDate, planSlot, dish!);
+        setConfirmMsg(`Ajouté au ${MEAL_SLOT_LABELS[planSlot].toLowerCase()} du ${planDate}`);
+      } else {
+        const intervalDays = frequency === 'custom' ? Math.max(1, Number(customDays) || 1) : frequency;
+        await setMealRecurring(session!.user.id, dish!, planSlot, planDate, intervalDays, endDate!);
+        setConfirmMsg(`Ajouté au planning jusqu'au ${endDate}`);
+      }
       setPlanOpen(false);
     } finally {
       setSaving(false);
@@ -172,6 +195,40 @@ export default function DishDetail() {
                   <Chip key={slot} label={MEAL_SLOT_LABELS[slot]} active={planSlot === slot} onPress={() => setPlanSlot(slot)} />
                 ))}
               </ScrollView>
+              <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Répétition</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                <Chip label="Une fois" active={frequency === 'once'} onPress={() => setFrequency('once')} />
+                <Chip label="Tous les jours" active={frequency === 1} onPress={() => setFrequency(1)} />
+                <Chip label="Tous les 2 jours" active={frequency === 2} onPress={() => setFrequency(2)} />
+                <Chip label="Toutes les semaines" active={frequency === 7} onPress={() => setFrequency(7)} />
+                <Chip label="Une semaine sur deux" active={frequency === 14} onPress={() => setFrequency(14)} />
+                <Chip label="Personnalisé" active={frequency === 'custom'} onPress={() => setFrequency('custom')} />
+              </ScrollView>
+              {frequency !== 'once' ? (
+                <View style={{ marginTop: 10, gap: 8 }}>
+                  {frequency === 'custom' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={{ fontSize: 12, color: colors.inkSoft }}>Tous les</Text>
+                      <TextInput
+                        value={customDays}
+                        onChangeText={setCustomDays}
+                        keyboardType="numeric"
+                        style={{ width: 44, textAlign: 'center', borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: 10, paddingVertical: 6, color: colors.ink }}
+                      />
+                      <Text style={{ fontSize: 12, color: colors.inkSoft }}>jours</Text>
+                    </View>
+                  ) : null}
+                  <Pressable
+                    onPress={() => setEndPickerOpen(true)}
+                    style={[styles.endBtn, { borderColor: colors.beigeDark }]}
+                  >
+                    <Text style={{ fontSize: 12, color: colors.ink }}>
+                      {endDate ? `Jusqu'au ${endDate}` : 'Choisir la date de fin'}
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+              {recurError ? <Text style={{ color: colors.danger, fontSize: 11.5, marginTop: 8 }}>{recurError}</Text> : null}
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
                 <Pill label={saving ? '…' : 'Confirmer'} variant="primary" onPress={confirmAdd} disabled={saving} />
                 <Pill label="Annuler" variant="ghost" onPress={() => setPlanOpen(false)} />
@@ -182,6 +239,16 @@ export default function DishDetail() {
           <Pill label="Supprimer ce plat" variant="ghost" onPress={onDelete} />
         </View>
       </ScrollView>
+
+      <CalendarPicker
+        visible={endPickerOpen}
+        selectedDate={endDate ?? planDate}
+        onClose={() => setEndPickerOpen(false)}
+        onSelect={(iso) => {
+          setEndDate(iso);
+          setEndPickerOpen(false);
+        }}
+      />
     </Screen>
   );
 }
@@ -194,4 +261,5 @@ const styles = StyleSheet.create({
   step: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   stepNum: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   planPanel: { borderWidth: 1, borderRadius: 16, padding: 14 },
+  endBtn: { borderWidth: 1.5, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, alignSelf: 'flex-start' },
 });

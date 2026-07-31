@@ -41,7 +41,7 @@ Document de référence pour reprendre ce projet dans une nouvelle conversation 
 2. ✅ Bouton retour (‹) ajouté sur la fiche recette (`ScreenHeader` a maintenant un `onBack` optionnel).
 3. ✅ Liste de courses : cliquer sur un plat (vue "Par plat" ou pastille plat en "Par catégorie") ouvre sa fiche recette.
 4. ✅ Liste de courses : affichage du/des jour(s) de consommation prévu par ingrédient/plat en vues Semaine et Plage (masqué en vue Jour, redondant).
-5. ⏳ Récurrence à l'ajout au planning (une fois / tous les jours / toutes les 2 semaines…).
+5. ✅ Récurrence à l'ajout au planning — dans la fiche recette, "+ Ajouter au planning" propose maintenant une fréquence (Une fois / Tous les jours / Tous les 2 jours / Toutes les semaines / Une semaine sur deux / Personnalisé en jours) et une date de fin (calendrier). Aucune migration nécessaire (réutilise `planning_entries`). **Non testé visuellement** (pas d'identifiants) — à vérifier.
 6. ⏳ Infos nutritionnelles détaillées par plat (protéines/glucides/fibres…), au-delà des calories actuelles.
 7. ⏳ Nombre de personnes par repas planifié → recalcul des quantités dans la liste de courses (cas : deux plats différents le même soir pour des groupes de tailles différentes). **Décision prise** (2026-07-31) : un nombre de personnes par plat planifié (pré-rempli avec la taille du foyer), pas encore implémenté.
 8. ✅ **Partage de l'app entre membres d'un même foyer** — planning et liste de courses communs à tous les membres d'un foyer. Rejoindre se fait via un code temporaire de 5 minutes (Profil → section "Partage du foyer" : bouton pour générer un code, champ pour saisir un code reçu). "Mes plats" reste personnel à chacun pour l'instant. **Migration 012 à exécuter — lire l'avertissement ci-dessous avant.**
