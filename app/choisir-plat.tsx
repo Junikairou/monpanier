@@ -84,8 +84,9 @@ export default function ChoisirPlat() {
         ))}
       </ScrollView>
 
-      <View style={{ paddingHorizontal: 18, paddingBottom: 10, alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 18, paddingBottom: 10, justifyContent: 'center' }}>
         <Pill label="+ Créer un nouveau plat" variant="primary" onPress={createNew} />
+        <Pill label="📖 Piocher dans le catalogue" onPress={() => router.push('/catalogue')} />
       </View>
 
       {loading ? (

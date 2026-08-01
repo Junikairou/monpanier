@@ -218,16 +218,19 @@ export default function Courses() {
     <View key={keyId} style={[styles.itemRow, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: checked ? 0.5 : 1 }]}>
       <Checkbox checked={checked} onPress={onToggle} />
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 12.5, fontFamily: fonts.bodyMedium, color: colors.ink, textDecorationLine: checked ? 'line-through' : 'none' }}>{name}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>
-          {qtyTag(qty)}
-          {dishBadge}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 5 }}>
+          <Text
+            style={{ flexShrink: 1, fontSize: 12.5, fontFamily: fonts.bodyMedium, color: colors.ink, textDecorationLine: checked ? 'line-through' : 'none' }}
+            numberOfLines={1}
+          >
+            {name}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, justifyContent: 'flex-end' }}>{dishBadge}</View>
         </View>
-        {dayBadgeNode ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>
-            {dayBadgeNode}
-          </View>
-        ) : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 3 }}>
+          {qtyTag(qty)}
+          {dayBadgeNode}
+        </View>
       </View>
     </View>
   );

@@ -166,6 +166,24 @@ Lot 1 (terminé, cette conversation) :
 
 **Migration 020 à exécuter** (catalogue d'articles par foyer, SQL envoyé dans le chat). **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur, écran de connexion s'affiche.
 
+## Chantier en cours (2026-08-01, lot 4 — retours après lot 3)
+
+1. ✅ **Bug corrigé (mobile) : création de plat en doublon / mauvaise navigation** — deux causes cumulées : (a) le formulaire restait marqué "modifié" pendant la navigation de retour après enregistrement, ce qui faisait intercepter ce retour par le garde-fou "quitter sans enregistrer" (surtout visible sur mobile où appui tactile + retour arrivent plus vite que le re-rendu) ; (b) un double-appui tactile pouvait déclencher l'enregistrement deux fois avant que le bouton soit désactivé. Corrigé : le formulaire n'est plus marqué "modifié" avant de naviguer, et un verrou empêche tout double-enregistrement.
+2. ✅ Planning : espace agrandi entre la frise des jours et la liste des repas.
+3. ✅ Planning : trait en pointillé ajouté au-dessus de "+ Ajouter un plat" (même style que celui déjà entre plusieurs plats d'un même repas).
+4. ✅ Liste de courses (vues Semaine/Plage) : nouvelle disposition des vignettes — nom du plat d'origine en haut à droite (même ligne que le nom de l'article), jour de consommation en bas à droite (même ligne que la quantité).
+5. ✅ Options avancées : section "Repas à planifier" retirée (redondante avec le raccourci déjà présent directement dans le Planning et avec Personnalisation).
+6. ✅ Formulaire de plat : "Temps de préparation" et "Prévu pour combien de personnes" sur la même ligne (moitié chacun).
+7. ✅ Détection de doublon de recette : avertissement (non bloquant) sous le nom du plat si une autre recette du foyer porte déjà ce nom.
+8. ✅ Sélecteur de plat (planning) : bouton "📖 Piocher dans le catalogue" ajouté à côté de "+ Créer un nouveau plat".
+
+**Repoussé à un prochain lot (chantiers plus lourds, à cadrer séparément)** :
+- **Catalogue de recettes communautaire** (partagé entre foyers, décision du 2026-08-01) — nécessite une nouvelle table/RLS pour des plats "publics" consultables par tous les foyers + écran de parcours dédié. Actuellement le catalogue n'est qu'une liste d'exemples fixes.
+- **Refonte des ingrédients** : catalogue d'articles avec rayon + nutriments par article, bouton pour modifier un article directement, retrait du champ Rayon de la recette (juste Nom/Qté/Unité) — décidé le 2026-08-01, pas encore implémenté.
+- Bouton "Liste d'articles" dans Plus → Gestion (dépend du point précédent).
+- Réordonnancement par glisser-déposer des étapes de recette (comme en Personnalisation).
+- **Rafraîchir en glissant vers le bas** : ne fonctionne pas sur la version web/PWA (navigateur mobile) — react-native-web n'implémente pas le geste natif de pull-to-refresh, contrairement à une app installée nativement. Solution possible : réintroduire un bouton "🔄 Actualiser" (fiable partout) en plus/à la place du geste. **Question posée à l'utilisateur, réponse attendue.**
+
 ## Pas fait / en attente
 
 - Communauté (partage de recettes) — explicitement mis de côté dès le départ

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from './ScaledText';
 import { useTheme } from '../theme/ThemeProvider';
@@ -12,6 +12,7 @@ import { IngredientPicker } from './IngredientPicker';
 import { NewDishInput } from '../data/dishes';
 import { TaxonomyItem } from '../data/taxonomies';
 import { CatalogIngredient, ensureCatalogIngredient, listCatalogIngredients } from '../data/ingredientsCatalog';
+import { listDishes } from '../data/dishes';
 import { Category, CourseType, GroceryCategory } from '../types/models';
 import { fonts } from '../theme/tokens';
 
@@ -149,10 +150,12 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   const [grocMenuFor, setGrocMenuFor] = useState<number | null>(null);
   const [steps, setSteps] = useState<string[]>(initial.steps);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [showNutrition, setShowNutrition] = useState(true);
   const [catalogItems, setCatalogItems] = useState<CatalogIngredient[]>([]);
   const [pickerFor, setPickerFor] = useState<number | null>(null);
+  const [existingNames, setExistingNames] = useState<string[]>([]);
 
   useEffect(() => {
     getProfile(session!.user.id).then((p) => setShowNutrition(p.show_nutrition_fields));
@@ -160,7 +163,14 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
 
   useEffect(() => {
     listCatalogIngredients().then(setCatalogItems).catch(() => {});
+    listDishes().then((d) => setExistingNames(d.map((x) => x.name))).catch(() => {});
   }, []);
+
+  const isDuplicateName =
+    !!name.trim() &&
+    existingNames.some(
+      (n) => n.trim().toLowerCase() === name.trim().toLowerCase() && n.trim().toLowerCase() !== initial.name.trim().toLowerCase(),
+    );
 
   useEffect(() => {
     if (!onDirtyChange) return;
@@ -181,11 +191,13 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   const groceryLabel = (key: string) => groceryCategories.find((g) => g.key === key)?.label ?? key;
 
   const save = async () => {
+    if (savingRef.current) return;
     if (!name.trim()) {
       setError('Donne un nom à ton plat.');
       return;
     }
     setError(null);
+    savingRef.current = true;
     setSaving(true);
     try {
       const knownNames = new Set(catalogItems.map((c) => c.name.trim().toLowerCase()));
@@ -193,6 +205,12 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       await Promise.all(
         newOnes.map((i) => ensureCatalogIngredient(session!.user.id, i.name, i.grocery_category, i.unit).catch(() => {})),
       );
+      // Le formulaire n'est plus "sale" avant même de naviguer : onSubmit peut
+      // déclencher une navigation immédiate (router.back()), et le garde-fou
+      // "quitter sans enregistrer" (beforeRemove) interceptait cette navigation
+      // programmatique tant que ce flag restait vrai — surtout visible sur mobile
+      // où les événements tactiles/back arrivent plus vite que le re-render.
+      onDirtyChange?.(false);
       await onSubmit({
         name: name.trim(),
         category,
@@ -215,10 +233,11 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
           })),
         steps: steps.map((s) => s.trim()).filter(Boolean),
       });
-      onDirtyChange?.(false);
     } catch (e: any) {
+      onDirtyChange?.(true);
       setError(e?.message ?? "Erreur lors de l'enregistrement.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -234,6 +253,11 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         </View>
         <View style={{ flex: 1 }}>
           <Field label="Nom du plat" value={name} onChangeText={setName} placeholder="Ex. Poêlée de légumes" />
+          {isDuplicateName ? (
+            <Text style={{ fontSize: 10.5, color: colors.honey, marginTop: -6, marginBottom: 6 }}>
+              ⚠️ Une recette s'appelle déjà « {name.trim()} »
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -250,13 +274,26 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         <Text style={{ color: colors.inkSoft }}>▾</Text>
       </Pressable>
 
-      <Field
-        label="Temps de préparation (optionnel, en minutes)"
-        value={prepMinutes}
-        onChangeText={setPrepMinutes}
-        keyboardType="numeric"
-        placeholder="Ex. 20"
-      />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <Field
+            label="Temps de préparation (min)"
+            value={prepMinutes}
+            onChangeText={setPrepMinutes}
+            keyboardType="numeric"
+            placeholder="Ex. 20"
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field
+            label="Prévu pour combien de pers. ?"
+            value={baseServings}
+            onChangeText={setBaseServings}
+            keyboardType="numeric"
+            placeholder="4"
+          />
+        </View>
+      </View>
 
       {showNutrition ? (
         <>
@@ -287,14 +324,6 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
           </View>
         </>
       ) : null}
-
-      <Field
-        label="Cette recette est prévue pour combien de personnes ?"
-        value={baseServings}
-        onChangeText={setBaseServings}
-        keyboardType="numeric"
-        placeholder="4"
-      />
 
       <Text style={[styles.section, { color: colors.ink }]}>Ingrédients</Text>
       {ingredients.map((ing, i) => (

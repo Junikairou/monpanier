@@ -373,7 +373,7 @@ export default function Planning() {
             <FlatList
               data={allSlotKeys.filter((s) => activeSlots.includes(s))}
               keyExtractor={(s) => s}
-              contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10 }}
+              contentContainerStyle={{ padding: 18, paddingTop: 16, gap: 10 }}
               refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
               ListFooterComponent={
                 inactiveSlots.length > 0 ? (
@@ -451,7 +451,14 @@ export default function Planning() {
                         ) : null}
                       </>
                     )}
-                    <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap', marginTop: slotList.length === 0 ? 0 : 8 }}>
+                    <View
+                      style={[
+                        { flexDirection: 'row', gap: 5, flexWrap: 'wrap' },
+                        slotList.length === 0
+                          ? { marginTop: 0 }
+                          : { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderStyle: 'dashed', borderColor: colors.line },
+                      ]}
+                    >
                       <MiniButton label="+ Ajouter un plat" variant="sage" onPress={() => onAdd(slot)} />
                     </View>
                   </Card>
