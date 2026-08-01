@@ -193,6 +193,8 @@ Lot 1 (terminé, cette conversation) :
 2. ✅ Planning : légende "Aujourd'hui — [date]" recentrée (espace identique au-dessus et en dessous).
 3. ✅ Flèches ‹› (planning et courses) recentrées dans leur cercle — remplacées par des icônes Ionicons (même correctif déjà appliqué au bouton retour), le caractère texte n'était pas bien centré selon les polices.
 4. ✅ Bouton "revenir à aujourd'hui" (⟲) déplacé : retiré de l'en-tête (toujours visible avant), affiché seulement quand on n'est pas sur la semaine/le jour actuel, juste à côté du libellé de la semaine ou de la date — sur Planning (vues Jour et Semaine) et Courses (vue Semaine).
+5. ✅ Correction du centrage : le bouton ⟲ (point 4) décalait tout le bloc "‹ Semaine du... ›" vers la gauche puisqu'il s'ajoutait dans la même ligne centrée. Découpé en 3 colonnes (gauche vide / bloc semaine-et-flèches toujours centré / ⟲ à droite) sur Planning (Jour et Semaine) et Courses (Semaine) — le libellé et ses flèches restent maintenant parfaitement centrés, que le bouton ⟲ soit affiché ou non.
+6. ✅ 10 recettes courantes ajoutées au catalogue d'exemples (Lasagnes bolognaise, Ramen maison, Hachis parmentier au bœuf, Hachis parmentier végétal aux lentilles, Salade de pâtes, Salade de fruits, Poulet rôti et pommes de terre, Omelette aux champignons, Chili con carne, Riz cantonais).
 
 **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
 

@@ -346,21 +346,24 @@ export default function Planning() {
             <ArrowBtn dir="next" onPress={goNextWeek} />
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, paddingHorizontal: 18 }}>
+            <View style={{ flex: 1 }} />
             <Pressable onPress={() => setCalendarOpen(true)}>
               <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, textDecorationLine: 'underline' }}>
                 {formatDayCaption(selectedDateObj)}
               </Text>
             </Pressable>
-            {!isToday(selectedDateObj) ? (
-              <InfoPressable
-                onPress={goToday}
-                info={{ title: "Revenir à aujourd'hui", text: "Remet le planning sur la date du jour." }}
-                style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
-              >
-                <Text style={{ fontSize: 10.5 }}>⟲</Text>
-              </InfoPressable>
-            ) : null}
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              {!isToday(selectedDateObj) ? (
+                <InfoPressable
+                  onPress={goToday}
+                  info={{ title: "Revenir à aujourd'hui", text: "Remet le planning sur la date du jour." }}
+                  style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
+                >
+                  <Text style={{ fontSize: 10.5 }}>⟲</Text>
+                </InfoPressable>
+              ) : null}
+            </View>
           </View>
 
           {hasCalorieData ? (
@@ -483,21 +486,26 @@ export default function Planning() {
         </>
       ) : (
         <>
-          <View style={styles.weekNav}>
-            <ArrowBtn dir="prev" onPress={goPrevWeek} />
-            <Pressable onLongPress={() => setWeekMenuOpen(true)}>
-              <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(weekStart)}</Text>
-            </Pressable>
-            <ArrowBtn dir="next" onPress={goNextWeek} />
-            {toIso(weekStart) !== toIso(startOfWeek(new Date())) ? (
-              <InfoPressable
-                onPress={goToday}
-                info={{ title: "Revenir à aujourd'hui", text: "Remet le planning sur la semaine du jour." }}
-                style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
-              >
-                <Text style={{ fontSize: 11 }}>⟲</Text>
-              </InfoPressable>
-            ) : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 18, marginTop: 2, marginBottom: 12 }}>
+            <View style={{ flex: 1 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <ArrowBtn dir="prev" onPress={goPrevWeek} />
+              <Pressable onLongPress={() => setWeekMenuOpen(true)}>
+                <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(weekStart)}</Text>
+              </Pressable>
+              <ArrowBtn dir="next" onPress={goNextWeek} />
+            </View>
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              {toIso(weekStart) !== toIso(startOfWeek(new Date())) ? (
+                <InfoPressable
+                  onPress={goToday}
+                  info={{ title: "Revenir à aujourd'hui", text: "Remet le planning sur la semaine du jour." }}
+                  style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
+                >
+                  <Text style={{ fontSize: 11 }}>⟲</Text>
+                </InfoPressable>
+              ) : null}
+            </View>
           </View>
 
           {loading ? (
@@ -638,7 +646,6 @@ const styles = StyleSheet.create({
   slotLabel: { fontSize: 9.5, fontFamily: fonts.bodySemiBold, letterSpacing: 0.6, textTransform: 'uppercase' },
   removeBtn: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   dishName: { fontSize: 13.5, fontFamily: fonts.bodyMedium, marginBottom: 7 },
-  weekNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 2, marginBottom: 12 },
   dayColHeader: { alignItems: 'center', paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, marginBottom: 6 },
   dayColSlot: { borderWidth: 1, borderRadius: 10, padding: 8, marginBottom: 6 },
 });

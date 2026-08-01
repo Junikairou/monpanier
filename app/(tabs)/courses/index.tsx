@@ -310,19 +310,24 @@ export default function Courses() {
           <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 1))} />
         </View>
       ) : period === 'semaine' ? (
-        <View style={styles.weekNav}>
-          <ArrowBtn dir="prev" onPress={() => setAnchor(addDays(anchor, -7))} />
-          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(startOfWeek(anchor))}</Text>
-          <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 7))} />
-          {toIso(startOfWeek(anchor)) !== toIso(startOfWeek(new Date())) ? (
-            <InfoPressable
-              onPress={goToday}
-              info={{ title: "Revenir à aujourd'hui", text: "Remet la liste de courses sur la semaine du jour." }}
-              style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
-            >
-              <Text style={{ fontSize: 11 }}>⟲</Text>
-            </InfoPressable>
-          ) : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 18, marginTop: 10 }}>
+          <View style={{ flex: 1 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <ArrowBtn dir="prev" onPress={() => setAnchor(addDays(anchor, -7))} />
+            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(startOfWeek(anchor))}</Text>
+            <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 7))} />
+          </View>
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+            {toIso(startOfWeek(anchor)) !== toIso(startOfWeek(new Date())) ? (
+              <InfoPressable
+                onPress={goToday}
+                info={{ title: "Revenir à aujourd'hui", text: "Remet la liste de courses sur la semaine du jour." }}
+                style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
+              >
+                <Text style={{ fontSize: 11 }}>⟲</Text>
+              </InfoPressable>
+            ) : null}
+          </View>
         </View>
       ) : (
         <View style={styles.rangeNav}>
@@ -532,7 +537,6 @@ const styles = StyleSheet.create({
   weekStrip: { flex: 1, flexDirection: 'row', gap: 4 },
   arrowBtn: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   dayChip: { flex: 1, minWidth: 30, paddingVertical: 13, paddingHorizontal: 2, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  weekNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginHorizontal: 18, marginTop: 10 },
   rangeNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginHorizontal: 18, marginTop: 10 },
   rangeBtn: { alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1.5 },
   catLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
