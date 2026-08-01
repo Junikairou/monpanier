@@ -196,6 +196,13 @@ Lot 1 (terminé, cette conversation) :
 5. ✅ Correction du centrage : le bouton ⟲ (point 4) décalait tout le bloc "‹ Semaine du... ›" vers la gauche puisqu'il s'ajoutait dans la même ligne centrée. Découpé en 3 colonnes (gauche vide / bloc semaine-et-flèches toujours centré / ⟲ à droite) sur Planning (Jour et Semaine) et Courses (Semaine) — le libellé et ses flèches restent maintenant parfaitement centrés, que le bouton ⟲ soit affiché ou non.
 6. ✅ 10 recettes courantes ajoutées au catalogue d'exemples (Lasagnes bolognaise, Ramen maison, Hachis parmentier au bœuf, Hachis parmentier végétal aux lentilles, Salade de pâtes, Salade de fruits, Poulet rôti et pommes de terre, Omelette aux champignons, Chili con carne, Riz cantonais).
 
+## Chantier en cours (2026-08-01, connexion cassée pour d'autres personnes en PWA)
+
+Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en PWA. Deux problèmes signalés : connexion e-mail/mot de passe affiche "{}" ; connexion Google renvoie à la page de connexion sans se connecter.
+
+1. ✅ **Partiel** — `src/lib/auth.tsx` : les erreurs de connexion (e-mail/mot de passe, Google, inscription, réinitialisation) sont maintenant capturées même en cas d'échec réseau (elles pouvaient auparavant remonter un message vide ou peu clair, d'où le "{}" observé) — affiche désormais un message clair ("Connexion impossible : le serveur n'a pas répondu"). **Ça n'explique pas forcément la cause racine** — à confirmer : si "{}" réapparaît, il faudra le message exact affiché maintenant pour continuer le diagnostic.
+2. ⚠️ **Action requise dans le dashboard Supabase (je n'y ai pas accès)** — la connexion Google qui "revient à la page de connexion" est très probablement due aux **Redirect URLs** de Supabase (Authentication → URL Configuration) qui n'ont jamais été mises à jour depuis le renommage Mijoté→Mon Panier (2026-07-30, TODO jamais confirmé) : si `mijote://` ou une ancienne URL y traîne encore au lieu de `https://junikairou.github.io/monpanier/`, Google OAuth échoue silencieusement et Supabase renvoie vers l'app sans session. **À vérifier et corriger toi-même** : Supabase Dashboard → Authentication → URL Configuration → s'assurer que "Site URL" = `https://junikairou.github.io/monpanier/` et que cette même URL (avec le `/`) figure dans "Redirect URLs".
+
 **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
 
 **Migration 021 à exécuter** (SQL envoyé dans le chat). **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
