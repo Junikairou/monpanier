@@ -177,12 +177,19 @@ Lot 1 (terminé, cette conversation) :
 7. ✅ Détection de doublon de recette : avertissement (non bloquant) sous le nom du plat si une autre recette du foyer porte déjà ce nom.
 8. ✅ Sélecteur de plat (planning) : bouton "📖 Piocher dans le catalogue" ajouté à côté de "+ Créer un nouveau plat".
 
-**Repoussé à un prochain lot (chantiers plus lourds, à cadrer séparément)** :
-- **Catalogue de recettes communautaire** (partagé entre foyers, décision du 2026-08-01) — nécessite une nouvelle table/RLS pour des plats "publics" consultables par tous les foyers + écran de parcours dédié. Actuellement le catalogue n'est qu'une liste d'exemples fixes.
-- **Refonte des ingrédients** : catalogue d'articles avec rayon + nutriments par article, bouton pour modifier un article directement, retrait du champ Rayon de la recette (juste Nom/Qté/Unité) — décidé le 2026-08-01, pas encore implémenté.
-- Bouton "Liste d'articles" dans Plus → Gestion (dépend du point précédent).
-- Réordonnancement par glisser-déposer des étapes de recette (comme en Personnalisation).
-- ✅ **Rafraîchir en glissant vers le bas, sur web/PWA** — react-native-web n'a pas de geste natif ; recréé à la main (`src/components/PullToRefresh.tsx`, événements tactiles bruts, actif seulement quand la liste est déjà tout en haut), branché sur Planning (vue Jour), Courses et "Tous les plats". Ne change rien sur natif (RefreshControl déjà en place). **À tester au doigt sur téléphone** — non vérifiable depuis l'agent (pas d'écran tactile).
+## Chantier en cours (2026-08-01, lot 5 — chantiers lourds)
+
+1. ✅ **Rafraîchir en glissant vers le bas, sur web/PWA** — react-native-web n'a pas de geste natif ; recréé à la main (`src/components/PullToRefresh.tsx`, événements tactiles bruts, actif seulement quand la liste est déjà tout en haut), branché sur Planning (vue Jour), Courses et "Tous les plats". Ne change rien sur natif (RefreshControl déjà en place). **À tester au doigt sur téléphone** — non vérifiable depuis l'agent (pas d'écran tactile).
+2. ✅ **Catalogue de recettes communautaire** (décision du 2026-08-01) — un plat peut être marqué "🌍 Partager au catalogue commun" depuis sa fiche (par son auteur uniquement) ; devient alors visible en lecture seule par tous les foyers dans Catalogue de recettes (nouvelle section "Partagées par la communauté", séparée des exemples fixes). "+ Ajouter" copie la recette complète (ingrédients + étapes) dans son propre foyer. **Migration 021 à exécuter** (colonne `dishes.is_public` + règles de sécurité de lecture cross-foyer sur `dishes`/`ingredients`/`recipe_steps`).
+3. ✅ **Refonte des articles/ingrédients** (décision du 2026-08-01) :
+   - Le catalogue d'articles porte maintenant aussi des nutriments optionnels (calories/protéines/glucides/lipides/fibres, pour 100 g), en plus du rayon. **Migration 021** ajoute ces colonnes sur `ingredients_catalog`.
+   - Dans le formulaire de plat, la ligne d'un ingrédient ne montre plus que Nom/Qté/Unité (le Rayon a été retiré de la recette, il vit désormais uniquement sur l'article) ; un bouton ✏️ à côté du nom ouvre une fenêtre pour modifier l'article correspondant (nom, rayon, nutriments) ou en créer un nouveau à la volée si l'ingrédient tapé n'existe pas encore dans le catalogue.
+   - Nouvel écran **"Liste d'articles"** (Plus → Gestion → Articles) : recherche, regroupement par rayon, modification et suppression de chaque article, "+ Nouvel article".
+4. ✅ Étapes de la recette : réordonnancement par glisser-déposer (maintenir l'icône ☰ et glisser), même mécanisme que Personnalisation.
+
+**Migration 021 à exécuter** (SQL envoyé dans le chat). **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
+
+⚠️ Limite connue sur le catalogue communautaire : pas de modération/signalement pour l'instant — n'importe quel membre d'un foyer peut rendre une recette publique, visible par tous les foyers de l'app.
 
 ## Pas fait / en attente
 
@@ -195,7 +202,7 @@ Lot 1 (terminé, cette conversation) :
 
 ## Points d'attention techniques
 
-- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...020` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. Migrations 009 à 019 exécutées. **Migration 020 en attente** (catalogue d'articles par foyer).
+- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...021` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. Migrations 009 à 019 exécutées. **Migrations 020 et 021 en attente** (020 : catalogue d'articles par foyer ; 021 : catalogue communautaire + nutriments par article).
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.

@@ -14,6 +14,8 @@ export type GroceryCategory = string;
 export interface Dish {
   id: string;
   user_id: string;
+  household_id: string;
+  is_public: boolean;
   name: string;
   category: Category;
   course_type: CourseType;

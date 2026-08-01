@@ -33,10 +33,10 @@ export default function PlatsIndex() {
 
   const load = useCallback(() => {
     setLoading(true);
-    listDishes()
+    listDishes(session!.user.id)
       .then(setDishes)
       .finally(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   useFocusEffect(
     useCallback(() => {

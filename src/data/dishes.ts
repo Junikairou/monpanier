@@ -2,10 +2,26 @@ import { supabase } from '../lib/supabase';
 import { getMyHouseholdId } from './household';
 import type { Category, CourseType, Dish, Ingredient, RecipeStep } from '../types/models';
 
-export async function listDishes(): Promise<Dish[]> {
-  const { data, error } = await supabase.from('dishes').select('*').order('name');
+export async function listDishes(userId: string): Promise<Dish[]> {
+  // Filtre explicite par foyer : la lecture RLS de "dishes" autorise aussi les
+  // plats publics d'autres foyers (catalogue communautaire), donc un simple
+  // select('*') remonterait aussi les plats des autres au lieu de rester
+  // limité à "Mes plats".
+  const household_id = await getMyHouseholdId(userId);
+  const { data, error } = await supabase.from('dishes').select('*').eq('household_id', household_id).order('name');
   if (error) throw error;
   return data as Dish[];
+}
+
+export async function listPublicDishes(): Promise<Dish[]> {
+  const { data, error } = await supabase.from('dishes').select('*').eq('is_public', true).order('name');
+  if (error) throw error;
+  return data as Dish[];
+}
+
+export async function setDishPublic(id: string, isPublic: boolean): Promise<void> {
+  const { error } = await supabase.from('dishes').update({ is_public: isPublic }).eq('id', id);
+  if (error) throw error;
 }
 
 export async function updateDishClassification(

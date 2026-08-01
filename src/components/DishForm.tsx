@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from './ScaledText';
 import { useTheme } from '../theme/ThemeProvider';
 import { useTaxonomies } from '../lib/taxonomies';
@@ -9,9 +9,17 @@ import { Chip, Field, Pill } from './ui';
 import { ActionSheet } from './ActionSheet';
 import { EmojiPicker } from './EmojiPicker';
 import { IngredientPicker } from './IngredientPicker';
+import { ArticleEditModal } from './ArticleEditModal';
 import { NewDishInput } from '../data/dishes';
 import { TaxonomyItem } from '../data/taxonomies';
-import { CatalogIngredient, ensureCatalogIngredient, listCatalogIngredients } from '../data/ingredientsCatalog';
+import {
+  CatalogIngredient,
+  createCatalogIngredient,
+  deleteCatalogIngredient,
+  ensureCatalogIngredient,
+  listCatalogIngredients,
+  updateCatalogIngredient,
+} from '../data/ingredientsCatalog';
 import { listDishes } from '../data/dishes';
 import { Category, CourseType, GroceryCategory } from '../types/models';
 import { fonts } from '../theme/tokens';
@@ -126,6 +134,15 @@ export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
 };
 
 const UNIT_OPTIONS = ['Pièce', 'Gramme', 'ML', 'Cuillère à soupe', 'Pincée'];
+const STEP_ROW_HEIGHT = 66;
+
+function moveItem<T>(arr: T[], from: number, to: number): T[] {
+  if (from === -1) return arr;
+  const next = [...arr];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
 
 export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSubmit, onDirtyChange }: DishFormProps) {
   const { colors } = useTheme();
@@ -147,7 +164,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   const [prepMinutes, setPrepMinutes] = useState(initial.prepMinutes);
   const [ingredients, setIngredients] = useState<IngredientDraft[]>(initial.ingredients);
   const [unitMenuFor, setUnitMenuFor] = useState<number | null>(null);
-  const [grocMenuFor, setGrocMenuFor] = useState<number | null>(null);
+  const [editArticleFor, setEditArticleFor] = useState<number | null>(null);
   const [steps, setSteps] = useState<string[]>(initial.steps);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -156,6 +173,9 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   const [catalogItems, setCatalogItems] = useState<CatalogIngredient[]>([]);
   const [pickerFor, setPickerFor] = useState<number | null>(null);
   const [existingNames, setExistingNames] = useState<string[]>([]);
+  const [stepDragIdx, setStepDragIdx] = useState<number | null>(null);
+  const [stepDragDy, setStepDragDy] = useState(0);
+  const [stepBaseOrder, setStepBaseOrder] = useState<string[]>([]);
 
   useEffect(() => {
     getProfile(session!.user.id).then((p) => setShowNutrition(p.show_nutrition_fields));
@@ -163,7 +183,8 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
 
   useEffect(() => {
     listCatalogIngredients().then(setCatalogItems).catch(() => {});
-    listDishes().then((d) => setExistingNames(d.map((x) => x.name))).catch(() => {});
+    listDishes(session!.user.id).then((d) => setExistingNames(d.map((x) => x.name))).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isDuplicateName =
@@ -171,6 +192,27 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
     existingNames.some(
       (n) => n.trim().toLowerCase() === name.trim().toLowerCase() && n.trim().toLowerCase() !== initial.name.trim().toLowerCase(),
     );
+
+  const stepTargetIndex =
+    stepDragIdx !== null
+      ? Math.min(stepBaseOrder.length - 1, Math.max(0, stepDragIdx + Math.round(stepDragDy / STEP_ROW_HEIGHT)))
+      : -1;
+  const stepDisplayOrder = stepDragIdx !== null ? moveItem(stepBaseOrder, stepDragIdx, stepTargetIndex) : steps;
+  const stepRowOffset = stepDragIdx !== null ? stepDragDy - (stepTargetIndex - stepDragIdx) * STEP_ROW_HEIGHT : 0;
+
+  const startStepDrag = (idx: number) => {
+    setStepBaseOrder(steps);
+    setStepDragIdx(idx);
+    setStepDragDy(0);
+  };
+  const onStepDragMove = (dy: number) => setStepDragDy(dy);
+  const endStepDrag = () => {
+    if (stepDragIdx !== null && stepTargetIndex !== stepDragIdx) {
+      setSteps(moveItem(stepBaseOrder, stepDragIdx, stepTargetIndex));
+    }
+    setStepDragIdx(null);
+    setStepDragDy(0);
+  };
 
   useEffect(() => {
     if (!onDirtyChange) return;
@@ -188,8 +230,6 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
 
   const courseTypeItem = courseTypes.find((c) => c.key === courseType);
   const courseTypeLabel = courseTypeItem ? `${courseTypeItem.icon ?? ''} ${courseTypeItem.label}`.trim() : courseType;
-  const groceryLabel = (key: string) => groceryCategories.find((g) => g.key === key)?.label ?? key;
-
   const save = async () => {
     if (savingRef.current) return;
     if (!name.trim()) {
@@ -243,7 +283,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 18 }}>
+    <ScrollView contentContainerStyle={{ padding: 18 }} scrollEnabled={stepDragIdx === null}>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
         <View>
           <Text style={[styles.label, { color: colors.inkSoft }]}>Emoji</Text>
@@ -351,6 +391,13 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
               >
                 <Text style={{ fontSize: 14 }}>🔍</Text>
               </Pressable>
+              <Pressable
+                onPress={() => setEditArticleFor(i)}
+                disabled={!ing.name.trim()}
+                style={[styles.dropdown, { paddingHorizontal: 10, marginBottom: 12, borderColor: colors.beigeDark, opacity: ing.name.trim() ? 1 : 0.4 }]}
+              >
+                <Text style={{ fontSize: 14 }}>✏️</Text>
+              </Pressable>
             </View>
             <View style={{ width: 45 }}>
               <Field
@@ -371,13 +418,6 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
               </Pressable>
             </View>
           </View>
-          <Text style={[styles.label, { color: colors.inkSoft }]}>Rayon</Text>
-          <Pressable onPress={() => setGrocMenuFor(i)} style={[styles.dropdown, { borderColor: colors.beigeDark }]}>
-            <Text style={{ fontSize: 13, color: colors.ink }}>
-              {groceryCategories.find((g) => g.key === ing.grocery_category)?.icon ?? ''} {groceryLabel(ing.grocery_category)}
-            </Text>
-            <Text style={{ color: colors.inkSoft }}>▾</Text>
-          </Pressable>
         </View>
       ))}
       <Pill
@@ -395,14 +435,17 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
           <Chip key={phrase} label={phrase} onPress={() => setSteps((prev) => [...prev.filter((s) => s.trim()), phrase])} />
         ))}
       </ScrollView>
-      {steps.map((s, i) => (
-        <Field
+      {stepDisplayOrder.map((s, i) => (
+        <StepRow
           key={i}
-          label={`Étape ${i + 1}`}
+          index={i}
           value={s}
+          dragging={stepDragIdx === i}
+          dragOffset={stepDragIdx === i ? stepRowOffset : 0}
           onChangeText={(v) => setSteps((prev) => prev.map((st, idx) => (idx === i ? v : st)))}
-          placeholder="Décris cette étape…"
-          multiline
+          onDragStart={() => startStepDrag(i)}
+          onDragMove={onStepDragMove}
+          onDragEnd={endStepDrag}
         />
       ))}
       <Pill label="+ Ajouter une étape" variant="ghost" onPress={() => setSteps((prev) => [...prev, ''])} />
@@ -439,6 +482,45 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         onClose={() => setPickerFor(null)}
       />
 
+      <ArticleEditModal
+        visible={editArticleFor !== null}
+        item={
+          editArticleFor !== null
+            ? catalogItems.find((c) => c.name.trim().toLowerCase() === ingredients[editArticleFor].name.trim().toLowerCase()) ?? null
+            : null
+        }
+        initialName={editArticleFor !== null ? ingredients[editArticleFor].name : undefined}
+        groceryCategories={groceryCategories}
+        showNutrition={showNutrition}
+        onSave={async (patch) => {
+          if (editArticleFor === null) return;
+          const existing = catalogItems.find((c) => c.name.trim().toLowerCase() === ingredients[editArticleFor].name.trim().toLowerCase());
+          let saved: CatalogIngredient;
+          if (existing) {
+            await updateCatalogIngredient(existing.id, patch);
+            saved = { ...existing, ...patch } as CatalogIngredient;
+            setCatalogItems((prev) => prev.map((c) => (c.id === existing.id ? saved : c)));
+          } else {
+            saved = await createCatalogIngredient(session!.user.id, patch);
+            setCatalogItems((prev) => [...prev, saved]);
+          }
+          updateIngredient(editArticleFor, { name: saved.name, grocery_category: saved.grocery_category as GroceryCategory });
+          setEditArticleFor(null);
+        }}
+        onDelete={
+          editArticleFor !== null &&
+          catalogItems.some((c) => c.name.trim().toLowerCase() === ingredients[editArticleFor].name.trim().toLowerCase())
+            ? async () => {
+                const existing = catalogItems.find((c) => c.name.trim().toLowerCase() === ingredients[editArticleFor!].name.trim().toLowerCase())!;
+                await deleteCatalogIngredient(existing.id);
+                setCatalogItems((prev) => prev.filter((c) => c.id !== existing.id));
+                setEditArticleFor(null);
+              }
+            : undefined
+        }
+        onClose={() => setEditArticleFor(null)}
+      />
+
       <ActionSheet
         visible={unitMenuFor !== null}
         title="Unité"
@@ -446,18 +528,62 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         onClose={() => setUnitMenuFor(null)}
       />
 
-      <ActionSheet
-        visible={grocMenuFor !== null}
-        title="Rayon"
-        actions={groceryCategories.map((gc) => ({
-          label: `${gc.icon ?? ''} ${gc.label}`.trim(),
-          onPress: () => grocMenuFor !== null && updateIngredient(grocMenuFor, { grocery_category: gc.key }),
-        }))}
-        onClose={() => setGrocMenuFor(null)}
-      />
 
       <EmojiPicker visible={emojiPickerOpen} onSelect={setEmoji} onClose={() => setEmojiPickerOpen(false)} />
     </ScrollView>
+  );
+}
+
+function StepRow({
+  index,
+  value,
+  dragging,
+  dragOffset,
+  onChangeText,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+}: {
+  index: number;
+  value: string;
+  dragging: boolean;
+  dragOffset: number;
+  onChangeText: (v: string) => void;
+  onDragStart: () => void;
+  onDragMove: (dy: number) => void;
+  onDragEnd: () => void;
+}) {
+  const { colors } = useTheme();
+
+  const callbacksRef = useRef({ onDragStart, onDragMove, onDragEnd });
+  useEffect(() => {
+    callbacksRef.current = { onDragStart, onDragMove, onDragEnd };
+  });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => callbacksRef.current.onDragStart(),
+      onPanResponderMove: (_e, gesture) => callbacksRef.current.onDragMove(gesture.dy),
+      onPanResponderRelease: () => callbacksRef.current.onDragEnd(),
+      onPanResponderTerminate: () => callbacksRef.current.onDragEnd(),
+    }),
+  ).current;
+
+  return (
+    <View
+      style={[
+        { flexDirection: 'row', gap: 6, alignItems: 'flex-start', marginBottom: 12 },
+        dragging ? { transform: [{ translateY: dragOffset }], zIndex: 10, opacity: 0.9 } : undefined,
+      ]}
+    >
+      <View {...panResponder.panHandlers} hitSlop={8} style={{ paddingHorizontal: 4, paddingVertical: 12 }}>
+        <Text style={{ fontSize: 15, color: colors.inkFaint }}>☰</Text>
+      </View>
+      <View style={{ flex: 1, marginBottom: 0 }}>
+        <Field label={`Étape ${index + 1}`} value={value} onChangeText={onChangeText} placeholder="Décris cette étape…" multiline />
+      </View>
+    </View>
   );
 }
 

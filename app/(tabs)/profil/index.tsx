@@ -34,6 +34,7 @@ const SECTIONS: { title: string; tiles: TileDef[] }[] = [
     title: 'Gestion',
     tiles: [
       { label: 'Recettes', icon: 'restaurant-outline', route: '/catalogue' },
+      { label: 'Articles', icon: 'basket-outline', route: '/articles' },
       { label: 'Personnalisation', icon: 'pricetags-outline', route: '/personnalisation' },
     ],
   },

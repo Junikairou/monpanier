@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../src/components/ui';
-import { deleteDish, getDish, listIngredients, listRecipeSteps } from '../../src/data/dishes';
+import { deleteDish, getDish, listIngredients, listRecipeSteps, setDishPublic } from '../../src/data/dishes';
 import { getPlanningEntry, setEntryServings, setMeal, setMealRecurring } from '../../src/data/planning';
 import { getProfile } from '../../src/data/profile';
 import { useTaxonomies } from '../../src/lib/taxonomies';
@@ -306,6 +306,17 @@ export default function DishDetail() {
             </View>
           )}
           <Pill label="✏️ Modifier la recette" variant="ghost" onPress={() => router.push({ pathname: '/plat/modifier', params: { id } })} />
+          {dish.user_id === session!.user.id ? (
+            <Pill
+              label={dish.is_public ? '🌍 Partagée au catalogue commun (retirer)' : '🌍 Partager au catalogue commun'}
+              variant="ghost"
+              onPress={async () => {
+                const next = !dish.is_public;
+                await setDishPublic(dish.id, next);
+                setDish({ ...dish, is_public: next });
+              }}
+            />
+          ) : null}
           <Pill label="Supprimer ce plat" variant="ghost" onPress={onDelete} />
         </View>
       </ScrollView>

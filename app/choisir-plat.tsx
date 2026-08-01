@@ -28,7 +28,7 @@ export default function ChoisirPlat() {
   const [filter, setFilter] = useState<Category | null>(null);
 
   useEffect(() => {
-    listDishes()
+    listDishes(session!.user.id)
       .then(setDishes)
       .finally(() => setLoading(false));
   }, []);
