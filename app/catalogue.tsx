@@ -59,7 +59,12 @@ export default function Catalogue() {
 
   return (
     <Screen>
-      <ScreenHeader title="Catalogue de recettes" subtitle="Des idées prêtes à ajouter à Mes plats" onBack={() => router.back()} />
+      <ScreenHeader
+        title="Catalogue de recettes"
+        subtitle="Des idées prêtes à ajouter à Mes plats"
+        onBack={() => router.back()}
+        right={<Pill label="+ Créer" onPress={() => router.push('/(tabs)/plats/new')} />}
+      />
       {loading ? (
         <LoadingBlock />
       ) : (

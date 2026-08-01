@@ -18,7 +18,7 @@ import { listPlanningRange } from '../../../src/data/planning';
 import { GroceryItem, Ingredient, PlanningEntry } from '../../../src/types/models';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
-import { addDays, dayLabel, formatWeekOf, isToday, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
+import { addDays, dayLabel, formatShortDayMonth, formatWeekOf, isToday, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
 
 function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void }) {
@@ -50,6 +50,7 @@ export default function Courses() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedOverride, setExpandedOverride] = useState<Set<string>>(new Set());
+  const [expandedDishBadges, setExpandedDishBadges] = useState<Set<string>>(new Set());
   const [manualOpen, setManualOpen] = useState(false);
   const [mName, setMName] = useState('');
   const [mQty, setMQty] = useState('');
@@ -153,7 +154,7 @@ export default function Courses() {
 
   const dayBadge = (dates: string[]) => {
     if (period === 'jour' || dates.length === 0) return null;
-    const label = dates.map((d) => `${dayLabel(new Date(d))} ${new Date(d).getDate()}`).join(', ');
+    const label = dates.map((d) => formatShortDayMonth(new Date(d))).join(', ');
     return (
       <View style={[styles.dayTag, { backgroundColor: colors.beige }]}>
         <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{label}</Text>
@@ -167,25 +168,40 @@ export default function Courses() {
     </View>
   );
 
-  const dishOriginBadges = (sourceDishIds: string[]) => {
+  const toggleDishBadgeExpanded = (rowKey: string) => {
+    setExpandedDishBadges((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowKey)) next.delete(rowKey);
+      else next.add(rowKey);
+      return next;
+    });
+  };
+
+  const dishOriginBadges = (rowKey: string, sourceDishIds: string[]) => {
     const known = sourceDishIds.filter((id) => dishById[id]);
     if (known.length === 0) return null;
+    if (known.length === 1) {
+      return (
+        <Pressable onPress={() => goToDish(known[0])} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+          <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[known[0]].name}</Text>
+        </Pressable>
+      );
+    }
+    const expanded = expandedDishBadges.has(rowKey);
     return (
       <>
-        {known.length > 1 ? (
-          <View style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
-            <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
-              🔗 dans {known.length} plats
-            </Text>
-          </View>
-        ) : (
-          <Text style={{ fontSize: 9.5, color: colors.inkFaint }}>dans :</Text>
-        )}
-        {known.map((id) => (
-          <Pressable key={id} onPress={() => goToDish(id)} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
-            <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[id].name}</Text>
-          </Pressable>
-        ))}
+        <Pressable onPress={() => toggleDishBadgeExpanded(rowKey)} style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
+          <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
+            🔗 dans {known.length} plats {expanded ? '▴' : '▾'}
+          </Text>
+        </Pressable>
+        {expanded
+          ? known.map((id) => (
+              <Pressable key={id} onPress={() => goToDish(id)} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+                <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[id].name}</Text>
+              </Pressable>
+            ))
+          : null}
       </>
     );
   };
@@ -196,7 +212,8 @@ export default function Courses() {
     onToggle: () => void,
     name: string,
     qty: string,
-    badge?: React.ReactNode,
+    dishBadge?: React.ReactNode,
+    dayBadgeNode?: React.ReactNode,
   ) => (
     <View key={keyId} style={[styles.itemRow, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: checked ? 0.5 : 1 }]}>
       <Checkbox checked={checked} onPress={onToggle} />
@@ -204,8 +221,13 @@ export default function Courses() {
         <Text style={{ fontSize: 12.5, fontFamily: fonts.bodyMedium, color: colors.ink, textDecorationLine: checked ? 'line-through' : 'none' }}>{name}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>
           {qtyTag(qty)}
-          {badge}
+          {dishBadge}
         </View>
+        {dayBadgeNode ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>
+            {dayBadgeNode}
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -347,10 +369,8 @@ export default function Courses() {
                           () => onToggleAuto(item),
                           item.name,
                           `${item.quantity} ${item.unit}`,
-                          <>
-                            {dishOriginBadges(item.source_dish_ids)}
-                            {dayBadge(item.dates)}
-                          </>,
+                          dishOriginBadges(item.key, item.source_dish_ids),
+                          dayBadge(item.dates),
                         ),
                       )}
                     </View>
@@ -370,10 +390,8 @@ export default function Courses() {
                           () => onToggleAuto(item),
                           item.name,
                           `${item.quantity} ${item.unit}`,
-                          <>
-                            {dishOriginBadges(item.source_dish_ids)}
-                            {dayBadge(item.dates)}
-                          </>,
+                          dishOriginBadges(item.key, item.source_dish_ids),
+                          dayBadge(item.dates),
                         ),
                       )}
                     </View>

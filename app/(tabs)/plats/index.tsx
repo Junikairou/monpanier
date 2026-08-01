@@ -6,7 +6,7 @@ import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Checkbox, Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { ActionSheet } from '../../../src/components/ActionSheet';
-import { deleteDish, listDishes, seedDemoDishes } from '../../../src/data/dishes';
+import { deleteDish, listDishes, seedDemoDishes, updateDishClassification } from '../../../src/data/dishes';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { Category, Dish } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
@@ -15,7 +15,7 @@ export default function PlatsIndex() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const router = useRouter();
-  const { categories, label } = useTaxonomies();
+  const { categories, courseTypes, label } = useTaxonomies();
 
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +25,9 @@ export default function PlatsIndex() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [moveKindOpen, setMoveKindOpen] = useState(false);
+  const [moveTargetKind, setMoveTargetKind] = useState<'category' | 'course_type' | null>(null);
+  const [moving, setMoving] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -87,6 +90,20 @@ export default function PlatsIndex() {
       { text: 'Annuler', style: 'cancel' },
       { text: 'Supprimer', style: 'destructive', onPress: run },
     ]);
+  };
+
+  const applyMove = async (key: string) => {
+    if (!moveTargetKind || selected.size === 0) return;
+    setMoving(true);
+    try {
+      for (const id of selected) await updateDishClassification(id, { [moveTargetKind]: key } as any);
+      setSelected(new Set());
+      setManageMode(false);
+      load();
+    } finally {
+      setMoving(false);
+      setMoveTargetKind(null);
+    }
   };
 
   return (
@@ -157,6 +174,12 @@ export default function PlatsIndex() {
                 onPress={() => setSelected(selected.size === visible.length ? new Set() : new Set(visible.map((d) => d.id)))}
               />
               <Pill
+                label="Ranger dans..."
+                variant="ghost"
+                disabled={selected.size === 0}
+                onPress={() => setMoveKindOpen(true)}
+              />
+              <Pill
                 label={deleting ? '…' : `Supprimer (${selected.size})`}
                 variant="primary"
                 disabled={deleting || selected.size === 0}
@@ -170,6 +193,26 @@ export default function PlatsIndex() {
           )}
         </>
       )}
+
+      <ActionSheet
+        visible={moveKindOpen}
+        title={`Ranger ${selected.size} plat${selected.size > 1 ? 's' : ''} par...`}
+        actions={[
+          { label: '📁 Catégorie de plat', onPress: () => setMoveTargetKind('category') },
+          { label: '📁 Type de plat', onPress: () => setMoveTargetKind('course_type') },
+        ]}
+        onClose={() => setMoveKindOpen(false)}
+      />
+
+      <ActionSheet
+        visible={moveTargetKind !== null}
+        title={moving ? 'Déplacement…' : moveTargetKind === 'category' ? 'Choisir la catégorie' : 'Choisir le type'}
+        actions={(moveTargetKind === 'category' ? categories : courseTypes).map((c) => ({
+          label: `${c.icon ?? ''} ${c.label}`.trim(),
+          onPress: () => applyMove(c.key),
+        }))}
+        onClose={() => setMoveTargetKind(null)}
+      />
 
       <ActionSheet
         visible={addMenuOpen}
@@ -217,6 +260,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderTopWidth: 1,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 10,
   },

@@ -11,10 +11,10 @@ import { TaxonomyItem, TaxonomyKind } from '../src/data/taxonomies';
 import { fonts, radii } from '../src/theme/tokens';
 
 const TABS: { key: TaxonomyKind; title: string; hasIcon: boolean }[] = [
+  { key: 'meal_slot', title: 'Repas à planifier', hasIcon: true },
   { key: 'category', title: 'Catégories de plat', hasIcon: true },
   { key: 'course_type', title: 'Types de plat', hasIcon: true },
   { key: 'grocery_category', title: 'Rayons (courses)', hasIcon: true },
-  { key: 'meal_slot', title: 'Repas à planifier', hasIcon: true },
 ];
 
 const ROW_HEIGHT = 52;

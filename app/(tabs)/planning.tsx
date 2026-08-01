@@ -318,7 +318,6 @@ export default function Planning() {
                     key={iso}
                     onPress={() => {
                       setSelectedDate(iso);
-                      setCalendarOpen(true);
                     }}
                     onLongPress={() => openDayMenu(iso)}
                     style={[
@@ -351,9 +350,11 @@ export default function Planning() {
             <ArrowBtn dir="next" onPress={goNextWeek} />
           </View>
 
-          <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginTop: 2, marginBottom: 2 }}>
-            {formatDayCaption(selectedDateObj)}
-          </Text>
+          <Pressable onPress={() => setCalendarOpen(true)}>
+            <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginTop: 2, marginBottom: 2, textDecorationLine: 'underline' }}>
+              {formatDayCaption(selectedDateObj)}
+            </Text>
+          </Pressable>
 
           {hasCalorieData ? (
             <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: hasMacroData ? 1 : 8 }}>
@@ -423,7 +424,7 @@ export default function Planning() {
                                 </Text>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                   <Pressable onPress={() => onSeeRecipe(entry.dish!.id, entry.id)} style={{ flex: 1, flexShrink: 1 }}>
-                                    <Text style={[styles.dishName, { color: colors.ink }]} numberOfLines={1}>{entry.dish.name}</Text>
+                                    <Text style={[styles.dishName, { color: colors.ink, marginBottom: 0 }]} numberOfLines={1}>{entry.dish.name}</Text>
                                   </Pressable>
                                   <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginLeft: 8 }}>
                                     {entry.servings} pers.

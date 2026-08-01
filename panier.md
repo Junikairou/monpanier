@@ -152,6 +152,20 @@ Lot 1 (terminé, cette conversation) :
 
 **Backlog lot 2 : vide** — les points 6 à 13 prévus ici ont tous été livrés dans le lot 2 ci-dessus (repas personnalisables, confirmation avant de quitter, suggestion de rayon, animations, saisie rapide d'étape, mode Complet/Simple, tutoriel des onglets). Rien en attente.
 
+## Chantier en cours (2026-08-01, lot 3)
+
+1. ✅ Bug 404 au rafraîchissement d'une page (ex. `/planning`) sur GitHub Pages — ajout d'une copie `dist/index.html` → `dist/404.html` dans le déploiement (`.github/workflows/deploy-pages.yml`), technique standard pour les sites à une page hébergés sur GitHub Pages.
+2. ✅ Planning (vue Jour) : alignement du "N pers." avec le nom du plat corrigé pour le 2e plat (et suivants) d'un créneau — la marge sous le nom du plat cassait le centrage vertical de la ligne.
+3. ✅ Planning : le calendrier s'ouvre désormais en appuyant sur le texte "Aujourd'hui — [date]" sous la frise, au lieu d'un appui sur un jour de la frise (qui ne fait plus que sélectionner ce jour).
+4. ✅ Liste de courses (vues Semaine/Plage, "Par catégorie") : réorganisation des badges par ligne d'article — nom(s) du/des plat(s) d'origine sur une ligne avec la quantité, jour(s) de consommation sur une ligne séparée en dessous, format "Sam 1 août" (jour, numéro, mois). Si un article vient de plusieurs plats, badge "🔗 dans N plats" repliable (▾/▴) — les noms de plats ne s'affichent qu'après un appui dessus, au lieu de tout afficher en permanence.
+5. ✅ Personnalisation : onglet "Repas à planifier" remis en premier.
+6. ✅ Catalogue d'articles courants par foyer (`ingredients_catalog`, **migration 020 à exécuter**) — pré-rempli avec ~45 articles français courants classés par rayon. Dans le formulaire de plat, un bouton 🔍 à côté du champ "Nom" d'un ingrédient ouvre une recherche/sélection groupée par rayon ; sélectionner un article remplit automatiquement son rayon (il ne reste qu'à indiquer Qté/Unité). Taper un nom inédit reste possible (saisie libre) : il est alors automatiquement ajouté au catalogue du foyer à l'enregistrement du plat, pour réapparaître dans les suggestions la fois suivante. **Limite connue** : pas encore d'écran dédié pour renommer/supprimer des articles du catalogue directement (seulement ajout via cette recherche/saisie) — à ajouter plus tard si besoin.
+7. ✅ "Tous les plats", mode Gérer : bouton "Ranger dans..." pour reclasser en masse les plats sélectionnés dans une catégorie ou un type de plat en un clic (comme les déplacer dans un dossier), en plus de la suppression en masse existante.
+8. ✅ Alignement Nom/Qté/Unité des lignes d'ingrédients (formulaire de plat) corrigé — le libellé "Unité" n'utilisait pas le même style que les libellés "Nom"/"Qté", causant un léger décalage vertical entre les champs d'une même ligne.
+9. ✅ Catalogue de recettes : bouton "+ Créer" ajouté dans l'en-tête pour créer une recette directement depuis cet écran, sans devoir en sélectionner une existante.
+
+**Migration 020 à exécuter** (catalogue d'articles par foyer, SQL envoyé dans le chat). **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur, écran de connexion s'affiche.
+
 ## Pas fait / en attente
 
 - Communauté (partage de recettes) — explicitement mis de côté dès le départ
@@ -163,7 +177,7 @@ Lot 1 (terminé, cette conversation) :
 
 ## Points d'attention techniques
 
-- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...017` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. **Migrations 016 et 017 en attente d'exécution** (016 : corrige le bug de synchronisation planning/courses + photo de profil + visibilité des profils du foyer ; 017 : temps de préparation, affichage nutrition désactivable, nouvelles catégories par défaut). Migrations 009 à 015 déjà exécutées (2026-07-31).
+- **Migrations SQL** à exécuter manuellement dans Supabase (SQL Editor) : `supabase/schema.sql` puis `supabase/migrations/001...020` dans l'ordre. Vérifier ce qui est déjà appliqué avant d'ajouter une migration. Migrations 009 à 019 exécutées. **Migration 020 en attente** (catalogue d'articles par foyer).
 - `.env` local jamais commité (gitignored). Secrets GitHub Actions : `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (repo Settings → Secrets).
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.

@@ -8,9 +8,12 @@ import { getProfile } from '../data/profile';
 import { Chip, Field, Pill } from './ui';
 import { ActionSheet } from './ActionSheet';
 import { EmojiPicker } from './EmojiPicker';
+import { IngredientPicker } from './IngredientPicker';
 import { NewDishInput } from '../data/dishes';
 import { TaxonomyItem } from '../data/taxonomies';
+import { CatalogIngredient, ensureCatalogIngredient, listCatalogIngredients } from '../data/ingredientsCatalog';
 import { Category, CourseType, GroceryCategory } from '../types/models';
+import { fonts } from '../theme/tokens';
 
 const RAYON_KEYWORDS: { category: string; words: string[] }[] = [
   {
@@ -148,10 +151,16 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showNutrition, setShowNutrition] = useState(true);
+  const [catalogItems, setCatalogItems] = useState<CatalogIngredient[]>([]);
+  const [pickerFor, setPickerFor] = useState<number | null>(null);
 
   useEffect(() => {
     getProfile(session!.user.id).then((p) => setShowNutrition(p.show_nutrition_fields));
   }, [session]);
+
+  useEffect(() => {
+    listCatalogIngredients().then(setCatalogItems).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!onDirtyChange) return;
@@ -179,6 +188,11 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
     setError(null);
     setSaving(true);
     try {
+      const knownNames = new Set(catalogItems.map((c) => c.name.trim().toLowerCase()));
+      const newOnes = ingredients.filter((i) => i.name.trim() && !knownNames.has(i.name.trim().toLowerCase()));
+      await Promise.all(
+        newOnes.map((i) => ensureCatalogIngredient(session!.user.id, i.name, i.grocery_category, i.unit).catch(() => {})),
+      );
       await onSubmit({
         name: name.trim(),
         category,
@@ -286,20 +300,28 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       {ingredients.map((ing, i) => (
         <View key={i} style={[styles.ingRow, { borderColor: colors.line }]}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 2 }}>
-              <Field
-                label="Nom"
-                value={ing.name}
-                onChangeText={(v) => {
-                  const patch: Partial<IngredientDraft> = { name: v };
-                  if (ing.grocery_category === 'autre') {
-                    const guess = guessGroceryCategory(v, groceryCategories);
-                    if (guess) patch.grocery_category = guess;
-                  }
-                  updateIngredient(i, patch);
-                }}
-                placeholder="Riz basmati"
-              />
+            <View style={{ flex: 2, flexDirection: 'row', gap: 6, alignItems: 'flex-end' }}>
+              <View style={{ flex: 1 }}>
+                <Field
+                  label="Nom"
+                  value={ing.name}
+                  onChangeText={(v) => {
+                    const patch: Partial<IngredientDraft> = { name: v };
+                    if (ing.grocery_category === 'autre') {
+                      const guess = guessGroceryCategory(v, groceryCategories);
+                      if (guess) patch.grocery_category = guess;
+                    }
+                    updateIngredient(i, patch);
+                  }}
+                  placeholder="Riz basmati"
+                />
+              </View>
+              <Pressable
+                onPress={() => setPickerFor(i)}
+                style={[styles.dropdown, { paddingHorizontal: 10, marginBottom: 12, borderColor: colors.beigeDark }]}
+              >
+                <Text style={{ fontSize: 14 }}>🔍</Text>
+              </Pressable>
             </View>
             <View style={{ width: 45 }}>
               <Field
@@ -369,6 +391,25 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         onClose={() => setCourseTypeMenuOpen(false)}
       />
 
+      <IngredientPicker
+        visible={pickerFor !== null}
+        items={catalogItems}
+        groceryCategories={groceryCategories}
+        onSelect={(item) => {
+          if (pickerFor === null) return;
+          updateIngredient(pickerFor, {
+            name: item.name,
+            grocery_category: item.grocery_category as GroceryCategory,
+            unit: ingredients[pickerFor].unit || item.default_unit || '',
+          });
+        }}
+        onCreateNew={(newName) => {
+          if (pickerFor === null) return;
+          updateIngredient(pickerFor, { name: newName });
+        }}
+        onClose={() => setPickerFor(null)}
+      />
+
       <ActionSheet
         visible={unitMenuFor !== null}
         title="Unité"
@@ -392,7 +433,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 11, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  label: { fontSize: 10.5, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: fonts.bodySemiBold },
   section: { fontSize: 16, fontStyle: 'italic', marginBottom: 10 },
   ingRow: { borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 10 },
   emojiBox: { width: 52, height: 52, borderWidth: 1.5, borderRadius: 12, fontSize: 24, textAlign: 'center', textAlignVertical: 'center' },

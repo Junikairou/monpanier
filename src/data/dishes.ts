@@ -8,6 +8,14 @@ export async function listDishes(): Promise<Dish[]> {
   return data as Dish[];
 }
 
+export async function updateDishClassification(
+  id: string,
+  patch: { category?: Category; course_type?: CourseType },
+): Promise<void> {
+  const { error } = await supabase.from('dishes').update(patch).eq('id', id);
+  if (error) throw error;
+}
+
 export async function getDish(id: string): Promise<Dish> {
   const { data, error } = await supabase.from('dishes').select('*').eq('id', id).single();
   if (error) throw error;

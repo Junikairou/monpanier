@@ -54,6 +54,10 @@ export function shortDayLabel(date: Date): string {
   return DAY_LABELS_SHORT[(date.getDay() + 6) % 7];
 }
 
+export function formatShortDayMonth(date: Date): string {
+  return `${shortDayLabel(date)} ${date.getDate()} ${MONTH_LABELS[date.getMonth()]}`;
+}
+
 export function isToday(date: Date): boolean {
   return toIso(date) === toIso(new Date());
 }
