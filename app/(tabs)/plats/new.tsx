@@ -46,8 +46,11 @@ export default function NewDish() {
             } else if (params.returnDate) {
               await setMeal(userId, params.returnDate, params.returnSlot, dish);
             }
-            router.back();
-            router.back();
+            // router.dismiss(2) au lieu de deux router.back() : deux back() synchrones
+            // pouvaient se désynchroniser de la pile de navigation réelle sur mobile
+            // (surtout avec l'écran "choisir-plat" qui est un modal), provoquant un
+            // retour au mauvais endroit et parfois un double ajout au planning.
+            router.dismiss(2);
           } else {
             router.back();
           }

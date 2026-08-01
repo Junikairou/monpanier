@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '../../src/components/ScaledText';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
@@ -20,7 +21,7 @@ function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void 
   const { colors } = useTheme();
   return (
     <Pressable onPress={onPress} hitSlop={8} style={[styles.arrowBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}>
-      <Text style={{ color: colors.inkSoft, fontSize: 11 }}>{dir === 'prev' ? '‹' : '›'}</Text>
+      <Ionicons name={dir === 'prev' ? 'chevron-back' : 'chevron-forward'} size={13} color={colors.inkSoft} />
     </Pressable>
   );
 }
@@ -274,13 +275,6 @@ export default function Planning() {
         </Pressable>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <InfoPressable
-            onPress={goToday}
-            info={{ title: "Revenir à aujourd'hui", text: "Remet le planning sur la date du jour." }}
-            style={[styles.iconBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}
-          >
-            <Text style={{ fontSize: 13 }}>⟲</Text>
-          </InfoPressable>
-          <InfoPressable
             onPress={() => router.push('/(tabs)/courses')}
             info={{ title: 'Liste de courses', text: 'Ouvre la liste de courses.' }}
             style={[styles.iconBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}
@@ -352,11 +346,22 @@ export default function Planning() {
             <ArrowBtn dir="next" onPress={goNextWeek} />
           </View>
 
-          <Pressable onPress={() => setCalendarOpen(true)}>
-            <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginTop: 2, marginBottom: 2, textDecorationLine: 'underline' }}>
-              {formatDayCaption(selectedDateObj)}
-            </Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 }}>
+            <Pressable onPress={() => setCalendarOpen(true)}>
+              <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, textDecorationLine: 'underline' }}>
+                {formatDayCaption(selectedDateObj)}
+              </Text>
+            </Pressable>
+            {!isToday(selectedDateObj) ? (
+              <InfoPressable
+                onPress={goToday}
+                info={{ title: "Revenir à aujourd'hui", text: "Remet le planning sur la date du jour." }}
+                style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
+              >
+                <Text style={{ fontSize: 10.5 }}>⟲</Text>
+              </InfoPressable>
+            ) : null}
+          </View>
 
           {hasCalorieData ? (
             <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginBottom: hasMacroData ? 1 : 8 }}>
@@ -388,7 +393,10 @@ export default function Planning() {
                 ) : null
               }
               renderItem={({ item: slot }) => {
-                const slotList = slotEntries(slot);
+                // Filtre les entrées "fantômes" (sans plat ni marquage restaurant, ex. reliquat d'un
+                // bug de création) avant de calculer les index : sinon elles décalent silencieusement
+                // le pointillé "entre plats" d'un cran, qui semble alors apparaître avant le 1er plat visible.
+                const slotList = slotEntries(slot).filter((e) => e.dish_id || e.is_restaurant);
                 const balance = showBalanceHint ? slotBalance(slot) : null;
                 return (
                   <Card>
@@ -481,6 +489,15 @@ export default function Planning() {
               <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(weekStart)}</Text>
             </Pressable>
             <ArrowBtn dir="next" onPress={goNextWeek} />
+            {toIso(weekStart) !== toIso(startOfWeek(new Date())) ? (
+              <InfoPressable
+                onPress={goToday}
+                info={{ title: "Revenir à aujourd'hui", text: "Remet le planning sur la semaine du jour." }}
+                style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
+              >
+                <Text style={{ fontSize: 11 }}>⟲</Text>
+              </InfoPressable>
+            ) : null}
           </View>
 
           {loading ? (

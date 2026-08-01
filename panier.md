@@ -187,6 +187,15 @@ Lot 1 (terminé, cette conversation) :
    - Nouvel écran **"Liste d'articles"** (Plus → Gestion → Articles) : recherche, regroupement par rayon, modification et suppression de chaque article, "+ Nouvel article".
 4. ✅ Étapes de la recette : réordonnancement par glisser-déposer (maintenir l'icône ☰ et glisser), même mécanisme que Personnalisation.
 
+## Chantier en cours (2026-08-01, retours après lot 5)
+
+1. ✅ **Bug (mobile) : création de plat en doublon / mauvaise navigation, tentative 2** — cause supplémentaire trouvée : deux `router.back()` appelés l'un après l'autre pouvaient se désynchroniser de la pile de navigation réelle sur mobile (l'écran "choisir un plat" est un modal). Remplacés par un seul `router.dismiss(2)` (API officielle expo-router pour fermer plusieurs écrans d'un coup, atomique). Au passage : la liste du planning ignore désormais les repas "fantômes" (sans plat ni marquage restaurant, résidu de ce bug) au lieu de les compter dans les pointillés entre plats — ce qui causait un pointillé qui semblait apparaître avant le 1er plat au lieu d'entre les plats. **À confirmer sur téléphone** après ce correctif.
+2. ✅ Planning : légende "Aujourd'hui — [date]" recentrée (espace identique au-dessus et en dessous).
+3. ✅ Flèches ‹› (planning et courses) recentrées dans leur cercle — remplacées par des icônes Ionicons (même correctif déjà appliqué au bouton retour), le caractère texte n'était pas bien centré selon les polices.
+4. ✅ Bouton "revenir à aujourd'hui" (⟲) déplacé : retiré de l'en-tête (toujours visible avant), affiché seulement quand on n'est pas sur la semaine/le jour actuel, juste à côté du libellé de la semaine ou de la date — sur Planning (vues Jour et Semaine) et Courses (vue Semaine).
+
+**Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
+
 **Migration 021 à exécuter** (SQL envoyé dans le chat). **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
 
 ⚠️ Limite connue sur le catalogue communautaire : pas de modération/signalement pour l'instant — n'importe quel membre d'un foyer peut rendre une recette publique, visible par tous les foyers de l'app.

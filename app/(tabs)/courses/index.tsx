@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
@@ -26,7 +27,7 @@ function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void 
   const { colors } = useTheme();
   return (
     <Pressable onPress={onPress} hitSlop={8} style={[styles.arrowBtn, { backgroundColor: colors.paper, borderColor: colors.beige }]}>
-      <Text style={{ color: colors.inkSoft, fontSize: 11 }}>{dir === 'prev' ? '‹' : '›'}</Text>
+      <Ionicons name={dir === 'prev' ? 'chevron-back' : 'chevron-forward'} size={13} color={colors.inkSoft} />
     </Pressable>
   );
 }
@@ -62,6 +63,13 @@ export default function Courses() {
   const rangeEnd = period === 'jour' ? anchor : period === 'semaine' ? addDays(startOfWeek(anchor), 6) : new Date(rangeTo);
   const startIso = toIso(rangeStart);
   const endIso = toIso(rangeEnd);
+
+  const goToday = () => {
+    const today = new Date();
+    setAnchor(today);
+    setRangeFrom(toIso(today));
+    setRangeTo(toIso(addDays(today, 3)));
+  };
 
   const pickFrom = (iso: string) => {
     setRangeFrom(iso);
@@ -242,22 +250,6 @@ export default function Courses() {
       <ScreenHeader
         title="Liste de courses"
         subtitle={`${totalCount} article${totalCount > 1 ? 's' : ''} · ${checkedCount} coché${checkedCount > 1 ? 's' : ''}`}
-        right={
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            <InfoPressable
-              onPress={() => {
-                const today = new Date();
-                setAnchor(today);
-                setRangeFrom(toIso(today));
-                setRangeTo(toIso(addDays(today, 3)));
-              }}
-              info={{ title: "Revenir à aujourd'hui", text: "Remet la liste de courses sur la date du jour." }}
-              style={[styles.arrowBtn, { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.paper, borderColor: colors.beige }]}
-            >
-              <Text style={{ fontSize: 13 }}>⟲</Text>
-            </InfoPressable>
-          </View>
-        }
       />
 
       <View style={[styles.switchWrap, { backgroundColor: colors.beige }]}>
@@ -322,6 +314,15 @@ export default function Courses() {
           <ArrowBtn dir="prev" onPress={() => setAnchor(addDays(anchor, -7))} />
           <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{formatWeekOf(startOfWeek(anchor))}</Text>
           <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 7))} />
+          {toIso(startOfWeek(anchor)) !== toIso(startOfWeek(new Date())) ? (
+            <InfoPressable
+              onPress={goToday}
+              info={{ title: "Revenir à aujourd'hui", text: "Remet la liste de courses sur la semaine du jour." }}
+              style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper, borderColor: colors.beige }}
+            >
+              <Text style={{ fontSize: 11 }}>⟲</Text>
+            </InfoPressable>
+          ) : null}
         </View>
       ) : (
         <View style={styles.rangeNav}>
