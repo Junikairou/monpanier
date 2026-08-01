@@ -6,6 +6,7 @@ import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Card, Checkbox, InfoPressable, LoadingBlock, MiniButton, Screen } from '../../src/components/ui';
 import { CalendarPicker } from '../../src/components/CalendarPicker';
+import { PullToRefresh } from '../../src/components/PullToRefresh';
 import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
 import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked } from '../../src/data/planning';
@@ -34,6 +35,7 @@ export default function Planning() {
   const slotIcon = (key: MealSlot) => mealSlots.find((m) => m.key === key)?.icon ?? '';
   const { width: windowWidth } = useWindowDimensions();
   const weekScrollRef = useRef<ScrollView>(null);
+  const scrollOffsetRef = useRef(0);
   const dragState = useRef({ dragging: false, startX: 0, startScroll: 0 });
 
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
@@ -370,11 +372,14 @@ export default function Planning() {
           {loading ? (
             <LoadingBlock />
           ) : (
+            <PullToRefresh onRefresh={load} scrollOffsetRef={scrollOffsetRef}>
             <FlatList
               data={allSlotKeys.filter((s) => activeSlots.includes(s))}
               keyExtractor={(s) => s}
               contentContainerStyle={{ padding: 18, paddingTop: 16, gap: 10 }}
               refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
+              onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.y; }}
+              scrollEventThrottle={16}
               ListFooterComponent={
                 inactiveSlots.length > 0 ? (
                   <Pressable onPress={() => setAddSlotMenuOpen(true)} style={{ alignSelf: 'center', marginTop: 2, paddingVertical: 8, paddingHorizontal: 14 }}>
@@ -465,6 +470,7 @@ export default function Planning() {
                 );
               }}
             />
+            </PullToRefresh>
           )}
         </>
       ) : (

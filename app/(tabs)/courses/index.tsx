@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -20,6 +20,7 @@ import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
 import { addDays, dayLabel, formatShortDayMonth, formatWeekOf, isToday, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
+import { PullToRefresh } from '../../../src/components/PullToRefresh';
 
 function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void }) {
   const { colors } = useTheme();
@@ -55,6 +56,7 @@ export default function Courses() {
   const [mName, setMName] = useState('');
   const [mQty, setMQty] = useState('');
   const [mUnit, setMUnit] = useState('');
+  const scrollOffsetRef = useRef(0);
 
   const rangeStart = period === 'jour' ? anchor : period === 'semaine' ? startOfWeek(anchor) : new Date(rangeFrom);
   const rangeEnd = period === 'jour' ? anchor : period === 'semaine' ? addDays(startOfWeek(anchor), 6) : new Date(rangeTo);
@@ -352,9 +354,12 @@ export default function Courses() {
         <EmptyState text="Rien de planifié sur cette période. Ajoute des plats à ton planning pour générer la liste." />
       ) : (
         <View style={{ flex: 1 }}>
+          <PullToRefresh onRefresh={load} scrollOffsetRef={scrollOffsetRef}>
           <ScrollView
             contentContainerStyle={{ padding: 18, paddingTop: 10, paddingBottom: 80 }}
             refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
+            onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.y; }}
+            scrollEventThrottle={16}
           >
             {view === 'rayon' ? (
               <>
@@ -506,6 +511,7 @@ export default function Courses() {
               </View>
             ) : null}
           </ScrollView>
+          </PullToRefresh>
 
           {!manualOpen ? (
             <Pressable onPress={() => setManualOpen(true)} style={[styles.fab, { backgroundColor: colors.forest, shadowColor: colors.forest }]}>

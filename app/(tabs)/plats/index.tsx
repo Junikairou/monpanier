@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Checkbox, Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { ActionSheet } from '../../../src/components/ActionSheet';
+import { PullToRefresh } from '../../../src/components/PullToRefresh';
 import { deleteDish, listDishes, seedDemoDishes, updateDishClassification } from '../../../src/data/dishes';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { Category, Dish } from '../../../src/types/models';
@@ -25,6 +26,7 @@ export default function PlatsIndex() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const scrollOffsetRef = useRef(0);
   const [moveKindOpen, setMoveKindOpen] = useState(false);
   const [moveTargetKind, setMoveTargetKind] = useState<'category' | 'course_type' | null>(null);
   const [moving, setMoving] = useState(false);
@@ -138,11 +140,14 @@ export default function PlatsIndex() {
         </View>
       ) : (
         <>
+          <PullToRefresh onRefresh={load} scrollOffsetRef={scrollOffsetRef}>
           <FlatList
             data={visible}
             keyExtractor={(d) => d.id}
             contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10, paddingBottom: manageMode ? 90 : 18 }}
             refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
+            onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.y; }}
+            scrollEventThrottle={16}
             renderItem={({ item }) => (
               <Pressable
                 onPress={() =>
@@ -191,6 +196,7 @@ export default function PlatsIndex() {
               <Text style={{ color: '#FFF', fontSize: 22, marginTop: -2 }}>＋</Text>
             </Pressable>
           )}
+          </PullToRefresh>
         </>
       )}
 

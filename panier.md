@@ -182,7 +182,7 @@ Lot 1 (terminé, cette conversation) :
 - **Refonte des ingrédients** : catalogue d'articles avec rayon + nutriments par article, bouton pour modifier un article directement, retrait du champ Rayon de la recette (juste Nom/Qté/Unité) — décidé le 2026-08-01, pas encore implémenté.
 - Bouton "Liste d'articles" dans Plus → Gestion (dépend du point précédent).
 - Réordonnancement par glisser-déposer des étapes de recette (comme en Personnalisation).
-- **Rafraîchir en glissant vers le bas** : ne fonctionne pas sur la version web/PWA (navigateur mobile) — react-native-web n'implémente pas le geste natif de pull-to-refresh, contrairement à une app installée nativement. Solution possible : réintroduire un bouton "🔄 Actualiser" (fiable partout) en plus/à la place du geste. **Question posée à l'utilisateur, réponse attendue.**
+- ✅ **Rafraîchir en glissant vers le bas, sur web/PWA** — react-native-web n'a pas de geste natif ; recréé à la main (`src/components/PullToRefresh.tsx`, événements tactiles bruts, actif seulement quand la liste est déjà tout en haut), branché sur Planning (vue Jour), Courses et "Tous les plats". Ne change rien sur natif (RefreshControl déjà en place). **À tester au doigt sur téléphone** — non vérifiable depuis l'agent (pas d'écran tactile).
 
 ## Pas fait / en attente
 
