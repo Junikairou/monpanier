@@ -150,15 +150,7 @@ Lot 1 (terminé, cette conversation) :
 
 **Lot 2 terminé (8/8).** **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur à chaque étape.
 
-Backlog (lot 2, prochaine conversation) :
-6. ⬜ Ajouter un repas directement dans le planning sans passer par "Options avancées".
-7. ⬜ Possibilité d'ajouter des repas à planifier en plus des créneaux existants (petit-déj/déjeuner/dîner...).
-8. ⬜ Confirmation avant de quitter une page avec modifications non enregistrées (création/modif de plat + autres endroits de validation) — dans le thème visuel de l'app.
-9. ⬜ Suggestion automatique du rayon à l'ajout d'un ingrédient (dictionnaire de mots-clés), modifiable par l'utilisateur, "Autre" si incertain.
-10. ⬜ Animations de transition pour toutes les actions — règle à appliquer aussi pour toutes les futures maj.
-11. ⬜ Accélérer la saisie d'une étape de recette dans "Nouveau plat" (éviter de taper à la main de A à Z).
-12. ⬜ Choix Mode Complet / Mode Simple à la première connexion (options avancées activées ou désactivées par défaut) avec explication brève des deux modes.
-13. ⬜ Petit tutoriel des onglets (flèche + texte explicatif par onglet) avec case "Ne plus rappeler" par fenêtre, si les onglets restent sans info.
+**Backlog lot 2 : vide** — les points 6 à 13 prévus ici ont tous été livrés dans le lot 2 ci-dessus (repas personnalisables, confirmation avant de quitter, suggestion de rayon, animations, saisie rapide d'étape, mode Complet/Simple, tutoriel des onglets). Rien en attente.
 
 ## Pas fait / en attente
 
