@@ -285,8 +285,12 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 5. ✅ Glisser à la souris sans sélectionner le texte : corrigé aussi pour Personnalisation (glisser-déposer des catégories/rayons) et la vue Semaine du planning, qui n'avaient pas ce correctif.
 6. ✅ Écran **Paramètres** (Plus → Avancé) : version de l'app, lien vers le code source, réinitialisation des préférences propres à cet appareil (thème/taille du texte/tutoriel).
 7. ✅ Écran **Feedback** (Plus → Avancé) : formulaire d'envoi + historique de tes propres envois. **Migration 024 à exécuter** (nouvelle table `feedback`).
+8. ✅ Migration 024 corrigée (rejouable sans erreur — la 1ère tentative avait déjà créé la table et les règles, `create policy` n'a pas de "if not exists" contrairement à `create table`).
+9. ✅ Historique : mode "Gérer" avec sélection multiple, "Tout sélectionner", suppression groupée.
 
-**Migration 024 à exécuter** (SQL envoyé dans le chat).
+**Rappel important sur le regroupement par série (points 2-3 ci-dessus)** : ça ne fonctionne que pour les repas planifiés avec répétition **après avoir exécuté la migration 023 et ce lot de code**. Les séries créées avant n'ont pas d'identifiant de groupe rétroactif (technique : on ne peut pas deviner après coup quelles entrées existantes appartenaient à la même série) — elles resteront affichées comme des entrées isolées dans l'historique.
+
+**Migrations à exécuter : 023 (si pas déjà fait) puis 024** (SQL envoyé dans le chat).
 
 **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
 

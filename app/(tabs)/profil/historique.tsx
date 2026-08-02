@@ -4,7 +4,7 @@ import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
-import { Card, EmptyState, LoadingBlock, Screen, ScreenHeader } from '../../../src/components/ui';
+import { Card, Checkbox, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { deleteRecurrenceGroupAll, listRecentPlanningEntries, removeMeal } from '../../../src/data/planning';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { PlanningEntry } from '../../../src/types/models';
@@ -37,6 +37,9 @@ export default function Historique() {
   const [entries, setEntries] = useState<PlanningEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [manageMode, setManageMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -114,15 +117,67 @@ export default function Historique() {
     ]);
   };
 
+  const toggleSelect = (key: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const bulkDelete = () => {
+    if (selected.size === 0) return;
+    const run = async () => {
+      setBulkDeleting(true);
+      try {
+        for (const group of groups.filter((g) => selected.has(g.key))) {
+          if (group.groupId) await deleteRecurrenceGroupAll(group.groupId);
+          else await removeMeal(session!.user.id, group.entries[0].id);
+        }
+        setSelected(new Set());
+        setManageMode(false);
+        load();
+      } finally {
+        setBulkDeleting(false);
+      }
+    };
+    const message = `Retirer ${selected.size} entrée${selected.size > 1 ? 's' : ''} de l'historique (et du planning) ?`;
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) run();
+      return;
+    }
+    Alert.alert('Retirer ?', message, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Retirer', style: 'destructive', onPress: run },
+    ]);
+  };
+
   return (
     <Screen>
-      <ScreenHeader title="Historique" subtitle="Derniers ajouts au planning" onBack={() => router.back()} />
+      <ScreenHeader
+        title="Historique"
+        subtitle="Derniers ajouts au planning"
+        onBack={() => router.back()}
+        right={
+          groups.length > 0 ? (
+            <Pill
+              label={manageMode ? 'Terminé' : 'Gérer'}
+              variant={manageMode ? 'primary' : 'ghost'}
+              onPress={() => {
+                setManageMode((m) => !m);
+                setSelected(new Set());
+              }}
+            />
+          ) : undefined
+        }
+      />
       {loading ? (
         <LoadingBlock />
       ) : groups.length === 0 ? (
         <EmptyState text="Rien à afficher pour l'instant." />
       ) : (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, gap: 8 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, gap: 8, paddingBottom: manageMode ? 90 : 18 }}>
           {groups.map((group) => {
             const first = group.entries[0];
             const isSeries = group.entries.length > 1;
@@ -130,45 +185,65 @@ export default function Historique() {
               ? Math.round((new Date(group.entries[1].date).getTime() - new Date(first.date).getTime()) / 86400000)
               : 0;
             return (
-              <Card key={group.key} style={{ gap: 6 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                      {label('meal_slot', first.slot)}
-                    </Text>
-                    <Text style={{ fontSize: 13.5, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>
-                      {first.is_restaurant ? '🍽️ Au restaurant' : first.dish?.name ?? 'Plat supprimé'}
-                    </Text>
-                    {isSeries ? (
-                      <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>
-                        Du {formatShortDayMonth(new Date(first.date))} au {formatShortDayMonth(new Date(group.entries[group.entries.length - 1].date))} · {frequencyLabel(gapDays)}
+              <Card key={group.key} style={{ gap: 6, flexDirection: 'row' }}>
+                {manageMode ? <Checkbox checked={selected.has(group.key)} onPress={() => toggleSelect(group.key)} /> : null}
+                <View style={{ flex: 1, gap: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
+                        {label('meal_slot', first.slot)}
                       </Text>
-                    ) : (
-                      <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>{formatShortDayMonth(new Date(first.date))}</Text>
-                    )}
+                      <Text style={{ fontSize: 13.5, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>
+                        {first.is_restaurant ? '🍽️ Au restaurant' : first.dish?.name ?? 'Plat supprimé'}
+                      </Text>
+                      {isSeries ? (
+                        <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>
+                          Du {formatShortDayMonth(new Date(first.date))} au {formatShortDayMonth(new Date(group.entries[group.entries.length - 1].date))} · {frequencyLabel(gapDays)}
+                        </Text>
+                      ) : (
+                        <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>{formatShortDayMonth(new Date(first.date))}</Text>
+                      )}
+                    </View>
                   </View>
-                </View>
-                <View style={{ flexDirection: 'row', gap: 14 }}>
-                  {first.dish ? (
-                    <Pressable onPress={() => router.push({ pathname: '/plat/[id]', params: { id: first.dish!.id, entryId: first.id } })}>
-                      <Text style={{ fontSize: 12, color: colors.forest }}>Voir la recette</Text>
-                    </Pressable>
+                  {!manageMode ? (
+                    <View style={{ flexDirection: 'row', gap: 14 }}>
+                      {first.dish ? (
+                        <Pressable onPress={() => router.push({ pathname: '/plat/[id]', params: { id: first.dish!.id, entryId: first.id } })}>
+                          <Text style={{ fontSize: 12, color: colors.forest }}>Voir la recette</Text>
+                        </Pressable>
+                      ) : null}
+                      <Pressable
+                        onPress={() => (isSeries ? removeGroup(group) : removeStandalone(first))}
+                        disabled={busyKey === group.key}
+                        hitSlop={6}
+                      >
+                        <Text style={{ fontSize: 12, color: colors.danger }}>
+                          {busyKey === group.key ? '…' : isSeries ? `Retirer toute la série (${group.entries.length})` : 'Retirer'}
+                        </Text>
+                      </Pressable>
+                    </View>
                   ) : null}
-                  <Pressable
-                    onPress={() => (isSeries ? removeGroup(group) : removeStandalone(first))}
-                    disabled={busyKey === group.key}
-                    hitSlop={6}
-                  >
-                    <Text style={{ fontSize: 12, color: colors.danger }}>
-                      {busyKey === group.key ? '…' : isSeries ? `Retirer toute la série (${group.entries.length})` : 'Retirer'}
-                    </Text>
-                  </Pressable>
                 </View>
               </Card>
             );
           })}
         </ScrollView>
       )}
+      {manageMode ? (
+        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 14, borderTopWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
+          <Pill
+            label={selected.size === groups.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+            variant="ghost"
+            onPress={() => setSelected(selected.size === groups.length ? new Set() : new Set(groups.map((g) => g.key)))}
+          />
+          <Pill
+            label={bulkDeleting ? '…' : `Retirer (${selected.size})`}
+            variant="primary"
+            disabled={bulkDeleting || selected.size === 0}
+            onPress={bulkDelete}
+          />
+        </View>
+      ) : null}
     </Screen>
   );
 }
