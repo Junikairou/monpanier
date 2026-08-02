@@ -9,6 +9,7 @@ import { Card, Pill, Screen, ScreenHeader } from '../src/components/ui';
 import { EmojiPicker } from '../src/components/EmojiPicker';
 import { TaxonomyItem, TaxonomyKind } from '../src/data/taxonomies';
 import { fonts, radii } from '../src/theme/tokens';
+import { noSelectWebStyle } from '../src/lib/webDragScroll';
 
 const TABS: { key: TaxonomyKind; title: string; hasIcon: boolean }[] = [
   { key: 'meal_slot', title: 'Repas à planifier', hasIcon: true },
@@ -207,7 +208,7 @@ function TaxonomyRow({
         dragging ? { transform: [{ translateY: dragOffset }], shadowOpacity: 0.25, elevation: 6, zIndex: 10 } : undefined,
       ]}
     >
-      <View {...panResponder.panHandlers} hitSlop={8} style={{ paddingHorizontal: 4, paddingVertical: 8 }}>
+      <View {...panResponder.panHandlers} hitSlop={8} style={[{ paddingHorizontal: 4, paddingVertical: 8 }, noSelectWebStyle]}>
         <Text style={{ fontSize: 16, color: colors.inkFaint }}>☰</Text>
       </View>
       {hasIcon ? (

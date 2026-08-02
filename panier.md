@@ -276,6 +276,20 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur à chaque étape.
 
+## Chantier en cours (2026-08-02, retours après le lot précédent)
+
+1. ✅ **Bug résolu (vraie cause) : "Quitter sans enregistrer" nécessitait deux appuis** — confirmer relançait un `router.back()`/dispatch, qui redéclenchait l'interception du garde-fou puisque le formulaire était encore marqué "modifié" à cet instant précis, absorbant le premier appui. Un verrou empêche maintenant cette ré-interception.
+2. ✅ Historique regroupé par série : une répétition ("tous les jours" etc.) apparaît comme une seule ligne (nom du plat, date de début → date de fin, fréquence), avec "Retirer toute la série" en un clic, au lieu d'une ligne par occurrence.
+3. ✅ Planning : maintenir le nom d'un plat faisant partie d'une série propose maintenant deux options — retirer la série à partir de cette date, ou **toute la série (passé compris)**.
+4. ✅ **Bug corrigé : alignement emoji / nom du plat** — trouvé la vraie cause : le champ "Nom du plat" a une marge basse intégrée (composant partagé `Field`) que le carré emoji n'avait pas, ce qui le décalait plus bas malgré des hauteurs de boîte identiques. Marge ajoutée en miroir.
+5. ✅ Glisser à la souris sans sélectionner le texte : corrigé aussi pour Personnalisation (glisser-déposer des catégories/rayons) et la vue Semaine du planning, qui n'avaient pas ce correctif.
+6. ✅ Écran **Paramètres** (Plus → Avancé) : version de l'app, lien vers le code source, réinitialisation des préférences propres à cet appareil (thème/taille du texte/tutoriel).
+7. ✅ Écran **Feedback** (Plus → Avancé) : formulaire d'envoi + historique de tes propres envois. **Migration 024 à exécuter** (nouvelle table `feedback`).
+
+**Migration 024 à exécuter** (SQL envoyé dans le chat).
+
+**Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
+
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface

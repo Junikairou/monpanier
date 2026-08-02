@@ -86,6 +86,12 @@ export async function deleteRecurrenceGroupFrom(groupId: string, fromDate: strin
   if (error) throw error;
 }
 
+// Supprime toute la série (passé et futur inclus).
+export async function deleteRecurrenceGroupAll(groupId: string): Promise<void> {
+  const { error } = await supabase.from('planning_entries').delete().eq('recurrence_group_id', groupId);
+  if (error) throw error;
+}
+
 export async function listRecentPlanningEntries(limit = 50): Promise<PlanningEntry[]> {
   const { data, error } = await supabase
     .from('planning_entries')

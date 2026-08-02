@@ -383,7 +383,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   return (
     <ScrollView contentContainerStyle={{ padding: 18 }} scrollEnabled={stepDragIdx === null && ingDragIdx === null}>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
-        <View>
+        <View style={{ marginBottom: 12 }}>
           <Text style={[styles.label, { color: colors.inkSoft }]}>Emoji</Text>
           <Pressable onPress={() => setEmojiPickerOpen(true)} style={[styles.emojiBox, { borderColor: colors.beigeDark, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' }]}>
             <Text style={{ fontSize: 18 }}>{emoji || '🍽️'}</Text>

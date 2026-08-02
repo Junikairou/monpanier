@@ -10,7 +10,7 @@ import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { PullToRefresh } from '../../src/components/PullToRefresh';
 import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
-import { copyDay, copyWeek, deleteRecurrenceGroupFrom, hasEntriesInRange, listPlanningRange, removeMeal, setCooked } from '../../src/data/planning';
+import { copyDay, copyWeek, deleteRecurrenceGroupAll, deleteRecurrenceGroupFrom, hasEntriesInRange, listPlanningRange, removeMeal, setCooked } from '../../src/data/planning';
 import { applyTemplateToWeek, saveTemplateFromWeek } from '../../src/data/template';
 import { getProfile, updateProfile } from '../../src/data/profile';
 import { useTaxonomies } from '../../src/lib/taxonomies';
@@ -138,11 +138,18 @@ export default function Planning() {
       { label: '✕ Retirer ce repas', destructive: true, onPress: () => onRemove(entry.id) },
     ];
     if (entry.recurrence_group_id) {
-      actions.push({
-        label: '✕ Retirer cette série (à partir d\'ici)',
-        destructive: true,
-        onPress: () => deleteRecurrenceGroupFrom(entry.recurrence_group_id!, entry.date).then(load),
-      });
+      actions.push(
+        {
+          label: '✕ Retirer cette série (à partir d\'ici)',
+          destructive: true,
+          onPress: () => deleteRecurrenceGroupFrom(entry.recurrence_group_id!, entry.date).then(load),
+        },
+        {
+          label: '✕ Retirer toute la série (passé compris)',
+          destructive: true,
+          onPress: () => deleteRecurrenceGroupAll(entry.recurrence_group_id!).then(load),
+        },
+      );
     }
     return actions;
   };
@@ -559,7 +566,7 @@ export default function Planning() {
               directionalLockEnabled
               decelerationRate="fast"
               contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24, gap: CARD_GAP }}
-              style={Platform.OS === 'web' ? ({ cursor: 'grab' } as any) : undefined}
+              style={Platform.OS === 'web' ? ({ cursor: 'grab', userSelect: 'none' } as any) : undefined}
               {...webDragHandlers}
             >
               {days.map((d) => {
