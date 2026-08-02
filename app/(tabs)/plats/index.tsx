@@ -11,6 +11,7 @@ import { deleteDish, listDishes, listIngredientNamesByDish, seedDemoDishes, setD
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { Category, Dish } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
+import { noSelectWebStyle, useWebHorizontalDrag } from '../../../src/lib/webDragScroll';
 
 export default function PlatsIndex() {
   const { colors } = useTheme();
@@ -33,6 +34,7 @@ export default function PlatsIndex() {
   const [moveTargetKind, setMoveTargetKind] = useState<'category' | 'course_type' | null>(null);
   const [moving, setMoving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const catDrag = useWebHorizontalDrag();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -158,7 +160,14 @@ export default function PlatsIndex() {
         </View>
       ) : null}
       <View style={styles.topActions}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
+        <ScrollView
+          ref={catDrag.ref}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 12 }}
+          style={noSelectWebStyle}
+          {...catDrag.handlers}
+        >
           <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
           {categories.map((c) => (
             <Chip key={c.key} label={c.label} active={filter === c.key} onPress={() => setFilter(c.key)} />
@@ -273,6 +282,7 @@ export default function PlatsIndex() {
         actions={[
           { label: '📖 Piocher dans le catalogue', onPress: () => router.push('/catalogue') },
           { label: '✏️ Créer une nouvelle recette', onPress: () => router.push('/(tabs)/plats/new') },
+          { label: '📋 Importer un texte de recette', onPress: () => router.push('/plat/importer') },
         ]}
         onClose={() => setAddMenuOpen(false)}
       />

@@ -294,11 +294,27 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur.
 
+## Chantier en cours (2026-08-02, retours utilisateur — lot 5 points)
+
+1. ✅ Historique : bouton "Modifier la date" (série ou entrée isolée) — ouvre un calendrier ; pour une série, décale toutes les occurrences du même écart en jours (garde l'intervalle d'origine). `setEntryDate`/`shiftRecurrenceGroup` dans `src/data/planning.ts`.
+2. ✅ Scroll à la souris sans sélection de texte : appliqué aux catégories de "Tous les plats" et du Catalogue de recettes (`useWebHorizontalDrag`, manquait sur ces deux écrans — déjà en place ailleurs).
+3. ✅ **Notifications de repas (cadrées)** — Plus → Options avancées → section "Notifications" : active la permission navigateur, un horaire (HH:mm) par repas actif ; calcule "commencer à préparer à…" à partir du temps de préparation le plus long des plats prévus ce jour-là pour ce créneau. Réglages stockés **localement par appareil** (comme thème/taille du texte), pas partagés dans le foyer. **Limite importante : pas de notification en arrière-plan** (nécessiterait un serveur de push) — ne se déclenche que si l'app reste ouverte dans un onglet au moment voulu (vérifié toutes les minutes). `src/lib/notifications.ts`, `src/lib/useMealReminders.ts`.
+4. ✅ **Mode hors ligne (première version)** :
+   - App installée en PWA : se recharge maintenant hors connexion (service worker `public/sw.js`, cache tout ce qui a déjà été chargé en ligne). Ne fonctionne qu'après une première visite en ligne.
+   - Liste de courses : lecture hors ligne (dernière liste chargée pour la période affichée, mise en cache localement) ; cocher/décocher un article hors ligne fonctionne (mise en file d'attente locale), synchronisé automatiquement au retour de connexion.
+   - **Limites connues** : seule la liste de courses a l'écriture hors ligne (pas le planning ni les plats pour l'instant, cf. demande initiale centrée sur "au supermarché") ; le cache d'une période (jour/semaine/plage) n'est mis à jour qu'à la prochaine consultation en ligne, donc un changement fait sur un appareil pendant que l'autre est hors ligne peut ne pas apparaître tout de suite. `src/lib/offlineStore.ts`, `src/lib/offlineSync.ts`, adaptations dans `src/data/groceries.ts`.
+5. ✅ **Import de recette sans IA** — "Tous les plats" → "+ Nouveau" → "📋 Importer un texte de recette" (`app/plat/importer.tsx`) : coller un texte, découpage basique par mots-clés ("Ingrédients"/"Étapes"/"Préparation") en ingrédients/étapes, pré-remplit le formulaire habituel pour correction avant d'enregistrer. Pas d'IA (pas de clé API) : moins fiable sur des textes mal structurés, texte sans ces en-têtes part entièrement en étapes à trier à la main. Pas de lien/image pour l'instant (demande initialement plus large, réduite à la version simple par choix de l'utilisateur).
+
+**Aucune migration pour ce lot** (tout est stocké côté client — AsyncStorage/cache local).
+
+**Non testé visuellement** (pas d'identifiants) — compilation TypeScript vérifiée sans erreur.
+
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface
 - Icône PWA personnalisée (branding Mijoté)
-- Import de recette par IA (lien/texte/photo) — proposé puis abandonné (pas de clé API Anthropic)
+- Import de recette par IA (lien/photo, analyse intelligente) — pas de clé API Anthropic ; version texte simple (sans IA) faite le 2026-08-02, voir plus haut
+- Mode hors ligne : écriture hors ligne limitée à la liste de courses pour l'instant (planning/plats en lecture seule tant que la connexion est coupée) — voir limites au 2026-08-02
 - Build natif Android pour le Play Store — prévu **plus tard**, pas commencé (nécessite un compte Google Play Developer, ~25$ une fois)
 - Déploiement automatique Vercel — abandonné au profit de GitHub Pages (2026-07-30)
 

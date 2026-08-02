@@ -113,6 +113,26 @@ export async function setEntryServings(entryId: string, servings: number): Promi
   if (error) throw error;
 }
 
+// Corrige la date d'une entrée isolée (erreur de saisie).
+export async function setEntryDate(entryId: string, date: string): Promise<void> {
+  const { error } = await supabase.from('planning_entries').update({ date }).eq('id', entryId);
+  if (error) throw error;
+}
+
+// Décale toute une série (erreur sur la date de départ) : recalcule chaque
+// date à partir du même écart en jours, en gardant l'intervalle d'origine.
+export async function shiftRecurrenceGroup(groupId: string, entries: PlanningEntry[], newStartIso: string): Promise<void> {
+  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+  const oldStart = new Date(sorted[0].date);
+  const deltaDays = Math.round((new Date(newStartIso).getTime() - oldStart.getTime()) / 86400000);
+  if (deltaDays === 0) return;
+  for (const entry of sorted) {
+    const newDate = toIso(addDays(new Date(entry.date), deltaDays));
+    const { error } = await supabase.from('planning_entries').update({ date: newDate }).eq('id', entry.id);
+    if (error) throw error;
+  }
+}
+
 export async function replaceMeal(
   userId: string,
   entryId: string,

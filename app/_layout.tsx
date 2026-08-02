@@ -19,6 +19,8 @@ import {
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
 import { AuthProvider, useAuth } from '../src/lib/auth';
 import { TaxonomyProvider } from '../src/lib/taxonomies';
+import { useMealReminders } from '../src/lib/useMealReminders';
+import { useOfflineSync } from '../src/lib/offlineSync';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -42,7 +44,19 @@ function ThemedStatusBar() {
 function MaybeTaxonomyProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   if (!session) return <>{children}</>;
-  return <TaxonomyProvider userId={session.user.id}>{children}</TaxonomyProvider>;
+  return (
+    <TaxonomyProvider userId={session.user.id}>
+      <MealReminders />
+      {children}
+    </TaxonomyProvider>
+  );
+}
+
+function MealReminders() {
+  const { session } = useAuth();
+  useMealReminders(session?.user.id ?? null);
+  useOfflineSync();
+  return null;
 }
 
 function RootStack() {
@@ -70,6 +84,14 @@ function WebFrame({ children, onLayout }: { children: React.ReactNode; onLayout:
     // (manifest link, apple PWA meta) — inject them at runtime instead so
     // the app is still installable as a PWA.
     const base = window.location.pathname.startsWith('/monpanier') ? '/monpanier/' : '/';
+
+    // Cache l'app (JS/CSS/HTML) pour un chargement hors ligne — utile en
+    // supermarché où la connexion est souvent mauvaise. Les appels Supabase
+    // (autre origine) ne passent pas par ce cache.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => {});
+    }
+
     const addTag = (tag: string, attrs: Record<string, string>) => {
       const el = document.createElement(tag);
       Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));

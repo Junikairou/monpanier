@@ -11,6 +11,7 @@ import { getDisplayNamesByIds } from '../src/data/profile';
 import { useTaxonomies } from '../src/lib/taxonomies';
 import { Dish } from '../src/types/models';
 import { fonts, radii } from '../src/theme/tokens';
+import { noSelectWebStyle, useWebHorizontalDrag } from '../src/lib/webDragScroll';
 
 export default function Catalogue() {
   const { colors } = useTheme();
@@ -33,6 +34,7 @@ export default function Catalogue() {
   const [publishSelection, setPublishSelection] = useState<Set<string>>(new Set());
   const [publishing, setPublishing] = useState(false);
   const [unpublishingId, setUnpublishingId] = useState<string | null>(null);
+  const catDrag = useWebHorizontalDrag();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -179,7 +181,14 @@ export default function Catalogue() {
           style={{ borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: radii.sm, paddingVertical: 9, paddingHorizontal: 12, fontSize: 13, color: colors.ink, backgroundColor: colors.paper }}
         />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 18, paddingVertical: 10 }}>
+      <ScrollView
+        ref={catDrag.ref}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[{ flexGrow: 0 }, noSelectWebStyle]}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingVertical: 10 }}
+        {...catDrag.handlers}
+      >
         <Chip label="Toutes" active={categoryFilter === null} onPress={() => setCategoryFilter(null)} />
         {categories.map((c) => (
           <Chip key={c.key} label={c.label} active={categoryFilter === c.key} onPress={() => setCategoryFilter(c.key)} />

@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { getMyHouseholdId } from './household';
 import type { GroceryCategory, GroceryItem } from '../types/models';
+import { cacheGet, cacheSet, enqueueAction, isOnline } from '../lib/offlineStore';
 
 function mergeKey(name: string, unit: string): string {
   return `${name.trim().toLowerCase()}::${unit.trim().toLowerCase()}`;
@@ -28,7 +29,32 @@ export interface GroceryList {
  * views always reflects exactly what's planned in that window. Only the
  * checked state persists across views, keyed by ingredient name+unit.
  */
+function groceryCacheKey(startIso: string, endIso: string): string {
+  return `groceries:${startIso}:${endIso}`;
+}
+
 export async function getGroceryListForRange(
+  userId: string,
+  startIso: string,
+  endIso: string,
+): Promise<GroceryList> {
+  const cacheKey = groceryCacheKey(startIso, endIso);
+  if (!isOnline()) {
+    const cached = await cacheGet<GroceryList>(cacheKey);
+    if (cached) return cached;
+  }
+  try {
+    const list = await fetchGroceryListForRange(userId, startIso, endIso);
+    await cacheSet(cacheKey, list);
+    return list;
+  } catch (err) {
+    const cached = await cacheGet<GroceryList>(cacheKey);
+    if (cached) return cached;
+    throw err;
+  }
+}
+
+async function fetchGroceryListForRange(
   userId: string,
   startIso: string,
   endIso: string,
@@ -128,6 +154,10 @@ export async function toggleAutoChecked(
   item: ComputedGroceryItem,
   checked: boolean,
 ): Promise<void> {
+  if (!isOnline()) {
+    await enqueueAction('toggleAutoChecked', { userId, item, checked });
+    return;
+  }
   const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('grocery_items').upsert(
     {
@@ -148,8 +178,40 @@ export async function toggleAutoChecked(
 }
 
 export async function toggleManualChecked(id: string, checked: boolean): Promise<void> {
+  if (!isOnline()) {
+    await enqueueAction('toggleManualChecked', { id, checked });
+    return;
+  }
   const { error } = await supabase.from('grocery_items').update({ checked }).eq('id', id);
   if (error) throw error;
+}
+
+// Applique une action mise en file (appelé par flushGroceryQueue) en
+// contournant la re-mise en file (on est forcément en ligne à cet instant).
+export async function applyQueuedGroceryAction(type: string, payload: any): Promise<void> {
+  if (type === 'toggleAutoChecked') {
+    const household_id = await getMyHouseholdId(payload.userId);
+    const item: ComputedGroceryItem = payload.item;
+    const { error } = await supabase.from('grocery_items').upsert(
+      {
+        user_id: payload.userId,
+        household_id,
+        name: item.name,
+        unit: item.unit,
+        grocery_category: item.grocery_category,
+        quantity: item.quantity,
+        manual: false,
+        checked: payload.checked,
+        merge_key: item.key,
+        source_dish_ids: item.source_dish_ids,
+      },
+      { onConflict: 'household_id,merge_key' },
+    );
+    if (error) throw error;
+  } else if (type === 'toggleManualChecked') {
+    const { error } = await supabase.from('grocery_items').update({ checked: payload.checked }).eq('id', payload.id);
+    if (error) throw error;
+  }
 }
 
 export async function addManualItem(

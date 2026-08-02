@@ -5,7 +5,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Card, Checkbox, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
-import { deleteRecurrenceGroupAll, listRecentPlanningEntries, removeMeal } from '../../../src/data/planning';
+import { CalendarPicker } from '../../../src/components/CalendarPicker';
+import { deleteRecurrenceGroupAll, listRecentPlanningEntries, removeMeal, setEntryDate, shiftRecurrenceGroup } from '../../../src/data/planning';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { PlanningEntry } from '../../../src/types/models';
 import { formatShortDayMonth } from '../../../src/lib/dates';
@@ -40,6 +41,8 @@ export default function Historique() {
   const [manageMode, setManageMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [dateEditGroup, setDateEditGroup] = useState<Group | null>(null);
+  const [savingDate, setSavingDate] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -115,6 +118,22 @@ export default function Historique() {
       { text: 'Annuler', style: 'cancel' },
       { text: 'Retirer', style: 'destructive', onPress: run },
     ]);
+  };
+
+  const saveDate = async (iso: string) => {
+    if (!dateEditGroup) return;
+    setSavingDate(true);
+    try {
+      if (dateEditGroup.groupId) {
+        await shiftRecurrenceGroup(dateEditGroup.groupId, dateEditGroup.entries, iso);
+      } else {
+        await setEntryDate(dateEditGroup.entries[0].id, iso);
+      }
+      setDateEditGroup(null);
+      load();
+    } finally {
+      setSavingDate(false);
+    }
   };
 
   const toggleSelect = (key: string) => {
@@ -212,6 +231,9 @@ export default function Historique() {
                           <Text style={{ fontSize: 12, color: colors.forest }}>Voir la recette</Text>
                         </Pressable>
                       ) : null}
+                      <Pressable onPress={() => setDateEditGroup(group)} disabled={savingDate} hitSlop={6}>
+                        <Text style={{ fontSize: 12, color: colors.forest }}>{isSeries ? 'Modifier la date de départ' : 'Modifier la date'}</Text>
+                      </Pressable>
                       <Pressable
                         onPress={() => (isSeries ? removeGroup(group) : removeStandalone(first))}
                         disabled={busyKey === group.key}
@@ -243,6 +265,14 @@ export default function Historique() {
             onPress={bulkDelete}
           />
         </View>
+      ) : null}
+      {dateEditGroup ? (
+        <CalendarPicker
+          visible
+          selectedDate={dateEditGroup.entries[0].date}
+          onSelect={saveDate}
+          onClose={() => setDateEditGroup(null)}
+        />
       ) : null}
     </Screen>
   );
