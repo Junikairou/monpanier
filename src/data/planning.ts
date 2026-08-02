@@ -5,6 +5,15 @@ import type { Dish, MealSlot, PlanningEntry } from '../types/models';
 
 export type CopyMode = 'replace' | 'add';
 
+function uuidv4(): string {
+  // Pas besoin de sécurité cryptographique ici (juste un identifiant de
+  // regroupement client) ; évite une dépendance pour un simple id.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export async function listPlanningRange(
   userId: string,
   startIso: string,
@@ -49,9 +58,10 @@ export async function setMealRecurring(
   servings?: number,
 ): Promise<void> {
   const household_id = await getMyHouseholdId(userId);
-  const rows: { user_id: string; household_id: string; date: string; slot: MealSlot; dish_id: string; servings: number }[] = [];
+  const recurrence_group_id = uuidv4();
+  const rows: { user_id: string; household_id: string; date: string; slot: MealSlot; dish_id: string; servings: number; recurrence_group_id: string }[] = [];
   for (let d = new Date(startIso); toIso(d) <= endIso; d = addDays(d, intervalDays)) {
-    rows.push({ user_id: userId, household_id, date: toIso(d), slot, dish_id: dish.id, servings: servings ?? dish.base_servings });
+    rows.push({ user_id: userId, household_id, date: toIso(d), slot, dish_id: dish.id, servings: servings ?? dish.base_servings, recurrence_group_id });
   }
   if (rows.length === 0) return;
   // ignoreDuplicates : si ce plat est déjà présent ce jour-là dans ce créneau
@@ -63,6 +73,27 @@ export async function setMealRecurring(
     ignoreDuplicates: true,
   });
   if (error) throw error;
+}
+
+// Supprime cette occurrence et toutes celles de la même série de répétition
+// à partir de cette date (garde les occurrences passées intactes).
+export async function deleteRecurrenceGroupFrom(groupId: string, fromDate: string): Promise<void> {
+  const { error } = await supabase
+    .from('planning_entries')
+    .delete()
+    .eq('recurrence_group_id', groupId)
+    .gte('date', fromDate);
+  if (error) throw error;
+}
+
+export async function listRecentPlanningEntries(limit = 50): Promise<PlanningEntry[]> {
+  const { data, error } = await supabase
+    .from('planning_entries')
+    .select('*, dish:dishes(*)')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data as unknown as PlanningEntry[];
 }
 
 export async function getPlanningEntry(entryId: string): Promise<PlanningEntry> {

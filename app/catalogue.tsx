@@ -5,7 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../src/lib/auth';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { Card, Checkbox, Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../src/components/ui';
-import { createDish, DEMO_DISHES, listDishes, listIngredients, listPublicDishes, listRecipeSteps } from '../src/data/dishes';
+import { createDish, DEMO_DISHES, listDishes, listIngredients, listPublicDishes, listRecipeSteps, setDishPublic } from '../src/data/dishes';
 import { getMyHouseholdId } from '../src/data/household';
 import { getDisplayNamesByIds } from '../src/data/profile';
 import { useTaxonomies } from '../src/lib/taxonomies';
@@ -29,6 +29,10 @@ export default function Catalogue() {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [previewDemoIndex, setPreviewDemoIndex] = useState<number | null>(null);
+  const [publishPickerOpen, setPublishPickerOpen] = useState(false);
+  const [publishSelection, setPublishSelection] = useState<Set<string>>(new Set());
+  const [publishing, setPublishing] = useState(false);
+  const [unpublishingId, setUnpublishingId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -118,13 +122,52 @@ export default function Catalogue() {
 
   const previewDemo = previewDemoIndex !== null ? DEMO_DISHES[previewDemoIndex] : null;
 
+  const publishableDishes = myDishes.filter((d) => !d.is_public);
+
+  const togglePublishSelect = (id: string) => {
+    setPublishSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const confirmPublish = async () => {
+    if (publishSelection.size === 0) return;
+    setPublishing(true);
+    try {
+      for (const id of publishSelection) await setDishPublic(id, true);
+      setPublishSelection(new Set());
+      setPublishPickerOpen(false);
+      load();
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const unpublish = async (dishId: string) => {
+    setUnpublishingId(dishId);
+    try {
+      await setDishPublic(dishId, false);
+      load();
+    } finally {
+      setUnpublishingId(null);
+    }
+  };
+
   return (
     <Screen>
       <ScreenHeader
         title="Catalogue de recettes"
         subtitle="Des idées prêtes à ajouter à Mes plats"
         onBack={() => router.back()}
-        right={<Pill label="+ Créer" onPress={() => router.push('/(tabs)/plats/new')} />}
+        right={
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <Pill label="🌍 Publier" onPress={() => setPublishPickerOpen(true)} />
+            <Pill label="+ Créer" onPress={() => router.push('/(tabs)/plats/new')} />
+          </View>
+        }
       />
 
       <View style={{ paddingHorizontal: 18, paddingTop: 10 }}>
@@ -146,7 +189,36 @@ export default function Catalogue() {
       {loading ? (
         <LoadingBlock />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 0, gap: 10, paddingBottom: selected.size > 0 ? 90 : 18 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, paddingTop: 0, gap: 10, paddingBottom: selected.size > 0 ? 90 : 18 }}>
+          {myDishes.some((d) => d.is_public) ? (
+            <>
+              <Text style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, color: colors.inkFaint, marginBottom: 2 }}>
+                📤 Mes recettes publiées
+              </Text>
+              {myDishes
+                .filter((d) => d.is_public)
+                .map((item) => (
+                  <Card key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.sagePale }}>
+                      <Text style={{ fontSize: 20 }}>{item.image_emoji ?? '🍽️'}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
+                        {label('course_type', item.course_type)} · {label('category', item.category)}
+                      </Text>
+                      <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
+                    </View>
+                    <Pill
+                      label={unpublishingId === item.id ? '…' : 'Retirer'}
+                      variant="ghost"
+                      disabled={unpublishingId !== null}
+                      onPress={() => unpublish(item.id)}
+                    />
+                  </Card>
+                ))}
+            </>
+          ) : null}
+
           {visiblePublic.length > 0 ? (
             <>
               <Text style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, color: colors.inkFaint, marginBottom: 2 }}>
@@ -270,6 +342,46 @@ export default function Catalogue() {
                 </View>
               </ScrollView>
             ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={publishPickerOpen} transparent animationType="fade" onRequestClose={() => setPublishPickerOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 }} onPress={() => setPublishPickerOpen(false)}>
+          <Pressable
+            style={{ width: '100%', maxWidth: 380, maxHeight: '80%', borderRadius: radii.lg, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, overflow: 'hidden' }}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={{ fontSize: 14.5, fontFamily: fonts.bodySemiBold, color: colors.ink, padding: 16, paddingBottom: 8 }}>
+              Publier des recettes au catalogue
+            </Text>
+            <ScrollView style={{ maxHeight: 340 }}>
+              {publishableDishes.length === 0 ? (
+                <Text style={{ padding: 16, fontSize: 12, color: colors.inkFaint, textAlign: 'center' }}>
+                  Toutes tes recettes sont déjà publiées, ou tu n'en as pas encore.
+                </Text>
+              ) : (
+                publishableDishes.map((d) => (
+                  <Pressable
+                    key={d.id}
+                    onPress={() => togglePublishSelect(d.id)}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: colors.line }}
+                  >
+                    <Checkbox checked={publishSelection.has(d.id)} onPress={() => togglePublishSelect(d.id)} />
+                    <Text style={{ fontSize: 13.5, color: colors.ink }}>{d.image_emoji ?? '🍽️'} {d.name}</Text>
+                  </Pressable>
+                ))
+              )}
+            </ScrollView>
+            <View style={{ flexDirection: 'row', gap: 8, padding: 14, borderTopWidth: 1, borderTopColor: colors.line }}>
+              <Pill
+                label={publishing ? '…' : `Publier (${publishSelection.size})`}
+                variant="primary"
+                disabled={publishing || publishSelection.size === 0}
+                onPress={confirmPublish}
+              />
+              <Pill label="Annuler" variant="ghost" onPress={() => setPublishPickerOpen(false)} />
+            </View>
           </Pressable>
         </Pressable>
       </Modal>

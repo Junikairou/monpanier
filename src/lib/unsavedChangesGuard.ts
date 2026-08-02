@@ -1,37 +1,56 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 
 export function useUnsavedChangesGuard(dirty: boolean) {
   const navigation = useNavigation();
-  const [pendingAction, setPendingAction] = useState<any>(null);
+  const router = useRouter();
+  const [visible, setVisible] = useState(false);
   const dirtyRef = useRef(dirty);
   dirtyRef.current = dirty;
+  // Filet de secours pour un retour capturé par 'beforeRemove' (geste natif,
+  // bouton retour matériel) plutôt que par le bouton retour de l'écran.
+  const [pendingAction, setPendingAction] = useState<any>(null);
 
   useEffect(() => {
     const sub = navigation.addListener('beforeRemove' as any, (e: any) => {
       if (!dirtyRef.current) return;
       e.preventDefault();
       setPendingAction(e.data.action);
+      setVisible(true);
     });
     return sub;
   }, [navigation]);
 
+  // Le bouton retour de l'écran appelle CETTE fonction (au lieu de router.back()
+  // directement) : si le formulaire est modifié, on affiche la confirmation ;
+  // sinon on part directement. Beaucoup plus fiable que d'intercepter et rejouer
+  // une action de navigation capturée après coup, qui pouvait ne rien faire ou
+  // atterrir au mauvais endroit.
+  const attemptBack = () => {
+    if (dirtyRef.current) {
+      setPendingAction(null);
+      setVisible(true);
+    } else {
+      router.back();
+    }
+  };
+
   return {
-    visible: pendingAction !== null,
+    visible,
+    attemptBack,
     confirmLeave: () => {
       const action = pendingAction;
+      setVisible(false);
       setPendingAction(null);
-      // Pour un simple retour (l'immense majorité des cas), navigation.goBack()
-      // est plus fiable que rejouer l'action capturée par 'beforeRemove' (qui a pu
-      // atterrir sur le mauvais écran sur certaines plateformes) ; on ne rejoue
-      // l'action capturée que pour les cas différents d'un simple retour (ex. appui
-      // sur un onglet), où c'est la seule façon de retrouver la bonne destination.
-      if (action && action.type !== 'GO_BACK' && action.type !== 'POP') {
+      if (action) {
         navigation.dispatch(action);
       } else {
-        navigation.goBack();
+        router.back();
       }
     },
-    cancelLeave: () => setPendingAction(null),
+    cancelLeave: () => {
+      setVisible(false);
+      setPendingAction(null);
+    },
   };
 }

@@ -256,9 +256,28 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur à chaque étape.
 
+## Chantier en cours (2026-08-02, retours détaillés — bugs + planning historique)
+
+1. ✅ **Bug trouvé et corrigé : chevauchement visuel** — dans le sélecteur de plat (planning) et le catalogue, la liste de résultats n'avait pas `style={{flex:1}}` explicite, ce qui pouvait la faire déborder par-dessus les catégories/boutons juste au-dessus quand elle contenait beaucoup d'éléments (react-native-web a besoin de cette contrainte explicite pour borner correctement le défilement). Corrigé partout où le même schéma existait (planning, courses, tous les plats, catalogue, articles), en prévention.
+2. ✅ **Bug corrigé (vraie cause cette fois) : "Quitter sans enregistrer" ne faisait rien** — le bouton retour de l'écran appelait `router.back()` directement, ce qui déclenchait l'interception `beforeRemove`, et confirmer rejouait ensuite une action capturée qui pouvait ne pas aboutir correctement. Le bouton retour appelle maintenant une fonction dédiée qui vérifie elle-même s'il y a des modifications avant de partir — beaucoup plus fiable, et ça règle aussi le problème "Créer depuis le catalogue → retour sur Planning au lieu de Catalogue" par la même occasion (cause commune).
+3. ✅ Historique du planning : nouvel écran **Plus → Avancé → Historique**, liste les 60 derniers ajouts (plat, jour, créneau), avec "Modifier" (ouvre la fiche) et "Retirer" (avec confirmation).
+4. ✅ Répétitions ("tous les jours", etc.) : toute une série partage maintenant un identifiant commun. **Maintenir le nom d'un plat** dans le planning (vue Jour) ouvre un menu : voir la recette, retirer ce repas, ou — si le repas fait partie d'une série — **retirer toute la série à partir de cette date** (garde les occurrences passées).
+5. ✅ Message d'aide ajouté en bas du planning (vue Jour) expliquant l'appui long et le lien vers l'historique.
+6. ✅ Loupe/crayon de sélection d'article : déplacés à l'intérieur du champ "Nom de l'ingrédient" (à droite), au lieu de boutons séparés à côté — gagne de la place et reste visible même si le champ est plein.
+7. ✅ Suppression d'une étape de la recette possible (bouton ✕), avec confirmation.
+8. ✅ Glisser-déposer (ingrédients/étapes) : le mouvement est maintenant borné à la zone valide (avec un léger effet élastique aux bords) plutôt que de pouvoir dériver n'importe où à l'écran.
+9. ✅ Glisser à la souris (catégories, suggestions d'étapes, poignées ☰) : ne sélectionne plus le texte au passage.
+10. ✅ Carré emoji : hauteur exactement alignée sur le champ "Nom du plat" (40px, au lieu d'une valeur approximative).
+11. ✅ Confirmation avant suppression généralisée : ajoutée là où elle manquait encore (suppression d'un article dans "Liste d'articles" / la fenêtre d'édition rapide).
+12. ✅ Arrondi des quantités par unité : confirmé avec toi, déjà en place tel quel (fractions pour pièce/boîte/tranche/gousse/sachet/càs/càc/pincée, entier pour g/kg/ml/L) — rien à changer.
+13. ✅ Catalogue : bouton "🌍 Publier" dans l'en-tête pour publier plusieurs recettes de "Mes plats" directement depuis le catalogue (en plus du bouton déjà existant dans "Tous les plats"). Nouvelle section "📤 Mes recettes publiées" avec un bouton "Retirer" pour dépublier une recette que tu as toi-même partagée.
+
+**Migration 023 à exécuter** (SQL envoyé dans le chat — ajoute l'identifiant de série de répétition et la date de création sur `planning_entries`, nécessaires pour les points 3 et 4).
+
+**Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur à chaque étape.
+
 ## Pas fait / en attente
 
-- Communauté (partage de recettes) — explicitement mis de côté dès le départ
 - Traduction anglaise complète de l'interface
 - Icône PWA personnalisée (branding Mijoté)
 - Import de recette par IA (lien/texte/photo) — proposé puis abandonné (pas de clé API Anthropic)

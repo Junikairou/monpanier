@@ -10,7 +10,7 @@ import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { PullToRefresh } from '../../src/components/PullToRefresh';
 import { ActionSheet } from '../../src/components/ActionSheet';
 import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek, toIso, weekdayFull } from '../../src/lib/dates';
-import { copyDay, copyWeek, hasEntriesInRange, listPlanningRange, removeMeal, setCooked } from '../../src/data/planning';
+import { copyDay, copyWeek, deleteRecurrenceGroupFrom, hasEntriesInRange, listPlanningRange, removeMeal, setCooked } from '../../src/data/planning';
 import { applyTemplateToWeek, saveTemplateFromWeek } from '../../src/data/template';
 import { getProfile, updateProfile } from '../../src/data/profile';
 import { useTaxonomies } from '../../src/lib/taxonomies';
@@ -50,6 +50,7 @@ export default function Planning() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [clipboard, setClipboard] = useState<{ type: 'day'; date: string } | { type: 'week'; weekStart: string } | null>(null);
   const [dayMenuFor, setDayMenuFor] = useState<string | null>(null);
+  const [entryMenuFor, setEntryMenuFor] = useState<PlanningEntry | null>(null);
   const [weekMenuOpen, setWeekMenuOpen] = useState(false);
   const [conflictAction, setConflictAction] = useState<{ label: string; run: (mode: 'replace' | 'add') => Promise<void> } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -125,6 +126,25 @@ export default function Planning() {
 
   const onSeeRecipe = (dishId: string, entryId?: string) => {
     router.push({ pathname: '/plat/[id]', params: entryId ? { id: dishId, entryId } : { id: dishId } });
+  };
+
+  const openEntryMenu = (entry: PlanningEntry) => setEntryMenuFor(entry);
+
+  const entryMenuActions = () => {
+    if (!entryMenuFor) return [];
+    const entry = entryMenuFor;
+    const actions = [
+      { label: '👁️ Voir la recette', onPress: () => onSeeRecipe(entry.dish_id!, entry.id) },
+      { label: '✕ Retirer ce repas', destructive: true, onPress: () => onRemove(entry.id) },
+    ];
+    if (entry.recurrence_group_id) {
+      actions.push({
+        label: '✕ Retirer cette série (à partir d\'ici)',
+        destructive: true,
+        onPress: () => deleteRecurrenceGroupFrom(entry.recurrence_group_id!, entry.date).then(load),
+      });
+    }
+    return actions;
   };
 
   const onAddFor = (date: string, slot: MealSlot) => {
@@ -382,6 +402,7 @@ export default function Planning() {
           ) : (
             <PullToRefresh onRefresh={load} scrollOffsetRef={scrollOffsetRef}>
             <FlatList
+              style={{ flex: 1 }}
               data={allSlotKeys.filter((s) => activeSlots.includes(s))}
               keyExtractor={(s) => s}
               contentContainerStyle={{ padding: 18, paddingTop: 16, gap: 10 }}
@@ -389,11 +410,20 @@ export default function Planning() {
               onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.y; }}
               scrollEventThrottle={16}
               ListFooterComponent={
-                inactiveSlots.length > 0 ? (
-                  <Pressable onPress={() => setAddSlotMenuOpen(true)} style={{ alignSelf: 'center', marginTop: 2, paddingVertical: 8, paddingHorizontal: 14 }}>
-                    <Text style={{ color: colors.honey, fontSize: 12, fontFamily: fonts.bodyMedium }}>+ Activer un repas</Text>
-                  </Pressable>
-                ) : null
+                <>
+                  {inactiveSlots.length > 0 ? (
+                    <Pressable onPress={() => setAddSlotMenuOpen(true)} style={{ alignSelf: 'center', marginTop: 2, paddingVertical: 8, paddingHorizontal: 14 }}>
+                      <Text style={{ color: colors.honey, fontSize: 12, fontFamily: fonts.bodyMedium }}>+ Activer un repas</Text>
+                    </Pressable>
+                  ) : null}
+                  <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, marginTop: 14, paddingHorizontal: 24, lineHeight: 15 }}>
+                    💡 Maintiens le nom d'un plat pour le modifier/retirer (ou toute une série répétée). Retrouve aussi tes derniers ajouts dans{' '}
+                    <Text style={{ textDecorationLine: 'underline', color: colors.forest }} onPress={() => router.push('/(tabs)/profil/historique')}>
+                      Plus → Historique
+                    </Text>
+                    .
+                  </Text>
+                </>
               }
               renderItem={({ item: slot }) => {
                 // Filtre les entrées "fantômes" (sans plat ni marquage restaurant, ex. reliquat d'un
@@ -439,7 +469,11 @@ export default function Planning() {
                                   {label('course_type', entry.dish.course_type)}
                                 </Text>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <Pressable onPress={() => onSeeRecipe(entry.dish!.id, entry.id)} style={{ flex: 1, flexShrink: 1 }}>
+                                  <Pressable
+                                    onPress={() => onSeeRecipe(entry.dish!.id, entry.id)}
+                                    onLongPress={() => openEntryMenu(entry)}
+                                    style={{ flex: 1, flexShrink: 1 }}
+                                  >
                                     <Text style={[styles.dishName, { color: colors.ink, marginBottom: 0 }]} numberOfLines={1}>{entry.dish.name}</Text>
                                   </Pressable>
                                   <Text style={{ fontSize: 10.5, color: colors.inkFaint, fontFamily: fonts.bodyMedium, marginLeft: 8 }}>
@@ -596,6 +630,13 @@ export default function Planning() {
         title={dayMenuFor ? formatDayCaption(new Date(dayMenuFor)) : undefined}
         actions={dayMenuActions()}
         onClose={() => setDayMenuFor(null)}
+      />
+
+      <ActionSheet
+        visible={!!entryMenuFor}
+        title={entryMenuFor?.dish?.name}
+        actions={entryMenuActions()}
+        onClose={() => setEntryMenuFor(null)}
       />
 
       <ActionSheet

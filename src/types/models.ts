@@ -56,6 +56,8 @@ export interface PlanningEntry {
   is_restaurant: boolean;
   is_cooked: boolean;
   servings: number;
+  recurrence_group_id: string | null;
+  created_at: string;
   dish?: Dish;
 }
 

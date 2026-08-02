@@ -42,7 +42,7 @@ export default function ModifierDish() {
 
   return (
     <Screen>
-      <ScreenHeader title="Modifier le plat" onBack={() => router.back()} />
+      <ScreenHeader title="Modifier le plat" onBack={guard.attemptBack} />
       {!initial ? (
         <LoadingBlock />
       ) : (

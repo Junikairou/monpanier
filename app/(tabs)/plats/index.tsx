@@ -182,6 +182,7 @@ export default function PlatsIndex() {
         <>
           <PullToRefresh onRefresh={load} scrollOffsetRef={scrollOffsetRef}>
           <FlatList
+            style={{ flex: 1 }}
             data={visible}
             keyExtractor={(d) => d.id}
             contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10, paddingBottom: manageMode ? 90 : 18 }}

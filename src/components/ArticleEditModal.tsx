@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from './ScaledText';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts, radii } from '../theme/tokens';
@@ -68,6 +68,19 @@ export function ArticleEditModal({
     } finally {
       setSaving(false);
     }
+  };
+
+  const confirmDelete = () => {
+    if (!onDelete) return;
+    const message = `Supprimer l'article "${name}" ? Il ne sera plus proposé dans les recettes.`;
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) onDelete();
+      return;
+    }
+    Alert.alert('Supprimer cet article ?', message, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Supprimer', style: 'destructive', onPress: onDelete },
+    ]);
   };
 
   return (
@@ -162,7 +175,7 @@ export function ArticleEditModal({
               </Pressable>
             </View>
             {onDelete ? (
-              <Pressable onPress={onDelete} style={{ marginTop: 12, alignItems: 'center' }}>
+              <Pressable onPress={confirmDelete} style={{ marginTop: 12, alignItems: 'center' }}>
                 <Text style={{ color: colors.danger, fontSize: 12.5 }}>Supprimer cet article</Text>
               </Pressable>
             ) : null}

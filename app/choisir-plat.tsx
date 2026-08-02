@@ -119,6 +119,7 @@ export default function ChoisirPlat() {
         <EmptyState text="Aucun plat ne correspond." />
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={visible}
           keyExtractor={(d) => d.id}
           contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 10 }}

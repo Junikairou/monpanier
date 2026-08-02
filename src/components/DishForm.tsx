@@ -23,7 +23,7 @@ import {
 import { listDishes } from '../data/dishes';
 import { Category, CourseType, GroceryCategory } from '../types/models';
 import { fonts } from '../theme/tokens';
-import { useWebHorizontalDrag } from '../lib/webDragScroll';
+import { noSelectWebStyle, useWebHorizontalDrag } from '../lib/webDragScroll';
 
 const RAYON_KEYWORDS: { category: string; words: string[] }[] = [
   {
@@ -150,6 +150,8 @@ const UNIT_OPTIONS: { label: string; value: string }[] = [
 ];
 const STEP_ROW_HEIGHT = 42;
 const ING_ROW_HEIGHT = 58;
+// Empêche la sélection de texte au clic-glissé (poignée ☰) sur navigateur.
+const dragHandleWebStyle = Platform.OS === 'web' ? ({ userSelect: 'none', cursor: 'grab' } as any) : null;
 
 function moveItem<T>(arr: T[], from: number, to: number): T[] {
   if (from === -1) return arr;
@@ -225,7 +227,13 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
     setStepDragIdx(idx);
     setStepDragDy(0);
   };
-  const onStepDragMove = (dy: number) => setStepDragDy(dy);
+  const onStepDragMove = (dy: number) => {
+    if (stepDragIdx === null) return;
+    const overshoot = STEP_ROW_HEIGHT * 0.6;
+    const min = -stepDragIdx * STEP_ROW_HEIGHT - overshoot;
+    const max = (stepBaseOrder.length - 1 - stepDragIdx) * STEP_ROW_HEIGHT + overshoot;
+    setStepDragDy(Math.min(max, Math.max(min, dy)));
+  };
   const endStepDrag = () => {
     if (stepDragIdx !== null && stepTargetIndex !== stepDragIdx) {
       setSteps(moveItem(stepBaseOrder, stepDragIdx, stepTargetIndex));
@@ -246,7 +254,13 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
     setIngDragIdx(idx);
     setIngDragDy(0);
   };
-  const onIngDragMove = (dy: number) => setIngDragDy(dy);
+  const onIngDragMove = (dy: number) => {
+    if (ingDragIdx === null) return;
+    const overshoot = ING_ROW_HEIGHT * 0.6;
+    const min = -ingDragIdx * ING_ROW_HEIGHT - overshoot;
+    const max = (ingBaseOrder.length - 1 - ingDragIdx) * ING_ROW_HEIGHT + overshoot;
+    setIngDragDy(Math.min(max, Math.max(min, dy)));
+  };
   const endIngDrag = () => {
     if (ingDragIdx !== null && ingTargetIndex !== ingDragIdx) {
       setIngredients(moveItem(ingBaseOrder, ingDragIdx, ingTargetIndex));
@@ -290,6 +304,23 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       return;
     }
     Alert.alert('Retirer cet ingrédient ?', message, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Retirer', style: 'destructive', onPress: run },
+    ]);
+  };
+
+  const removeStep = (i: number) => {
+    const run = () => setSteps((prev) => prev.filter((_, idx) => idx !== i));
+    if (!steps[i].trim()) {
+      run();
+      return;
+    }
+    const message = `Retirer l'étape ${i + 1} de la recette ?`;
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) run();
+      return;
+    }
+    Alert.alert('Retirer cette étape ?', message, [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Retirer', style: 'destructive', onPress: run },
     ]);
@@ -355,7 +386,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         <View>
           <Text style={[styles.label, { color: colors.inkSoft }]}>Emoji</Text>
           <Pressable onPress={() => setEmojiPickerOpen(true)} style={[styles.emojiBox, { borderColor: colors.beigeDark, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ fontSize: 20 }}>{emoji || '🍽️'}</Text>
+            <Text style={{ fontSize: 18 }}>{emoji || '🍽️'}</Text>
           </Pressable>
         </View>
         <View style={{ flex: 1 }}>
@@ -369,7 +400,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       </View>
 
       <Text style={[styles.label, { color: colors.inkSoft }]}>Catégorie</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} ref={categoryDrag.ref} {...categoryDrag.handlers}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ marginBottom: 16 }, noSelectWebStyle]} ref={categoryDrag.ref} {...categoryDrag.handlers}>
         {categories.map((c) => (
           <Chip key={c.key} label={`${c.icon ?? ''} ${c.label}`.trim()} active={category === c.key} onPress={() => setCategory(c.key)} />
         ))}
@@ -460,7 +491,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       <Text style={[styles.label, { color: colors.inkSoft, textTransform: 'none', letterSpacing: 0 }]}>
         Étapes courantes (à ajouter puis ajuster) :
       </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} ref={stepSuggestionDrag.ref} {...stepSuggestionDrag.handlers}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ marginBottom: 10 }, noSelectWebStyle]} ref={stepSuggestionDrag.ref} {...stepSuggestionDrag.handlers}>
         {STEP_SUGGESTIONS.map((phrase) => (
           <Chip key={phrase} label={phrase} onPress={() => setSteps((prev) => [...prev.filter((s) => s.trim()), phrase])} />
         ))}
@@ -473,6 +504,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
           dragging={stepDragIdx === i}
           dragOffset={stepDragIdx === i ? stepRowOffset : 0}
           onChangeText={(v) => setSteps((prev) => prev.map((st, idx) => (idx === i ? v : st)))}
+          onRemove={() => removeStep(i)}
           onDragStart={() => startStepDrag(i)}
           onDragMove={onStepDragMove}
           onDragEnd={endStepDrag}
@@ -574,6 +606,7 @@ function StepRow({
   dragging,
   dragOffset,
   onChangeText,
+  onRemove,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -583,6 +616,7 @@ function StepRow({
   dragging: boolean;
   dragOffset: number;
   onChangeText: (v: string) => void;
+  onRemove: () => void;
   onDragStart: () => void;
   onDragMove: (dy: number) => void;
   onDragEnd: () => void;
@@ -611,7 +645,7 @@ function StepRow({
         dragging ? { transform: [{ translateY: dragOffset }], zIndex: 10, opacity: 0.9 } : undefined,
       ]}
     >
-      <View {...panResponder.panHandlers} hitSlop={8} style={{ paddingHorizontal: 2 }}>
+      <View {...panResponder.panHandlers} hitSlop={8} style={[{ paddingHorizontal: 2 }, dragHandleWebStyle]}>
         <Text style={{ fontSize: 14, color: colors.inkFaint }}>☰</Text>
       </View>
       <View style={[styles.stepNum, { backgroundColor: colors.sagePale }]}>
@@ -626,6 +660,9 @@ function StepRow({
         numberOfLines={1}
         style={{ flex: 1, borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 10, fontSize: 12.5, color: colors.ink }}
       />
+      <Pressable onPress={onRemove} hitSlop={6} style={{ paddingHorizontal: 2 }}>
+        <Text style={{ fontSize: 13, color: colors.danger }}>✕</Text>
+      </Pressable>
     </View>
   );
 }
@@ -683,16 +720,26 @@ function IngredientRow({
         dragging ? { transform: [{ translateY: dragOffset }], zIndex: 10, opacity: 0.9 } : undefined,
       ]}
     >
-      <View {...panResponder.panHandlers} hitSlop={8} style={{ paddingHorizontal: 1 }}>
+      <View {...panResponder.panHandlers} hitSlop={8} style={[{ paddingHorizontal: 1 }, dragHandleWebStyle]}>
         <Text style={{ fontSize: 13, color: colors.inkFaint }}>☰</Text>
       </View>
-      <TextInput
-        value={ing.name}
-        onChangeText={onChangeName}
-        placeholder="Nom de l'ingrédient"
-        placeholderTextColor={colors.inkFaint}
-        style={[smallInput, { flex: 1.8 }]}
-      />
+      <View style={{ flex: 1.8, position: 'relative', justifyContent: 'center' }}>
+        <TextInput
+          value={ing.name}
+          onChangeText={onChangeName}
+          placeholder="Nom de l'ingrédient"
+          placeholderTextColor={colors.inkFaint}
+          style={[smallInput, { paddingRight: 42 }]}
+        />
+        <View style={{ position: 'absolute', right: 4, flexDirection: 'row', gap: 4 }}>
+          <Pressable onPress={onOpenPicker} hitSlop={6} style={{ padding: 2 }}>
+            <Text style={{ fontSize: 12.5 }}>🔍</Text>
+          </Pressable>
+          <Pressable onPress={onOpenEdit} disabled={!ing.name.trim()} hitSlop={6} style={{ padding: 2, opacity: ing.name.trim() ? 1 : 0.4 }}>
+            <Text style={{ fontSize: 12.5 }}>✏️</Text>
+          </Pressable>
+        </View>
+      </View>
       <TextInput
         value={ing.quantity}
         onChangeText={onChangeQty}
@@ -706,12 +753,6 @@ function IngredientRow({
           {ing.unit || 'Unité'}
         </Text>
       </Pressable>
-      <Pressable onPress={onOpenPicker} hitSlop={6} style={{ paddingHorizontal: 2 }}>
-        <Text style={{ fontSize: 13 }}>🔍</Text>
-      </Pressable>
-      <Pressable onPress={onOpenEdit} disabled={!ing.name.trim()} hitSlop={6} style={{ paddingHorizontal: 2, opacity: ing.name.trim() ? 1 : 0.4 }}>
-        <Text style={{ fontSize: 13 }}>✏️</Text>
-      </Pressable>
       <Pressable onPress={onRemove} hitSlop={6} style={{ paddingHorizontal: 2 }}>
         <Text style={{ fontSize: 13, color: colors.danger }}>✕</Text>
       </Pressable>
@@ -723,7 +764,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 10.5, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: fonts.bodySemiBold },
   section: { fontSize: 16, fontStyle: 'italic', marginBottom: 10 },
   stepNum: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  emojiBox: { width: 44, height: 44, borderWidth: 1.5, borderRadius: 12, fontSize: 20, textAlign: 'center', textAlignVertical: 'center' },
+  emojiBox: { width: 40, height: 40, borderWidth: 1.5, borderRadius: 10, fontSize: 18, textAlign: 'center', textAlignVertical: 'center' },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',

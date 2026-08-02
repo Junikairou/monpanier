@@ -382,6 +382,7 @@ export default function Courses() {
         <View style={{ flex: 1 }}>
           <PullToRefresh onRefresh={load} scrollOffsetRef={scrollOffsetRef}>
           <ScrollView
+            style={{ flex: 1 }}
             contentContainerStyle={{ padding: 18, paddingTop: 10, paddingBottom: 80 }}
             refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.forest} />}
             onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.y; }}

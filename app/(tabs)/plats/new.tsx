@@ -26,7 +26,7 @@ export default function NewDish() {
 
   return (
     <Screen>
-      <ScreenHeader title="Nouveau plat" onBack={() => router.back()} />
+      <ScreenHeader title="Nouveau plat" onBack={guard.attemptBack} />
       <DishForm
         initial={params.initialCategory ? { ...EMPTY_DISH_FORM_INITIAL, category: params.initialCategory } : undefined}
         submitLabel="Enregistrer le plat"

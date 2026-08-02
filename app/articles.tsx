@@ -99,7 +99,7 @@ export default function Articles() {
       ) : grouped.length === 0 ? (
         <EmptyState text="Aucun article trouvé." />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 18, gap: 6 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, gap: 6 }}>
           {grouped.map((section) => (
             <View key={section.rayon.id}>
               <Text style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, color: colors.inkFaint, marginTop: 12, marginBottom: 6 }}>
