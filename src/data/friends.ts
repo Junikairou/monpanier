@@ -153,6 +153,7 @@ export interface MealInvite {
   date: string;
   slot: MealSlot;
   fromName: string;
+  status: 'pending' | 'accepted' | 'declined';
 }
 
 export async function inviteFriendToMeal(
@@ -175,8 +176,9 @@ export async function inviteFriendToMeal(
 export async function listMyMealInvites(userId: string): Promise<MealInvite[]> {
   const { data, error } = await supabase
     .from('meal_invites')
-    .select('id, household_id, date, slot, from_user_id, to_user_id')
+    .select('id, household_id, date, slot, from_user_id, to_user_id, status')
     .eq('to_user_id', userId)
+    .neq('status', 'declined')
     .order('date');
   if (error) throw error;
   const rows = (data ?? []) as any[];
@@ -187,7 +189,15 @@ export async function listMyMealInvites(userId: string): Promise<MealInvite[]> {
     date: r.date,
     slot: r.slot as MealSlot,
     fromName: names.get(r.from_user_id)?.display_name ?? 'Un ami',
+    status: r.status as 'pending' | 'accepted' | 'declined',
   }));
+}
+
+/** L'invité accepte ou refuse une invitation à un repas. Refuser retire l'invitation. */
+export async function respondToMealInvite(inviteId: string, accept: boolean): Promise<void> {
+  if (!accept) return cancelMealInvite(inviteId);
+  const { error } = await supabase.from('meal_invites').update({ status: 'accepted' }).eq('id', inviteId);
+  if (error) throw error;
 }
 
 /** Amis déjà invités à un repas donné (pour ne pas les proposer deux fois). */

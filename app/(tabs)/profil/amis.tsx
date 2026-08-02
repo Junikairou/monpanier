@@ -19,6 +19,7 @@ import {
   MealInvite,
   ReceivedRecipe,
   removeFriendship,
+  respondToMealInvite,
   sendFriendRequest,
 } from '../../../src/data/friends';
 import { copyDishToMyPlats } from '../../../src/data/dishes';
@@ -262,8 +263,9 @@ export default function Amis() {
             </Text>
             <View style={{ gap: 8 }}>
               {invites.map((inv) => (
-                <Card key={inv.id}>
+                <Card key={inv.id} style={{ gap: 8 }}>
                   <Pressable
+                    disabled={inv.status !== 'accepted'}
                     onPress={() =>
                       router.push({
                         pathname: '/repas-invite',
@@ -275,9 +277,29 @@ export default function Amis() {
                       {label('meal_slot', inv.slot)} · {formatShortDayMonth(new Date(inv.date))}
                     </Text>
                     <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>
-                      Chez {inv.fromName} — voir les plats et la liste de courses
+                      {inv.status === 'accepted'
+                        ? `Chez ${inv.fromName} — voir les plats et la liste de courses`
+                        : `${inv.fromName} t'invite à ce repas`}
                     </Text>
                   </Pressable>
+                  {inv.status === 'pending' ? (
+                    <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+                      <Pressable
+                        disabled={busyId === inv.id}
+                        onPress={() => act(inv.id, () => respondToMealInvite(inv.id, true))}
+                      >
+                        <Text style={{ fontSize: 12, color: colors.forest, fontFamily: fonts.bodySemiBold }}>
+                          {busyId === inv.id ? '…' : 'Accepter'}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        disabled={busyId === inv.id}
+                        onPress={() => act(inv.id, () => respondToMealInvite(inv.id, false))}
+                      >
+                        <Text style={{ fontSize: 12, color: colors.inkFaint }}>Refuser</Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
                 </Card>
               ))}
             </View>

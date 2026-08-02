@@ -318,7 +318,7 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
    - **Ajouter un ami** en tapant son `Pseudo#1234` → demande en attente, que l'autre accepte ou refuse. Sections "Demandes reçues" / "Demandes envoyées" / "Mes amis" (avec retrait possible).
    - **Envoyer une recette à un ami précis** : bouton "👤 Envoyer à un ami" sur la fiche d'une de tes recettes. L'ami la voit dans "📥 Recettes reçues" (page Amis) et peut l'ajouter à Mes plats (copie complète) ou l'ignorer. Différent du catalogue communautaire, qui reste public pour tout le monde.
    - **Inviter un ami à un repas** : appui long sur un plat du planning → "👤 Inviter un ami à ce repas". L'ami voit le repas dans "🍽️ Repas où je suis invité" et peut ouvrir un écran (`/repas-invite`) montrant **les plats prévus et la liste de courses de ce repas** (lecture seule, quantités telles que prévues par l'hôte). L'invitation porte sur le créneau entier (date + repas), pas sur un plat isolé.
-   - **Limites connues** : pas d'acceptation/refus d'une invitation à un repas (elle est simplement visible côté invité) ; les portions de l'hôte ne changent pas automatiquement quand il invite quelqu'un (à ajuster à la main s'il veut cuisiner plus) ; pas de notification, l'ami doit aller voir la page Amis.
+   - **Limites connues** : les portions de l'hôte ne changent pas automatiquement quand il invite quelqu'un (à ajuster à la main s'il veut cuisiner plus) ; pas de notification, l'ami doit aller voir la page Amis.
 4. ✅ **Import de recette par texte nettement amélioré** (toujours sans IA) :
    - Reconnaît plus d'en-têtes ("Ingrédients", "Ce qu'il vous faut", "Étapes", "Préparation", "Réalisation", "Marche à suivre"...) et **ignore** les sections inutiles ("Matériel", "Astuces", "Notes", "Valeurs nutritionnelles").
    - Détecte automatiquement le **nombre de personnes** ("Pour 6 personnes") et le **temps de préparation** ("Préparation : 20 min", "1 h 30").
@@ -330,12 +330,18 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Migration 025 à exécuter** (SQL envoyé dans le chat). **Non testé visuellement** (pas d'identifiants) — compilation TypeScript et build web vérifiés sans erreur, l'app démarre et l'écran de connexion s'affiche sans erreur console.
 
+## Chantier en cours (2026-08-03)
+
+1. ✅ **Amis : accepter/refuser une invitation à un repas** — l'invité voit désormais des boutons "Accepter"/"Refuser" tant que l'invitation est en attente ; refuser la retire, accepter donne accès aux plats et à la liste de courses (auparavant visibles sans confirmation). **Migration 026 à exécuter** (colonne `status` sur `meal_invites` + RLS resserrée : plats/ingrédients/étapes de recette ne sont lisibles par l'invité qu'après acceptation). `src/data/friends.ts` (`respondToMealInvite`), `app/(tabs)/profil/amis.tsx`.
+
+**Non testé visuellement** (pas d'identifiants) — compilation TypeScript vérifiée sans erreur.
+
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface
 - Icône PWA personnalisée (branding Mijoté)
 - Import de recette par **lien ou photo** — pas de clé API Anthropic pour l'analyse ; seul l'import par **texte collé** existe (amélioré le 2026-08-02, voir plus haut)
-- Amis : acceptation/refus d'une invitation à un repas, ajustement automatique des portions de l'hôte, notifications d'invitation
+- Amis : ajustement automatique des portions de l'hôte, notifications d'invitation
 - Mode hors ligne : écriture hors ligne limitée à la liste de courses pour l'instant (planning/plats en lecture seule tant que la connexion est coupée) — voir limites au 2026-08-02
 - Build natif Android pour le Play Store — prévu **plus tard**, pas commencé (nécessite un compte Google Play Developer, ~25$ une fois)
 - Déploiement automatique Vercel — abandonné au profit de GitHub Pages (2026-07-30)

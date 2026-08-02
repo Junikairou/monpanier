@@ -37,6 +37,7 @@ export default function RepasInvite() {
       date: params.date,
       slot: params.slot,
       fromName: params.from ?? '',
+      status: 'accepted',
     })
       .then(async (list) => {
         setDishes(list);
