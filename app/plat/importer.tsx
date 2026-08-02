@@ -17,6 +17,7 @@ export default function ImporterRecette() {
   const { session } = useAuth();
   const router = useRouter();
   const [text, setText] = useState('');
+  const [preview, setPreview] = useState<DishFormInitial | null>(null);
   const [initial, setInitial] = useState<DishFormInitial | null>(null);
   const [dirty, setDirty] = useState(false);
   const guard = useUnsavedChangesGuard(dirty);
@@ -41,7 +42,10 @@ export default function ImporterRecette() {
           >
             <TextInput
               value={text}
-              onChangeText={setText}
+              onChangeText={(v) => {
+                setText(v);
+                setPreview(null);
+              }}
               multiline
               placeholder={'Ex.\n\nGratin dauphinois\n\nIngrédients\n1 kg de pommes de terre\n50 cl de crème\n2 gousses d\'ail\n\nÉtapes\n1. Préchauffer le four à 180°C\n2. Éplucher et couper les pommes de terre'}
               placeholderTextColor={colors.inkFaint}
@@ -52,8 +56,34 @@ export default function ImporterRecette() {
             label="Analyser le texte"
             variant="primary"
             disabled={!text.trim()}
-            onPress={() => setInitial(parseRecipeText(text))}
+            onPress={() => setPreview(parseRecipeText(text))}
           />
+
+          {preview ? (
+            <View style={{ borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, padding: 14, gap: 6 }}>
+              <Text style={{ fontSize: 13.5, fontFamily: fonts.bodySemiBold, color: colors.ink }}>{preview.name}</Text>
+              <Text style={{ fontSize: 11, color: colors.inkSoft }}>
+                {preview.ingredients.filter((i) => i.name).length} ingrédient(s) · {preview.steps.filter(Boolean).length} étape(s)
+                {preview.prepMinutes ? ` · ${preview.prepMinutes} min` : ''} · pour {preview.baseServings} pers.
+              </Text>
+              {preview.ingredients
+                .filter((i) => i.name)
+                .slice(0, 6)
+                .map((i, idx) => (
+                  <Text key={idx} style={{ fontSize: 11.5, color: colors.inkSoft }}>
+                    • {i.quantity ? `${i.quantity} ${i.unit} ` : ''}
+                    {i.name}
+                  </Text>
+                ))}
+              <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 4 }}>
+                Tu pourras tout corriger à l'étape suivante.
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+                <Pill label="Continuer" variant="primary" onPress={() => setInitial(preview)} />
+                <Pill label="Modifier le texte" variant="ghost" onPress={() => setPreview(null)} />
+              </View>
+            </View>
+          ) : null}
         </ScrollView>
       </Screen>
     );

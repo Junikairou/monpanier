@@ -309,11 +309,33 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Non testé visuellement** (pas d'identifiants) — compilation TypeScript vérifiée sans erreur.
 
+## Chantier en cours (2026-08-02, lot suivant — historique, marges, Amis, import)
+
+1. ✅ **Historique — modifier une série complètement** : le bouton devient "Modifier dates / répétition" et ouvre une fenêtre avec **date de début, date de fin et fréquence** (tous les jours / 2 jours / 3 jours / semaine / 2 semaines). La série est **régénérée** avec ces réglages (les anciennes occurrences sont remplacées, l'identifiant de série et le plat/créneau/portions sont conservés) — c'est le seul moyen fiable de changer un intervalle, puisque le nombre d'occurrences change. Une entrée isolée garde juste la correction de date. `rescheduleRecurrenceGroup` dans `src/data/planning.ts`.
+2. ✅ **Marge sur les catégories qui défilent** : la zone de défilement elle-même est maintenant en retrait de 18px (`marginHorizontal` sur le ScrollView au lieu d'un padding sur son contenu), donc les vignettes disparaissent avant le bord de l'écran au lieu d'être coupées net contre lui. Corrigé sur **Catalogue de recettes** et **Sélecteur de plat** (qui avait le même défaut) ; "Tous les plats" était déjà correct (son conteneur avait déjà la marge). Le glisser-souris sans sélection de texte a aussi été ajouté au sélecteur de plat au passage.
+3. ✅ **Partie "Amis"** (remplace la page d'attente) — **migration 025 à exécuter** :
+   - **Identifiant public façon Discord** : chaque compte a un `Pseudo#1234`, affiché en haut de la page Amis avec un bouton "Copier". Le numéro à 4 chiffres est unique **pour un même pseudo** (deux "Marie" possibles, avec des numéros différents). Il est réattribué automatiquement si tu changes de pseudo.
+   - **Ajouter un ami** en tapant son `Pseudo#1234` → demande en attente, que l'autre accepte ou refuse. Sections "Demandes reçues" / "Demandes envoyées" / "Mes amis" (avec retrait possible).
+   - **Envoyer une recette à un ami précis** : bouton "👤 Envoyer à un ami" sur la fiche d'une de tes recettes. L'ami la voit dans "📥 Recettes reçues" (page Amis) et peut l'ajouter à Mes plats (copie complète) ou l'ignorer. Différent du catalogue communautaire, qui reste public pour tout le monde.
+   - **Inviter un ami à un repas** : appui long sur un plat du planning → "👤 Inviter un ami à ce repas". L'ami voit le repas dans "🍽️ Repas où je suis invité" et peut ouvrir un écran (`/repas-invite`) montrant **les plats prévus et la liste de courses de ce repas** (lecture seule, quantités telles que prévues par l'hôte). L'invitation porte sur le créneau entier (date + repas), pas sur un plat isolé.
+   - **Limites connues** : pas d'acceptation/refus d'une invitation à un repas (elle est simplement visible côté invité) ; les portions de l'hôte ne changent pas automatiquement quand il invite quelqu'un (à ajuster à la main s'il veut cuisiner plus) ; pas de notification, l'ami doit aller voir la page Amis.
+4. ✅ **Import de recette par texte nettement amélioré** (toujours sans IA) :
+   - Reconnaît plus d'en-têtes ("Ingrédients", "Ce qu'il vous faut", "Étapes", "Préparation", "Réalisation", "Marche à suivre"...) et **ignore** les sections inutiles ("Matériel", "Astuces", "Notes", "Valeurs nutritionnelles").
+   - Détecte automatiquement le **nombre de personnes** ("Pour 6 personnes") et le **temps de préparation** ("Préparation : 20 min", "1 h 30").
+   - Comprend les **fractions** (½, ¾, "1/2"), les **unités écrites de plein de façons** (g/gr/gramme, càs/c.à.s/cuillère à soupe, tbsp...), convertit **cl et dl en ml** (l'app ne gère pas ces unités), et garde une unité inconnue ("tasse") dans le nom au lieu de la perdre.
+   - Gère le format "Farine : 250 g" (nom d'abord) autant que "250 g de farine".
+   - Sans aucun en-tête reconnu : devine ligne par ligne (ligne courte commençant par un chiffre = ingrédient, ligne longue ou ponctuée = étape) au lieu de tout envoyer en étapes.
+   - **Aperçu du résultat** (nom, nombre d'ingrédients/étapes, temps, premières lignes) avant d'ouvrir le formulaire, avec un bouton "Modifier le texte" pour recommencer.
+   - **Vérifié par des tests** sur 3 formats de texte typiques (site de cuisine classique, format "nom : quantité" avec section Matériel, texte brut sans en-tête) — les trois sont correctement découpés.
+
+**Migration 025 à exécuter** (SQL envoyé dans le chat). **Non testé visuellement** (pas d'identifiants) — compilation TypeScript et build web vérifiés sans erreur, l'app démarre et l'écran de connexion s'affiche sans erreur console.
+
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface
 - Icône PWA personnalisée (branding Mijoté)
-- Import de recette par IA (lien/photo, analyse intelligente) — pas de clé API Anthropic ; version texte simple (sans IA) faite le 2026-08-02, voir plus haut
+- Import de recette par **lien ou photo** — pas de clé API Anthropic pour l'analyse ; seul l'import par **texte collé** existe (amélioré le 2026-08-02, voir plus haut)
+- Amis : acceptation/refus d'une invitation à un repas, ajustement automatique des portions de l'hôte, notifications d'invitation
 - Mode hors ligne : écriture hors ligne limitée à la liste de courses pour l'instant (planning/plats en lecture seule tant que la connexion est coupée) — voir limites au 2026-08-02
 - Build natif Android pour le Play Store — prévu **plus tard**, pas commencé (nécessite un compte Google Play Developer, ~25$ une fois)
 - Déploiement automatique Vercel — abandonné au profit de GitHub Pages (2026-07-30)

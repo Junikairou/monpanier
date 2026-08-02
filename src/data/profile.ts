@@ -15,6 +15,8 @@ export interface Profile {
   onboarded: boolean;
   show_balance_hint: boolean;
   show_nutrition_fields: boolean;
+  /** Identifiant public façon Discord : Pseudo#1234 (migration 025). */
+  tag: string | null;
 }
 
 export async function getProfile(userId: string): Promise<Profile> {

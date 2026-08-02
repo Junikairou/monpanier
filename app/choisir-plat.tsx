@@ -11,6 +11,7 @@ import { replaceTemplateMeal, setTemplateMeal } from '../src/data/template';
 import { useTaxonomies } from '../src/lib/taxonomies';
 import { Category, Dish, MealSlot } from '../src/types/models';
 import { fonts, radii } from '../src/theme/tokens';
+import { noSelectWebStyle, useWebHorizontalDrag } from '../src/lib/webDragScroll';
 
 const WEEKDAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
@@ -27,6 +28,7 @@ export default function ChoisirPlat() {
   const [saving, setSaving] = useState<string | null>(null);
   const [filter, setFilter] = useState<Category | null>(null);
   const [query, setQuery] = useState('');
+  const catDrag = useWebHorizontalDrag();
 
   useEffect(() => {
     listDishes(session!.user.id)
@@ -101,7 +103,14 @@ export default function ChoisirPlat() {
           style={{ borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: radii.sm, paddingVertical: 9, paddingHorizontal: 12, fontSize: 13, color: colors.ink, backgroundColor: colors.paper }}
         />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, paddingVertical: 12 }} contentContainerStyle={{ paddingHorizontal: 18 }}>
+      <ScrollView
+        ref={catDrag.ref}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[{ flexGrow: 0, paddingVertical: 12, marginHorizontal: 18 }, noSelectWebStyle]}
+        contentContainerStyle={{ paddingRight: 4 }}
+        {...catDrag.handlers}
+      >
         <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
         {categories.map((c) => (
           <Chip key={c.key} label={c.label} active={filter === c.key} onPress={() => setFilter(c.key)} />

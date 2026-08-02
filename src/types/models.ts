@@ -50,6 +50,7 @@ export interface RecipeStep {
 export interface PlanningEntry {
   id: string;
   user_id: string;
+  household_id: string;
   date: string; // ISO date, e.g. 2026-07-30
   slot: MealSlot;
   dish_id: string | null;

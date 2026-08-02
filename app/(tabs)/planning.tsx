@@ -13,6 +13,7 @@ import { addDays, dayLabel, formatDayCaption, formatWeekOf, isToday, startOfWeek
 import { copyDay, copyWeek, deleteRecurrenceGroupAll, deleteRecurrenceGroupFrom, hasEntriesInRange, listPlanningRange, removeMeal, setCooked } from '../../src/data/planning';
 import { applyTemplateToWeek, saveTemplateFromWeek } from '../../src/data/template';
 import { getProfile, updateProfile } from '../../src/data/profile';
+import { FriendProfile, inviteFriendToMeal, listFriends } from '../../src/data/friends';
 import { useTaxonomies } from '../../src/lib/taxonomies';
 import { CourseType, MealSlot, PlanningEntry } from '../../src/types/models';
 import { fonts, radii } from '../../src/theme/tokens';
@@ -51,6 +52,10 @@ export default function Planning() {
   const [clipboard, setClipboard] = useState<{ type: 'day'; date: string } | { type: 'week'; weekStart: string } | null>(null);
   const [dayMenuFor, setDayMenuFor] = useState<string | null>(null);
   const [entryMenuFor, setEntryMenuFor] = useState<PlanningEntry | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteFriends, setInviteFriends] = useState<FriendProfile[]>([]);
+  const [inviteTarget, setInviteTarget] = useState<{ date: string; slot: MealSlot } | null>(null);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [weekMenuOpen, setWeekMenuOpen] = useState(false);
   const [conflictAction, setConflictAction] = useState<{ label: string; run: (mode: 'replace' | 'add') => Promise<void> } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -135,6 +140,14 @@ export default function Planning() {
     const entry = entryMenuFor;
     const actions = [
       { label: '👁️ Voir la recette', onPress: () => onSeeRecipe(entry.dish_id!, entry.id) },
+      {
+        label: '👤 Inviter un ami à ce repas',
+        onPress: async () => {
+          setInviteTarget({ date: entry.date, slot: entry.slot });
+          setInviteFriends(await listFriends(userId));
+          setInviteOpen(true);
+        },
+      },
       { label: '✕ Retirer ce repas', destructive: true, onPress: () => onRemove(entry.id) },
     ];
     if (entry.recurrence_group_id) {
@@ -323,6 +336,12 @@ export default function Planning() {
       {loadError ? (
         <Text style={{ textAlign: 'center', fontSize: 11, color: colors.danger, marginBottom: 8 }}>
           Erreur de chargement : {loadError}
+        </Text>
+      ) : null}
+
+      {inviteMessage ? (
+        <Text style={{ textAlign: 'center', fontSize: 11, color: colors.forest, marginBottom: 8, paddingHorizontal: 18 }}>
+          {inviteMessage}
         </Text>
       ) : null}
 
@@ -644,6 +663,29 @@ export default function Planning() {
         title={entryMenuFor?.dish?.name}
         actions={entryMenuActions()}
         onClose={() => setEntryMenuFor(null)}
+      />
+
+      <ActionSheet
+        visible={inviteOpen}
+        title={inviteFriends.length === 0 ? "Aucun ami pour l'instant" : 'Inviter à ce repas…'}
+        actions={
+          inviteFriends.length === 0
+            ? [{ label: 'Ajouter un ami', onPress: () => router.push('/(tabs)/profil/amis') }]
+            : inviteFriends.map((f) => ({
+                label: f.display_name || 'Ami',
+                onPress: async () => {
+                  if (!inviteTarget) return;
+                  try {
+                    await inviteFriendToMeal(userId, f.id, inviteTarget.date, inviteTarget.slot);
+                    setInviteMessage(`${f.display_name || 'Ton ami'} est invité·e — il/elle verra le repas et sa liste de courses.`);
+                    setTimeout(() => setInviteMessage(null), 4000);
+                  } catch (e: any) {
+                    setInviteMessage(e.message ?? "L'invitation a échoué.");
+                  }
+                },
+              }))
+        }
+        onClose={() => setInviteOpen(false)}
       />
 
       <ActionSheet

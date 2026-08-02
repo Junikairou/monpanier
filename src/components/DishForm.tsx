@@ -93,23 +93,12 @@ const STEP_SUGGESTIONS = [
   'Laisser reposer avant de servir',
 ];
 
-export type IngredientDraft = { name: string; quantity: string; unit: string; grocery_category: GroceryCategory };
-
-export interface DishFormInitial {
-  name: string;
-  emoji: string;
-  category: Category;
-  courseType: CourseType;
-  calories: string;
-  protein: string;
-  carbs: string;
-  fat: string;
-  fiber: string;
-  baseServings: string;
-  prepMinutes: string;
-  ingredients: IngredientDraft[];
-  steps: string[];
-}
+// Définis dans dishFormTypes.ts (module sans dépendance react-native, pour
+// que l'import de recette puisse les réutiliser) ; ré-exportés ici, les écrans
+// les important déjà depuis ce fichier.
+import { DishFormInitial, EMPTY_DISH_FORM_INITIAL, IngredientDraft } from './dishFormTypes';
+export type { DishFormInitial, IngredientDraft };
+export { EMPTY_DISH_FORM_INITIAL };
 
 interface DishFormProps {
   initial?: DishFormInitial;
@@ -117,22 +106,6 @@ interface DishFormProps {
   onSubmit: (input: NewDishInput) => Promise<void>;
   onDirtyChange?: (dirty: boolean) => void;
 }
-
-export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
-  name: '',
-  emoji: '🍽️',
-  category: 'rapide',
-  courseType: 'plat',
-  calories: '',
-  protein: '',
-  carbs: '',
-  fat: '',
-  fiber: '',
-  baseServings: '4',
-  prepMinutes: '',
-  ingredients: [{ name: '', quantity: '', unit: '', grocery_category: 'autre' }],
-  steps: [''],
-};
 
 const UNIT_OPTIONS: { label: string; value: string }[] = [
   { label: 'Pièce', value: 'pièce' },

@@ -185,8 +185,11 @@ export default function Catalogue() {
         ref={catDrag.ref}
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={[{ flexGrow: 0 }, noSelectWebStyle]}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingVertical: 10 }}
+        // marginHorizontal (et non paddingHorizontal du contenu) : la zone de
+        // défilement elle-même est en retrait, donc les vignettes disparaissent
+        // à 18px du bord au lieu d'être coupées net contre le bord de l'écran.
+        style={[{ flexGrow: 0, marginHorizontal: 18 }, noSelectWebStyle]}
+        contentContainerStyle={{ paddingVertical: 10, paddingRight: 4 }}
         {...catDrag.handlers}
       >
         <Chip label="Toutes" active={categoryFilter === null} onPress={() => setCategoryFilter(null)} />

@@ -172,6 +172,29 @@ export async function deleteDish(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Recopie une recette lisible mais pas à soi (catalogue communautaire, recette
+ * reçue d'un ami) dans "Mes plats" — l'original reste intact chez son auteur.
+ */
+export async function copyDishToMyPlats(userId: string, dish: Dish): Promise<Dish> {
+  const [ingredients, steps] = await Promise.all([listIngredients(dish.id), listRecipeSteps(dish.id)]);
+  return createDish(userId, {
+    name: dish.name,
+    category: dish.category,
+    course_type: dish.course_type,
+    calories: dish.calories,
+    protein_g: dish.protein_g,
+    carbs_g: dish.carbs_g,
+    fat_g: dish.fat_g,
+    fiber_g: dish.fiber_g,
+    base_servings: dish.base_servings,
+    prep_minutes: dish.prep_minutes,
+    image_emoji: dish.image_emoji || '🍽️',
+    ingredients: ingredients.map((i) => ({ name: i.name, quantity: i.quantity, unit: i.unit, grocery_category: i.grocery_category })),
+    steps: steps.sort((a, b) => a.position - b.position).map((s) => s.instruction),
+  });
+}
+
 export const DEMO_DISHES: NewDishInput[] = [
   {
     name: 'Curry de pois chiches',

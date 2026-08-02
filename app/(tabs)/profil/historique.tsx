@@ -1,23 +1,33 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Card, Checkbox, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
-import { deleteRecurrenceGroupAll, listRecentPlanningEntries, removeMeal, setEntryDate, shiftRecurrenceGroup } from '../../../src/data/planning';
+import { ActionSheet } from '../../../src/components/ActionSheet';
+import {
+  deleteRecurrenceGroupAll,
+  listRecentPlanningEntries,
+  removeMeal,
+  rescheduleRecurrenceGroup,
+  setEntryDate,
+} from '../../../src/data/planning';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { PlanningEntry } from '../../../src/types/models';
 import { formatShortDayMonth } from '../../../src/lib/dates';
-import { fonts } from '../../../src/theme/tokens';
+import { fonts, radii } from '../../../src/theme/tokens';
 
 const FREQ_LABELS: Record<number, string> = {
   1: 'Tous les jours',
   2: 'Tous les 2 jours',
+  3: 'Tous les 3 jours',
   7: 'Toutes les semaines',
   14: 'Une semaine sur deux',
 };
+
+const FREQ_CHOICES = [1, 2, 3, 7, 14];
 
 function frequencyLabel(days: number): string {
   return FREQ_LABELS[days] ?? `Tous les ${days} jours`;
@@ -41,8 +51,15 @@ export default function Historique() {
   const [manageMode, setManageMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [dateEditGroup, setDateEditGroup] = useState<Group | null>(null);
-  const [savingDate, setSavingDate] = useState(false);
+  // Édition d'une série : date de début, date de fin et fréquence.
+  const [editGroup, setEditGroup] = useState<Group | null>(null);
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+  const [editInterval, setEditInterval] = useState(1);
+  const [picker, setPicker] = useState<'start' | 'end' | null>(null);
+  const [freqMenuOpen, setFreqMenuOpen] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -120,19 +137,36 @@ export default function Historique() {
     ]);
   };
 
-  const saveDate = async (iso: string) => {
-    if (!dateEditGroup) return;
-    setSavingDate(true);
+  const openEdit = (group: Group) => {
+    const first = group.entries[0];
+    const last = group.entries[group.entries.length - 1];
+    const gap =
+      group.entries.length > 1
+        ? Math.round((new Date(group.entries[1].date).getTime() - new Date(first.date).getTime()) / 86400000)
+        : 1;
+    setEditGroup(group);
+    setEditStart(first.date);
+    setEditEnd(last.date);
+    setEditInterval(gap > 0 ? gap : 1);
+    setEditError(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editGroup) return;
+    setSavingEdit(true);
+    setEditError(null);
     try {
-      if (dateEditGroup.groupId) {
-        await shiftRecurrenceGroup(dateEditGroup.groupId, dateEditGroup.entries, iso);
+      if (editGroup.groupId) {
+        await rescheduleRecurrenceGroup(editGroup.groupId, editGroup.entries, editStart, editEnd, editInterval);
       } else {
-        await setEntryDate(dateEditGroup.entries[0].id, iso);
+        await setEntryDate(editGroup.entries[0].id, editStart);
       }
-      setDateEditGroup(null);
+      setEditGroup(null);
       load();
+    } catch (e: any) {
+      setEditError(e.message ?? 'Modification impossible.');
     } finally {
-      setSavingDate(false);
+      setSavingEdit(false);
     }
   };
 
@@ -231,8 +265,10 @@ export default function Historique() {
                           <Text style={{ fontSize: 12, color: colors.forest }}>Voir la recette</Text>
                         </Pressable>
                       ) : null}
-                      <Pressable onPress={() => setDateEditGroup(group)} disabled={savingDate} hitSlop={6}>
-                        <Text style={{ fontSize: 12, color: colors.forest }}>{isSeries ? 'Modifier la date de départ' : 'Modifier la date'}</Text>
+                      <Pressable onPress={() => openEdit(group)} hitSlop={6}>
+                        <Text style={{ fontSize: 12, color: colors.forest }}>
+                          {isSeries ? 'Modifier dates / répétition' : 'Modifier la date'}
+                        </Text>
                       </Pressable>
                       <Pressable
                         onPress={() => (isSeries ? removeGroup(group) : removeStandalone(first))}
@@ -266,14 +302,82 @@ export default function Historique() {
           />
         </View>
       ) : null}
-      {dateEditGroup ? (
+      {editGroup ? (
+        <Modal transparent animationType="fade" onRequestClose={() => setEditGroup(null)}>
+          <Pressable style={styles.backdrop} onPress={() => setEditGroup(null)}>
+            <Pressable
+              style={[styles.panel, { backgroundColor: colors.paper, borderColor: colors.line }]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <Text style={{ fontSize: 14.5, fontFamily: fonts.bodySemiBold, color: colors.ink, marginBottom: 4 }}>
+                {editGroup.entries[0].dish?.name ?? 'Ce repas'}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.inkFaint, marginBottom: 14 }}>
+                {editGroup.groupId
+                  ? 'La série est régénérée avec ces réglages (les anciennes dates sont remplacées).'
+                  : 'Corrige la date de ce repas.'}
+              </Text>
+
+              <Text style={styles.fieldLabel}>{editGroup.groupId ? 'Date de début' : 'Date'}</Text>
+              <Pressable onPress={() => setPicker('start')} style={[styles.fieldBtn, { borderColor: colors.beigeDark }]}>
+                <Text style={{ fontSize: 12.5, color: colors.ink }}>{formatShortDayMonth(new Date(editStart))}</Text>
+              </Pressable>
+
+              {editGroup.groupId ? (
+                <>
+                  <Text style={styles.fieldLabel}>Date de fin</Text>
+                  <Pressable onPress={() => setPicker('end')} style={[styles.fieldBtn, { borderColor: colors.beigeDark }]}>
+                    <Text style={{ fontSize: 12.5, color: colors.ink }}>{formatShortDayMonth(new Date(editEnd))}</Text>
+                  </Pressable>
+
+                  <Text style={styles.fieldLabel}>Répétition</Text>
+                  <Pressable onPress={() => setFreqMenuOpen(true)} style={[styles.fieldBtn, { borderColor: colors.beigeDark }]}>
+                    <Text style={{ fontSize: 12.5, color: colors.ink }}>{frequencyLabel(editInterval)}</Text>
+                  </Pressable>
+                </>
+              ) : null}
+
+              {editError ? <Text style={{ fontSize: 11.5, color: colors.danger, marginTop: 10 }}>{editError}</Text> : null}
+
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+                <Pill label={savingEdit ? '…' : 'Enregistrer'} variant="primary" disabled={savingEdit} onPress={saveEdit} />
+                <Pill label="Annuler" variant="ghost" onPress={() => setEditGroup(null)} />
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      ) : null}
+
+      {picker ? (
         <CalendarPicker
           visible
-          selectedDate={dateEditGroup.entries[0].date}
-          onSelect={saveDate}
-          onClose={() => setDateEditGroup(null)}
+          selectedDate={picker === 'start' ? editStart : editEnd}
+          onSelect={(iso) => {
+            if (picker === 'start') {
+              setEditStart(iso);
+              // Garde une fin cohérente si la nouvelle date de début la dépasse.
+              if (iso > editEnd) setEditEnd(iso);
+            } else {
+              setEditEnd(iso);
+            }
+          }}
+          onClose={() => setPicker(null)}
         />
       ) : null}
+
+      <ActionSheet
+        visible={freqMenuOpen}
+        title="Répétition"
+        actions={FREQ_CHOICES.map((days) => ({ label: frequencyLabel(days), onPress: () => setEditInterval(days) }))}
+        onClose={() => setFreqMenuOpen(false)}
+      />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  panel: { width: '100%', maxWidth: 340, borderRadius: radii.lg, borderWidth: 1, padding: 18 },
+  fieldLabel: { fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 10, marginBottom: 5, opacity: 0.6 },
+  fieldBtn: { borderWidth: 1.5, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 12 },
+});

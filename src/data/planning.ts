@@ -133,6 +133,47 @@ export async function shiftRecurrenceGroup(groupId: string, entries: PlanningEnt
   }
 }
 
+/**
+ * Refait complètement une série de répétition : nouvelle date de début, de fin
+ * et/ou nouvelle fréquence. On supprime les occurrences existantes puis on
+ * régénère, en gardant le même identifiant de série, le même plat, le même
+ * créneau et les mêmes portions — c'est le seul moyen fiable de changer un
+ * intervalle (le nombre d'occurrences change).
+ */
+export async function rescheduleRecurrenceGroup(
+  groupId: string,
+  entries: PlanningEntry[],
+  startIso: string,
+  endIso: string,
+  intervalDays: number,
+): Promise<void> {
+  const model = [...entries].sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (!model) return;
+
+  const rows: Record<string, unknown>[] = [];
+  for (let d = new Date(startIso); toIso(d) <= endIso; d = addDays(d, intervalDays)) {
+    rows.push({
+      user_id: model.user_id,
+      household_id: model.household_id,
+      date: toIso(d),
+      slot: model.slot,
+      dish_id: model.dish_id,
+      servings: model.servings,
+      recurrence_group_id: groupId,
+    });
+  }
+  if (rows.length === 0) throw new Error('La date de fin doit être après la date de début.');
+
+  const { error: delErr } = await supabase.from('planning_entries').delete().eq('recurrence_group_id', groupId);
+  if (delErr) throw delErr;
+
+  const { error } = await supabase.from('planning_entries').upsert(rows, {
+    onConflict: 'user_id,date,slot,dish_id',
+    ignoreDuplicates: true,
+  });
+  if (error) throw error;
+}
+
 export async function replaceMeal(
   userId: string,
   entryId: string,

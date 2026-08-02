@@ -8,6 +8,7 @@ import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../src/compon
 import { deleteDish, getDish, listIngredients, listRecipeSteps, setDishPublic } from '../../src/data/dishes';
 import { getPlanningEntry, setEntryServings, setMeal, setMealRecurring } from '../../src/data/planning';
 import { getDisplayNamesByIds, getProfile } from '../../src/data/profile';
+import { FriendProfile, listFriends, shareDishWithFriend } from '../../src/data/friends';
 import { useTaxonomies } from '../../src/lib/taxonomies';
 import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { ActionSheet } from '../../src/components/ActionSheet';
@@ -57,6 +58,9 @@ export default function DishDetail() {
   const [recurError, setRecurError] = useState<string | null>(null);
   const [previewServings, setPreviewServings] = useState<number | null>(null);
   const [authorName, setAuthorName] = useState<string | null>(null);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [friends, setFriends] = useState<FriendProfile[]>([]);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -316,15 +320,26 @@ export default function DishDetail() {
           )}
           <Pill label="✏️ Modifier la recette" variant="ghost" onPress={() => router.push({ pathname: '/plat/modifier', params: { id } })} />
           {dish.user_id === session!.user.id ? (
-            <Pill
-              label={dish.is_public ? '🌍 Partagée au catalogue commun (retirer)' : '🌍 Partager au catalogue commun'}
-              variant="ghost"
-              onPress={async () => {
-                const next = !dish.is_public;
-                await setDishPublic(dish.id, next);
-                setDish({ ...dish, is_public: next });
-              }}
-            />
+            <>
+              <Pill
+                label={dish.is_public ? '🌍 Partagée au catalogue commun (retirer)' : '🌍 Partager au catalogue commun'}
+                variant="ghost"
+                onPress={async () => {
+                  const next = !dish.is_public;
+                  await setDishPublic(dish.id, next);
+                  setDish({ ...dish, is_public: next });
+                }}
+              />
+              <Pill
+                label="👤 Envoyer à un ami"
+                variant="ghost"
+                onPress={async () => {
+                  setSendError(null);
+                  setFriends(await listFriends(session!.user.id));
+                  setSendOpen(true);
+                }}
+              />
+            </>
           ) : null}
           <Pill label="Supprimer ce plat" variant="ghost" onPress={onDelete} />
         </View>
@@ -349,6 +364,29 @@ export default function DishDetail() {
           setEndPickerOpen(false);
         }}
       />
+
+      <ActionSheet
+        visible={sendOpen}
+        title={friends.length === 0 ? "Aucun ami pour l'instant" : 'Envoyer cette recette à…'}
+        actions={
+          friends.length === 0
+            ? [{ label: 'Ajouter un ami', onPress: () => router.push('/(tabs)/profil/amis') }]
+            : friends.map((f) => ({
+                label: f.display_name || 'Ami',
+                onPress: async () => {
+                  try {
+                    await shareDishWithFriend(session!.user.id, dish.id, f.id);
+                  } catch (e: any) {
+                    setSendError(e.message ?? "L'envoi a échoué.");
+                  }
+                },
+              }))
+        }
+        onClose={() => setSendOpen(false)}
+      />
+      {sendError ? (
+        <Text style={{ color: colors.danger, fontSize: 11.5, textAlign: 'center', paddingBottom: 8 }}>{sendError}</Text>
+      ) : null}
 
       <ActionSheet
         visible={freqMenuOpen}
