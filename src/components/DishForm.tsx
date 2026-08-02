@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, PanResponder, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from './ScaledText';
 import { useTheme } from '../theme/ThemeProvider';
 import { useTaxonomies } from '../lib/taxonomies';
@@ -23,6 +23,7 @@ import {
 import { listDishes } from '../data/dishes';
 import { Category, CourseType, GroceryCategory } from '../types/models';
 import { fonts } from '../theme/tokens';
+import { useWebHorizontalDrag } from '../lib/webDragScroll';
 
 const RAYON_KEYWORDS: { category: string; words: string[] }[] = [
   {
@@ -133,8 +134,22 @@ export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
   steps: [''],
 };
 
-const UNIT_OPTIONS = ['Pièce', 'Gramme', 'ML', 'Cuillère à soupe', 'Pincée'];
-const STEP_ROW_HEIGHT = 66;
+const UNIT_OPTIONS: { label: string; value: string }[] = [
+  { label: 'Pièce', value: 'pièce' },
+  { label: 'Gramme', value: 'g' },
+  { label: 'Kilogramme', value: 'kg' },
+  { label: 'Millilitre', value: 'ml' },
+  { label: 'Litre', value: 'L' },
+  { label: 'Cuillère à soupe', value: 'càs' },
+  { label: 'Cuillère à café', value: 'càc' },
+  { label: 'Pincée', value: 'pincée' },
+  { label: 'Boîte', value: 'boîte' },
+  { label: 'Tranche', value: 'tranche' },
+  { label: 'Gousse', value: 'gousse' },
+  { label: 'Sachet', value: 'sachet' },
+];
+const STEP_ROW_HEIGHT = 42;
+const ING_ROW_HEIGHT = 58;
 
 function moveItem<T>(arr: T[], from: number, to: number): T[] {
   if (from === -1) return arr;
@@ -176,6 +191,11 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   const [stepDragIdx, setStepDragIdx] = useState<number | null>(null);
   const [stepDragDy, setStepDragDy] = useState(0);
   const [stepBaseOrder, setStepBaseOrder] = useState<string[]>([]);
+  const [ingDragIdx, setIngDragIdx] = useState<number | null>(null);
+  const [ingDragDy, setIngDragDy] = useState(0);
+  const [ingBaseOrder, setIngBaseOrder] = useState<IngredientDraft[]>([]);
+  const categoryDrag = useWebHorizontalDrag();
+  const stepSuggestionDrag = useWebHorizontalDrag();
 
   useEffect(() => {
     getProfile(session!.user.id).then((p) => setShowNutrition(p.show_nutrition_fields));
@@ -214,6 +234,27 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
     setStepDragDy(0);
   };
 
+  const ingTargetIndex =
+    ingDragIdx !== null
+      ? Math.min(ingBaseOrder.length - 1, Math.max(0, ingDragIdx + Math.round(ingDragDy / ING_ROW_HEIGHT)))
+      : -1;
+  const ingDisplayOrder = ingDragIdx !== null ? moveItem(ingBaseOrder, ingDragIdx, ingTargetIndex) : ingredients;
+  const ingRowOffset = ingDragIdx !== null ? ingDragDy - (ingTargetIndex - ingDragIdx) * ING_ROW_HEIGHT : 0;
+
+  const startIngDrag = (idx: number) => {
+    setIngBaseOrder(ingredients);
+    setIngDragIdx(idx);
+    setIngDragDy(0);
+  };
+  const onIngDragMove = (dy: number) => setIngDragDy(dy);
+  const endIngDrag = () => {
+    if (ingDragIdx !== null && ingTargetIndex !== ingDragIdx) {
+      setIngredients(moveItem(ingBaseOrder, ingDragIdx, ingTargetIndex));
+    }
+    setIngDragIdx(null);
+    setIngDragDy(0);
+  };
+
   useEffect(() => {
     if (!onDirtyChange) return;
     const current: DishFormInitial = {
@@ -226,6 +267,32 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
 
   const updateIngredient = (i: number, patch: Partial<IngredientDraft>) => {
     setIngredients((prev) => prev.map((ing, idx) => (idx === i ? { ...ing, ...patch } : ing)));
+  };
+
+  const handleIngNameChange = (i: number, v: string) => {
+    const patch: Partial<IngredientDraft> = { name: v };
+    if (ingredients[i].grocery_category === 'autre') {
+      const guess = guessGroceryCategory(v, groceryCategories);
+      if (guess) patch.grocery_category = guess;
+    }
+    updateIngredient(i, patch);
+  };
+
+  const removeIngredient = (i: number) => {
+    const run = () => setIngredients((prev) => prev.filter((_, idx) => idx !== i));
+    if (!ingredients[i].name.trim()) {
+      run();
+      return;
+    }
+    const message = `Retirer "${ingredients[i].name}" de la recette ?`;
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) run();
+      return;
+    }
+    Alert.alert('Retirer cet ingrédient ?', message, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Retirer', style: 'destructive', onPress: run },
+    ]);
   };
 
   const courseTypeItem = courseTypes.find((c) => c.key === courseType);
@@ -283,12 +350,12 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 18 }} scrollEnabled={stepDragIdx === null}>
+    <ScrollView contentContainerStyle={{ padding: 18 }} scrollEnabled={stepDragIdx === null && ingDragIdx === null}>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
         <View>
           <Text style={[styles.label, { color: colors.inkSoft }]}>Emoji</Text>
           <Pressable onPress={() => setEmojiPickerOpen(true)} style={[styles.emojiBox, { borderColor: colors.beigeDark, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ fontSize: 24 }}>{emoji || '🍽️'}</Text>
+            <Text style={{ fontSize: 20 }}>{emoji || '🍽️'}</Text>
           </Pressable>
         </View>
         <View style={{ flex: 1 }}>
@@ -302,7 +369,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       </View>
 
       <Text style={[styles.label, { color: colors.inkSoft }]}>Catégorie</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} ref={categoryDrag.ref} {...categoryDrag.handlers}>
         {categories.map((c) => (
           <Chip key={c.key} label={`${c.icon ?? ''} ${c.label}`.trim()} active={category === c.key} onPress={() => setCategory(c.key)} />
         ))}
@@ -326,7 +393,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         </View>
         <View style={{ flex: 1 }}>
           <Field
-            label="Prévu pour combien de pers. ?"
+            label="Pour combien de personnes ?"
             value={baseServings}
             onChangeText={setBaseServings}
             keyboardType="numeric"
@@ -366,59 +433,22 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       ) : null}
 
       <Text style={[styles.section, { color: colors.ink }]}>Ingrédients</Text>
-      {ingredients.map((ing, i) => (
-        <View key={i} style={[styles.ingRow, { borderColor: colors.line }]}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 2, flexDirection: 'row', gap: 6, alignItems: 'flex-end' }}>
-              <View style={{ flex: 1 }}>
-                <Field
-                  label="Nom"
-                  value={ing.name}
-                  onChangeText={(v) => {
-                    const patch: Partial<IngredientDraft> = { name: v };
-                    if (ing.grocery_category === 'autre') {
-                      const guess = guessGroceryCategory(v, groceryCategories);
-                      if (guess) patch.grocery_category = guess;
-                    }
-                    updateIngredient(i, patch);
-                  }}
-                  placeholder="Riz basmati"
-                />
-              </View>
-              <Pressable
-                onPress={() => setPickerFor(i)}
-                style={[styles.dropdown, { paddingHorizontal: 10, marginBottom: 12, borderColor: colors.beigeDark }]}
-              >
-                <Text style={{ fontSize: 14 }}>🔍</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setEditArticleFor(i)}
-                disabled={!ing.name.trim()}
-                style={[styles.dropdown, { paddingHorizontal: 10, marginBottom: 12, borderColor: colors.beigeDark, opacity: ing.name.trim() ? 1 : 0.4 }]}
-              >
-                <Text style={{ fontSize: 14 }}>✏️</Text>
-              </Pressable>
-            </View>
-            <View style={{ width: 45 }}>
-              <Field
-                label="Qté"
-                value={ing.quantity}
-                onChangeText={(v) => updateIngredient(i, { quantity: v })}
-                keyboardType="numeric"
-                placeholder="200"
-              />
-            </View>
-            <View style={{ flex: 1.3 }}>
-              <Text style={[styles.label, { color: colors.inkSoft }]}>Unité</Text>
-              <Pressable onPress={() => setUnitMenuFor(i)} style={[styles.dropdown, { borderColor: colors.beigeDark }]}>
-                <Text style={{ fontSize: 12.5, color: ing.unit ? colors.ink : colors.inkFaint }} numberOfLines={1}>
-                  {ing.unit || 'Choisir'}
-                </Text>
-                <Text style={{ color: colors.inkSoft }}>▾</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
+      {ingDisplayOrder.map((ing, i) => (
+        <IngredientRow
+          key={i}
+          ing={ing}
+          dragging={ingDragIdx === i}
+          dragOffset={ingDragIdx === i ? ingRowOffset : 0}
+          onChangeName={(v) => handleIngNameChange(i, v)}
+          onChangeQty={(v) => updateIngredient(i, { quantity: v })}
+          onOpenUnitMenu={() => setUnitMenuFor(i)}
+          onOpenPicker={() => setPickerFor(i)}
+          onOpenEdit={() => setEditArticleFor(i)}
+          onRemove={() => removeIngredient(i)}
+          onDragStart={() => startIngDrag(i)}
+          onDragMove={onIngDragMove}
+          onDragEnd={endIngDrag}
+        />
       ))}
       <Pill
         label="+ Ajouter un ingrédient"
@@ -430,7 +460,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       <Text style={[styles.label, { color: colors.inkSoft, textTransform: 'none', letterSpacing: 0 }]}>
         Étapes courantes (à ajouter puis ajuster) :
       </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} ref={stepSuggestionDrag.ref} {...stepSuggestionDrag.handlers}>
         {STEP_SUGGESTIONS.map((phrase) => (
           <Chip key={phrase} label={phrase} onPress={() => setSteps((prev) => [...prev.filter((s) => s.trim()), phrase])} />
         ))}
@@ -479,6 +509,10 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
           if (pickerFor === null) return;
           updateIngredient(pickerFor, { name: newName });
         }}
+        onCreateNewArticle={() => {
+          if (pickerFor === null) return;
+          setEditArticleFor(pickerFor);
+        }}
         onClose={() => setPickerFor(null)}
       />
 
@@ -524,7 +558,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       <ActionSheet
         visible={unitMenuFor !== null}
         title="Unité"
-        actions={UNIT_OPTIONS.map((u) => ({ label: u, onPress: () => unitMenuFor !== null && updateIngredient(unitMenuFor, { unit: u }) }))}
+        actions={UNIT_OPTIONS.map((u) => ({ label: u.label, onPress: () => unitMenuFor !== null && updateIngredient(unitMenuFor, { unit: u.value }) }))}
         onClose={() => setUnitMenuFor(null)}
       />
 
@@ -573,16 +607,114 @@ function StepRow({
   return (
     <View
       style={[
-        { flexDirection: 'row', gap: 6, alignItems: 'flex-start', marginBottom: 12 },
+        { flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 6 },
         dragging ? { transform: [{ translateY: dragOffset }], zIndex: 10, opacity: 0.9 } : undefined,
       ]}
     >
-      <View {...panResponder.panHandlers} hitSlop={8} style={{ paddingHorizontal: 4, paddingVertical: 12 }}>
-        <Text style={{ fontSize: 15, color: colors.inkFaint }}>☰</Text>
+      <View {...panResponder.panHandlers} hitSlop={8} style={{ paddingHorizontal: 2 }}>
+        <Text style={{ fontSize: 14, color: colors.inkFaint }}>☰</Text>
       </View>
-      <View style={{ flex: 1, marginBottom: 0 }}>
-        <Field label={`Étape ${index + 1}`} value={value} onChangeText={onChangeText} placeholder="Décris cette étape…" multiline />
+      <View style={[styles.stepNum, { backgroundColor: colors.sagePale }]}>
+        <Text style={{ fontSize: 10.5, fontFamily: fonts.bodySemiBold, color: colors.forest }}>{index + 1}</Text>
       </View>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder="Décris cette étape…"
+        placeholderTextColor={colors.inkFaint}
+        multiline
+        numberOfLines={1}
+        style={{ flex: 1, borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 10, fontSize: 12.5, color: colors.ink }}
+      />
+    </View>
+  );
+}
+
+function IngredientRow({
+  ing,
+  dragging,
+  dragOffset,
+  onChangeName,
+  onChangeQty,
+  onOpenUnitMenu,
+  onOpenPicker,
+  onOpenEdit,
+  onRemove,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+}: {
+  ing: IngredientDraft;
+  dragging: boolean;
+  dragOffset: number;
+  onChangeName: (v: string) => void;
+  onChangeQty: (v: string) => void;
+  onOpenUnitMenu: () => void;
+  onOpenPicker: () => void;
+  onOpenEdit: () => void;
+  onRemove: () => void;
+  onDragStart: () => void;
+  onDragMove: (dy: number) => void;
+  onDragEnd: () => void;
+}) {
+  const { colors } = useTheme();
+
+  const callbacksRef = useRef({ onDragStart, onDragMove, onDragEnd });
+  useEffect(() => {
+    callbacksRef.current = { onDragStart, onDragMove, onDragEnd };
+  });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => callbacksRef.current.onDragStart(),
+      onPanResponderMove: (_e, gesture) => callbacksRef.current.onDragMove(gesture.dy),
+      onPanResponderRelease: () => callbacksRef.current.onDragEnd(),
+      onPanResponderTerminate: () => callbacksRef.current.onDragEnd(),
+    }),
+  ).current;
+
+  const smallInput = { borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8, fontSize: 12.5, color: colors.ink };
+
+  return (
+    <View
+      style={[
+        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, borderBottomWidth: 1, borderColor: colors.line },
+        dragging ? { transform: [{ translateY: dragOffset }], zIndex: 10, opacity: 0.9 } : undefined,
+      ]}
+    >
+      <View {...panResponder.panHandlers} hitSlop={8} style={{ paddingHorizontal: 1 }}>
+        <Text style={{ fontSize: 13, color: colors.inkFaint }}>☰</Text>
+      </View>
+      <TextInput
+        value={ing.name}
+        onChangeText={onChangeName}
+        placeholder="Nom de l'ingrédient"
+        placeholderTextColor={colors.inkFaint}
+        style={[smallInput, { flex: 1.8 }]}
+      />
+      <TextInput
+        value={ing.quantity}
+        onChangeText={onChangeQty}
+        keyboardType="numeric"
+        placeholder="Qté"
+        placeholderTextColor={colors.inkFaint}
+        style={[smallInput, { width: 42, textAlign: 'center' }]}
+      />
+      <Pressable onPress={onOpenUnitMenu} style={[smallInput, { width: 46, alignItems: 'center' }]}>
+        <Text numberOfLines={1} style={{ fontSize: 11, color: ing.unit ? colors.ink : colors.inkFaint }}>
+          {ing.unit || 'Unité'}
+        </Text>
+      </Pressable>
+      <Pressable onPress={onOpenPicker} hitSlop={6} style={{ paddingHorizontal: 2 }}>
+        <Text style={{ fontSize: 13 }}>🔍</Text>
+      </Pressable>
+      <Pressable onPress={onOpenEdit} disabled={!ing.name.trim()} hitSlop={6} style={{ paddingHorizontal: 2, opacity: ing.name.trim() ? 1 : 0.4 }}>
+        <Text style={{ fontSize: 13 }}>✏️</Text>
+      </Pressable>
+      <Pressable onPress={onRemove} hitSlop={6} style={{ paddingHorizontal: 2 }}>
+        <Text style={{ fontSize: 13, color: colors.danger }}>✕</Text>
+      </Pressable>
     </View>
   );
 }
@@ -590,8 +722,8 @@ function StepRow({
 const styles = StyleSheet.create({
   label: { fontSize: 10.5, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: fonts.bodySemiBold },
   section: { fontSize: 16, fontStyle: 'italic', marginBottom: 10 },
-  ingRow: { borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 10 },
-  emojiBox: { width: 52, height: 52, borderWidth: 1.5, borderRadius: 12, fontSize: 24, textAlign: 'center', textAlignVertical: 'center' },
+  stepNum: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  emojiBox: { width: 44, height: 44, borderWidth: 1.5, borderRadius: 12, fontSize: 20, textAlign: 'center', textAlignVertical: 'center' },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',

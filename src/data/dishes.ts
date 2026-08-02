@@ -48,6 +48,17 @@ export async function listIngredients(dishId: string): Promise<Ingredient[]> {
   return data as Ingredient[];
 }
 
+export async function listIngredientNamesByDish(dishIds: string[]): Promise<Record<string, string[]>> {
+  if (dishIds.length === 0) return {};
+  const { data, error } = await supabase.from('ingredients').select('dish_id, name').in('dish_id', dishIds);
+  if (error) throw error;
+  const map: Record<string, string[]> = {};
+  for (const row of data as { dish_id: string; name: string }[]) {
+    (map[row.dish_id] ??= []).push(row.name);
+  }
+  return map;
+}
+
 export async function listRecipeSteps(dishId: string): Promise<RecipeStep[]> {
   const { data, error } = await supabase
     .from('recipe_steps')

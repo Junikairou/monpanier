@@ -1,13 +1,13 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from '../../../src/components/ScaledText';
+import { Text, TextInput } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Checkbox, Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { ActionSheet } from '../../../src/components/ActionSheet';
 import { PullToRefresh } from '../../../src/components/PullToRefresh';
-import { deleteDish, listDishes, seedDemoDishes, updateDishClassification } from '../../../src/data/dishes';
+import { deleteDish, listDishes, listIngredientNamesByDish, seedDemoDishes, setDishPublic, updateDishClassification } from '../../../src/data/dishes';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { Category, Dish } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
@@ -19,9 +19,11 @@ export default function PlatsIndex() {
   const { categories, courseTypes, label } = useTaxonomies();
 
   const [dishes, setDishes] = useState<Dish[]>([]);
+  const [ingredientNamesByDish, setIngredientNamesByDish] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [filter, setFilter] = useState<Category | null>(null);
+  const [query, setQuery] = useState('');
   const [manageMode, setManageMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
@@ -30,11 +32,15 @@ export default function PlatsIndex() {
   const [moveKindOpen, setMoveKindOpen] = useState(false);
   const [moveTargetKind, setMoveTargetKind] = useState<'category' | 'course_type' | null>(null);
   const [moving, setMoving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     listDishes(session!.user.id)
-      .then(setDishes)
+      .then(async (d) => {
+        setDishes(d);
+        setIngredientNamesByDish(await listIngredientNamesByDish(d.map((x) => x.id)));
+      })
       .finally(() => setLoading(false));
   }, [session]);
 
@@ -44,7 +50,15 @@ export default function PlatsIndex() {
     }, [load]),
   );
 
-  const visible = filter ? dishes.filter((d) => d.category === filter) : dishes;
+  const q = query.trim().toLowerCase();
+  const visible = dishes
+    .filter((d) => !filter || d.category === filter)
+    .filter(
+      (d) =>
+        !q ||
+        d.name.toLowerCase().includes(q) ||
+        (ingredientNamesByDish[d.id] ?? []).some((n) => n.toLowerCase().includes(q)),
+    );
 
   const onSeed = async () => {
     setSeeding(true);
@@ -108,6 +122,19 @@ export default function PlatsIndex() {
     }
   };
 
+  const publishSelected = async () => {
+    if (selected.size === 0) return;
+    setPublishing(true);
+    try {
+      for (const id of selected) await setDishPublic(id, true);
+      setSelected(new Set());
+      setManageMode(false);
+      load();
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   return (
     <Screen>
       <ScreenHeader
@@ -119,6 +146,17 @@ export default function PlatsIndex() {
           ) : undefined
         }
       />
+      {dishes.length > 0 ? (
+        <View style={{ paddingHorizontal: 18, paddingTop: 10 }}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Rechercher un plat ou un ingrédient..."
+            placeholderTextColor={colors.inkFaint}
+            style={{ borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: radii.sm, paddingVertical: 9, paddingHorizontal: 12, fontSize: 13, color: colors.ink, backgroundColor: colors.paper }}
+          />
+        </View>
+      ) : null}
       <View style={styles.topActions}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
           <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
@@ -138,6 +176,8 @@ export default function PlatsIndex() {
             <Pill label={seeding ? '…' : 'Ajouter des exemples'} onPress={onSeed} disabled={seeding} />
           </View>
         </View>
+      ) : visible.length === 0 ? (
+        <EmptyState text="Aucun plat ne correspond à cette recherche." />
       ) : (
         <>
           <PullToRefresh onRefresh={load} scrollOffsetRef={scrollOffsetRef}>
@@ -183,6 +223,12 @@ export default function PlatsIndex() {
                 variant="ghost"
                 disabled={selected.size === 0}
                 onPress={() => setMoveKindOpen(true)}
+              />
+              <Pill
+                label={publishing ? '…' : '🌍 Publier au catalogue'}
+                variant="ghost"
+                disabled={publishing || selected.size === 0}
+                onPress={publishSelected}
               />
               <Pill
                 label={deleting ? '…' : `Supprimer (${selected.size})`}

@@ -209,6 +209,53 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 ⚠️ Limite connue sur le catalogue communautaire : pas de modération/signalement pour l'instant — n'importe quel membre d'un foyer peut rendre une recette publique, visible par tous les foyers de l'app.
 
+## Chantier en cours (2026-08-01, retours utilisateur — gros lot v3)
+
+**Planning**
+1. ✅ Barre de recherche dans le sélecteur de plat (planning → "Ajouter un plat") — cherche dans le nom du plat, la catégorie, le type de plat, et comprend "30 min" (filtre par temps de préparation).
+2. ✅ Répétition "tous les jours" (et autres fréquences) : ne bloque plus si le plat est déjà présent au jour de départ — la ligne du jour déjà occupé est simplement ignorée au lieu de faire échouer toute la série (`upsert ... ignoreDuplicates`). Auparavant l'insert échouait silencieusement (aucune erreur affichée) à cause d'une contrainte unique en base, d'où l'impossibilité de confirmer.
+3. ✅ Texte "Jour" → "À partir du jour" quand une répétition (autre que "Une fois") est choisie.
+4. ✅ Après confirmation d'un ajout au planning, retour automatique sur l'onglet Planning.
+5. ✅ Temps de préparation affiché dans le planning (à côté des calories) et dans le sélecteur de plat.
+6. ⬜ **Non fait — reporté** : options de notification (heure du repas, rappel du temps de préparation). Tu hésitais toi-même sur cette demande ; dis-moi si tu la veux et on la cadre à part (implique des permissions de notification, un réglage horaire par repas, etc.).
+
+**Formulaire de plat (créer/modifier)** — refonte assez large :
+7. ✅ Confirmation avant de quitter sans enregistrer : déjà en place depuis un lot précédent : à confirmer si la perte de données persiste malgré ça (dis-moi précisément dans quel cas ça t'est arrivé si ça se reproduit).
+8. ✅ Sélection d'un article (ingrédient) : le rayon n'est plus une liste toujours ouverte — nouvelle navigation par rayons fermés (comme un menu), avec la recherche toujours disponible en haut pour aller plus vite.
+9. ✅ "Prévu pour combien de pers. ?" → "Pour combien de personnes ?"
+10. ✅ Lignes d'ingrédients bien plus compactes (une seule ligne par ingrédient au lieu d'un gros bloc), Nom agrandi, Qté et Unité réduits.
+11. ✅ Unités affichées en acronyme une fois choisies (càs, càc, ml, g, kg, L, boîte, tranche, gousse, sachet, pièce, pincée) — le menu de choix garde les noms complets pour rester clair.
+12. ✅ Glisser-déposer pour réordonner les ingrédients (comme les étapes).
+13. ✅ Étapes de la recette compactées (numéro en pastille + champ réduit au lieu d'un gros bloc par étape).
+14. ✅ Dans "Choisir un article" : bouton permanent "+ Créer un article" en bas (ouvre directement la fiche de création, sans devoir taper un nom introuvable au préalable).
+15. ✅ Carré emoji réduit pour se rapprocher de la hauteur du champ "Nom du plat".
+16. ✅ Catégories et suggestions d'étapes : glisser à la souris pour faire défiler sur PC (comme déjà fait pour la semaine du planning).
+17. ✅ Suppression d'un ingrédient possible (bouton ✕), avec confirmation avant de le retirer.
+
+**Liste de courses**
+18. ✅ Téléchargement en JPEG (bouton 📸) — capture la liste affichée et la télécharge comme image, en plus d'être consultable/imprimable depuis le navigateur. Web uniquement (comme presque tout le reste de l'app).
+19. ✅ Marge ajoutée sous "Semaine du..."/la plage de dates avant le début des articles (vues Semaine et Plage).
+20. ✅ Quantités arrondies intelligemment selon l'unité : les unités "à la pièce" (pièce, boîte, tranche, gousse, sachet, càs, càc, pincée) s'arrondissent au quart le plus proche et s'affichent en fraction (¼, ½, ¾) plutôt qu'en décimales bizarres ; les unités de poids/volume (g, ml, kg, L) s'arrondissent à l'entier.
+21. ⬜ **Reporté, gros chantier à part** — mode hors ligne complet (lecture ET écriture sans connexion, avec synchronisation au retour du réseau). Tu as choisi cette option la plus ambitieuse ; c'est trop risqué à greffer dans ce lot déjà énorme sans le cadrer et le tester proprement à part (service worker, stockage local de toutes les données, gestion des conflits de synchro). **On le fait dans une prochaine conversation dédiée.**
+
+**Tous les plats**
+22. ✅ Barre de recherche (nom du plat ou d'un ingrédient qu'il contient).
+
+**Liste d'articles**
+23. ✅ Menu déroulant pour filtrer par rayon (en plus de la recherche).
+
+**Catalogue de recettes**
+24. ✅ Filtres par catégorie de plat (comme "Tous les plats").
+25. ✅ Barre de recherche (nom du plat ou d'un ingrédient, y compris pour les exemples).
+26. ✅ Bouton "+ Créer" : normalement corrigé par le changement générique du garde-fou "quitter sans enregistrer" (voir plus haut, confirme si retour sur Catalogue fonctionne maintenant).
+27. ✅ Depuis "Tous les plats" → mode Gérer : bouton "🌍 Publier au catalogue" pour rendre plusieurs recettes publiques en une fois (utilise le partage communautaire du lot précédent).
+28. ✅ Prévisualisation avant d'ajouter : les recettes de la communauté ouvrent la fiche recette complète ; les exemples ouvrent une fenêtre d'aperçu (ingrédients + étapes) avec un bouton "+ Ajouter à Mes plats" directement dedans.
+29. ✅ Nom du créateur affiché ("par ...") sur les recettes communautaires, dans le catalogue et sur la fiche recette.
+
+**Migrations à exécuter, dans l'ordre : 020, 021, puis 022** (022 : autorise à lire le nom de l'auteur d'une recette publique, nécessaire pour le point 29). SQL envoyé dans le chat.
+
+**Non testé visuellement** (pas d'identifiants) — compilation vérifiée sans erreur à chaque étape.
+
 ## Pas fait / en attente
 
 - Communauté (partage de recettes) — explicitement mis de côté dès le départ

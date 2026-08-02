@@ -54,7 +54,14 @@ export async function setMealRecurring(
     rows.push({ user_id: userId, household_id, date: toIso(d), slot, dish_id: dish.id, servings: servings ?? dish.base_servings });
   }
   if (rows.length === 0) return;
-  const { error } = await supabase.from('planning_entries').insert(rows);
+  // ignoreDuplicates : si ce plat est déjà présent ce jour-là dans ce créneau
+  // (contrainte unique user_id+date+slot+dish_id), on l'ignore simplement au lieu
+  // de faire échouer tout l'insert groupé (sinon impossible de confirmer une
+  // répétition démarrant un jour où le plat est déjà planifié).
+  const { error } = await supabase.from('planning_entries').upsert(rows, {
+    onConflict: 'user_id,date,slot,dish_id',
+    ignoreDuplicates: true,
+  });
   if (error) throw error;
 }
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from '../src/components/ScaledText';
+import { Text, TextInput } from '../src/components/ScaledText';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../src/lib/auth';
 import { useTheme } from '../src/theme/ThemeProvider';
@@ -10,7 +10,7 @@ import { replaceMeal, setMeal } from '../src/data/planning';
 import { replaceTemplateMeal, setTemplateMeal } from '../src/data/template';
 import { useTaxonomies } from '../src/lib/taxonomies';
 import { Category, Dish, MealSlot } from '../src/types/models';
-import { fonts } from '../src/theme/tokens';
+import { fonts, radii } from '../src/theme/tokens';
 
 const WEEKDAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
@@ -26,6 +26,7 @@ export default function ChoisirPlat() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [filter, setFilter] = useState<Category | null>(null);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     listDishes(session!.user.id)
@@ -33,7 +34,21 @@ export default function ChoisirPlat() {
       .finally(() => setLoading(false));
   }, []);
 
-  const visible = filter ? dishes.filter((d) => d.category === filter) : dishes;
+  const q = query.trim().toLowerCase();
+  const minMatch = q.match(/(\d+)\s*min/);
+  const maxMinutes = minMatch ? parseInt(minMatch[1], 10) : null;
+
+  const visible = dishes
+    .filter((d) => !filter || d.category === filter)
+    .filter((d) => {
+      if (maxMinutes !== null) return d.prep_minutes != null && d.prep_minutes <= maxMinutes;
+      if (!q) return true;
+      return (
+        d.name.toLowerCase().includes(q) ||
+        label('category', d.category).toLowerCase().includes(q) ||
+        label('course_type', d.course_type).toLowerCase().includes(q)
+      );
+    });
 
   const createNew = () => {
     router.push({
@@ -77,6 +92,15 @@ export default function ChoisirPlat() {
         subtitle={isTemplate ? WEEKDAY_NAMES[Number(params.weekday)] : params.date}
         onBack={() => router.back()}
       />
+      <View style={{ paddingHorizontal: 18, paddingTop: 12 }}>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Rechercher (ex. asiatique, soupe, 30 min...)"
+          placeholderTextColor={colors.inkFaint}
+          style={{ borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: radii.sm, paddingVertical: 9, paddingHorizontal: 12, fontSize: 13, color: colors.ink, backgroundColor: colors.paper }}
+        />
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, paddingVertical: 12 }} contentContainerStyle={{ paddingHorizontal: 18 }}>
         <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
         {categories.map((c) => (
@@ -92,7 +116,7 @@ export default function ChoisirPlat() {
       {loading ? (
         <LoadingBlock />
       ) : visible.length === 0 ? (
-        <EmptyState text="Aucun plat dans cette catégorie pour l'instant." />
+        <EmptyState text="Aucun plat ne correspond." />
       ) : (
         <FlatList
           data={visible}
@@ -112,8 +136,12 @@ export default function ChoisirPlat() {
                   {label('course_type', item.course_type)} · {label('category', item.category)}
                 </Text>
                 <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
-                {item.calories != null ? (
-                  <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 1 }}>🔥 {item.calories} kcal</Text>
+                {item.calories != null || item.prep_minutes != null ? (
+                  <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 1 }}>
+                    {[item.calories != null ? `🔥 ${item.calories} kcal` : null, item.prep_minutes != null ? `⏱️ ${item.prep_minutes} min` : null]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
                 ) : null}
               </View>
               <Pill label={saving === item.id ? '…' : 'Choisir'} variant="primary" onPress={() => choose(item)} />

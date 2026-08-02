@@ -23,6 +23,17 @@ export async function getProfile(userId: string): Promise<Profile> {
   return data as Profile;
 }
 
+export async function getDisplayNamesByIds(userIds: string[]): Promise<Record<string, string>> {
+  if (userIds.length === 0) return {};
+  const { data, error } = await supabase.from('profiles').select('id, display_name').in('id', userIds);
+  if (error) throw error;
+  const map: Record<string, string> = {};
+  for (const row of data as { id: string; display_name: string | null }[]) {
+    if (row.display_name) map[row.id] = row.display_name;
+  }
+  return map;
+}
+
 export async function updateProfile(userId: string, patch: Partial<Profile>): Promise<void> {
   const { error } = await supabase
     .from('profiles')

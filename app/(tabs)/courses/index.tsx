@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -22,6 +22,7 @@ import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
 import { addDays, dayLabel, formatShortDayMonth, formatWeekOf, isToday, shortDayLabel, startOfWeek, toIso } from '../../../src/lib/dates';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
 import { PullToRefresh } from '../../../src/components/PullToRefresh';
+import { formatQuantity } from '../../../src/lib/formatQuantity';
 
 function ArrowBtn({ dir, onPress }: { dir: 'prev' | 'next'; onPress: () => void }) {
   const { colors } = useTheme();
@@ -58,6 +59,25 @@ export default function Courses() {
   const [mQty, setMQty] = useState('');
   const [mUnit, setMUnit] = useState('');
   const scrollOffsetRef = useRef(0);
+  const exportRef = useRef<View>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const exportJpeg = async () => {
+    if (Platform.OS !== 'web' || !exportRef.current) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const node = exportRef.current as unknown as HTMLElement;
+      const canvas = await html2canvas(node, { backgroundColor: colors.cream, scale: 2 });
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `liste-de-courses-${toIso(new Date())}.jpg`;
+      link.click();
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const rangeStart = period === 'jour' ? anchor : period === 'semaine' ? startOfWeek(anchor) : new Date(rangeFrom);
   const rangeEnd = period === 'jour' ? anchor : period === 'semaine' ? addDays(startOfWeek(anchor), 6) : new Date(rangeTo);
@@ -310,7 +330,7 @@ export default function Courses() {
           <ArrowBtn dir="next" onPress={() => setAnchor(addDays(anchor, 1))} />
         </View>
       ) : period === 'semaine' ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 18, marginTop: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 18, marginTop: 10, marginBottom: 14 }}>
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <ArrowBtn dir="prev" onPress={() => setAnchor(addDays(anchor, -7))} />
@@ -367,6 +387,7 @@ export default function Courses() {
             onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.y; }}
             scrollEventThrottle={16}
           >
+            <View ref={exportRef} collapsable={false} style={{ backgroundColor: colors.cream }}>
             {view === 'rayon' ? (
               <>
                 {groceryCategories.map((gc) => {
@@ -382,7 +403,7 @@ export default function Courses() {
                           item.checked,
                           () => onToggleAuto(item),
                           item.name,
-                          `${item.quantity} ${item.unit}`,
+                          formatQuantity(item.quantity, item.unit) + ` ${item.unit}`,
                           dishOriginBadges(item.key, item.source_dish_ids),
                           dayBadge(item.dates),
                         ),
@@ -403,7 +424,7 @@ export default function Courses() {
                           item.checked,
                           () => onToggleAuto(item),
                           item.name,
-                          `${item.quantity} ${item.unit}`,
+                          formatQuantity(item.quantity, item.unit) + ` ${item.unit}`,
                           dishOriginBadges(item.key, item.source_dish_ids),
                           dayBadge(item.dates),
                         ),
@@ -415,7 +436,7 @@ export default function Courses() {
                   <View>
                     <Text style={[styles.catLabel, { color: colors.inkFaint }]}>Ajoutés manuellement</Text>
                     {list.manual.map((item) =>
-                      renderRow(item.id, item.checked, () => onToggleManual(item), item.name, `${item.quantity} ${item.unit}`),
+                      renderRow(item.id, item.checked, () => onToggleManual(item), item.name, formatQuantity(item.quantity, item.unit) + ` ${item.unit}`),
                     )}
                   </View>
                 ) : null}
@@ -489,7 +510,7 @@ export default function Courses() {
                                 ) : null}
                               </View>
                               <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>
-                                {Math.round(ing.quantity * scaleFactor * 100) / 100} {ing.unit}
+                                {formatQuantity(ing.quantity * scaleFactor, ing.unit)} {ing.unit}
                               </Text>
                             </View>
                           );
@@ -498,6 +519,7 @@ export default function Courses() {
                 );
               })
             )}
+            </View>
 
             {manualOpen ? (
               <View style={[styles.manualPanel, { borderColor: colors.beige, backgroundColor: colors.paper }]}>
@@ -520,9 +542,18 @@ export default function Courses() {
           </PullToRefresh>
 
           {!manualOpen ? (
-            <Pressable onPress={() => setManualOpen(true)} style={[styles.fab, { backgroundColor: colors.forest, shadowColor: colors.forest }]}>
-              <Text style={{ color: '#FFF', fontSize: 20, marginTop: -2 }}>＋</Text>
-            </Pressable>
+            <>
+              <Pressable
+                onPress={exportJpeg}
+                disabled={exporting}
+                style={[styles.fab, { right: 74, backgroundColor: colors.paper, borderWidth: 1.5, borderColor: colors.beige, shadowColor: colors.ink, opacity: exporting ? 0.6 : 1 }]}
+              >
+                <Text style={{ fontSize: 18 }}>📸</Text>
+              </Pressable>
+              <Pressable onPress={() => setManualOpen(true)} style={[styles.fab, { backgroundColor: colors.forest, shadowColor: colors.forest }]}>
+                <Text style={{ color: '#FFF', fontSize: 20, marginTop: -2 }}>＋</Text>
+              </Pressable>
+            </>
           ) : null}
         </View>
       )}
@@ -537,7 +568,7 @@ const styles = StyleSheet.create({
   weekStrip: { flex: 1, flexDirection: 'row', gap: 4 },
   arrowBtn: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   dayChip: { flex: 1, minWidth: 30, paddingVertical: 13, paddingHorizontal: 2, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  rangeNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginHorizontal: 18, marginTop: 10 },
+  rangeNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginHorizontal: 18, marginTop: 10, marginBottom: 14 },
   rangeBtn: { alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1.5 },
   catLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
   itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 9, borderRadius: radii.sm, marginBottom: 8 },

@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../src/lib/auth';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { Card, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../src/components/ui';
+import { ActionSheet } from '../src/components/ActionSheet';
 import { ArticleEditModal } from '../src/components/ArticleEditModal';
 import {
   CatalogIngredient,
@@ -29,6 +30,8 @@ export default function Articles() {
   const [query, setQuery] = useState('');
   const [showNutrition, setShowNutrition] = useState(false);
   const [editing, setEditing] = useState<CatalogIngredient | null | 'new'>(null);
+  const [rayonFilter, setRayonFilter] = useState<string | null>(null);
+  const [rayonMenuOpen, setRayonMenuOpen] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -49,8 +52,12 @@ export default function Articles() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? items.filter((i) => i.name.toLowerCase().includes(q)) : items;
-  }, [items, query]);
+    return items
+      .filter((i) => !rayonFilter || i.grocery_category === rayonFilter)
+      .filter((i) => !q || i.name.toLowerCase().includes(q));
+  }, [items, query, rayonFilter]);
+
+  const rayonFilterItem = groceryCategories.find((g) => g.key === rayonFilter);
 
   const grouped = useMemo(() => {
     const byRayon = new Map<string, CatalogIngredient[]>();
@@ -70,14 +77,21 @@ export default function Articles() {
         onBack={() => router.back()}
         right={<Pill label="+ Nouvel article" onPress={() => setEditing('new')} />}
       />
-      <View style={{ paddingHorizontal: 18, paddingTop: 10 }}>
+      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 18, paddingTop: 10 }}>
         <TextInput
           value={query}
           onChangeText={setQuery}
           placeholder="Rechercher un article..."
           placeholderTextColor={colors.inkFaint}
-          style={{ borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: radii.sm, paddingVertical: 10, paddingHorizontal: 12, fontSize: 13.5, color: colors.ink, backgroundColor: colors.paper }}
+          style={{ flex: 1, borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: radii.sm, paddingVertical: 10, paddingHorizontal: 12, fontSize: 13.5, color: colors.ink, backgroundColor: colors.paper }}
         />
+        <Pressable
+          onPress={() => setRayonMenuOpen(true)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: radii.sm, paddingVertical: 10, paddingHorizontal: 10, backgroundColor: colors.paper }}
+        >
+          <Text style={{ fontSize: 13 }}>{rayonFilterItem ? `${rayonFilterItem.icon ?? ''} ${rayonFilterItem.label}`.trim() : 'Tous les rayons'}</Text>
+          <Text style={{ color: colors.inkSoft }}>▾</Text>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -129,6 +143,16 @@ export default function Articles() {
             : undefined
         }
         onClose={() => setEditing(null)}
+      />
+
+      <ActionSheet
+        visible={rayonMenuOpen}
+        title="Filtrer par rayon"
+        actions={[
+          { label: 'Tous les rayons', onPress: () => setRayonFilter(null) },
+          ...groceryCategories.map((g) => ({ label: `${g.icon ?? ''} ${g.label}`.trim(), onPress: () => setRayonFilter(g.key) })),
+        ]}
+        onClose={() => setRayonMenuOpen(false)}
       />
     </Screen>
   );

@@ -7,7 +7,7 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../../src/components/ui';
 import { deleteDish, getDish, listIngredients, listRecipeSteps, setDishPublic } from '../../src/data/dishes';
 import { getPlanningEntry, setEntryServings, setMeal, setMealRecurring } from '../../src/data/planning';
-import { getProfile } from '../../src/data/profile';
+import { getDisplayNamesByIds, getProfile } from '../../src/data/profile';
 import { useTaxonomies } from '../../src/lib/taxonomies';
 import { CalendarPicker } from '../../src/components/CalendarPicker';
 import { ActionSheet } from '../../src/components/ActionSheet';
@@ -18,6 +18,7 @@ import {
   RecipeStep,
 } from '../../src/types/models';
 import { formatDayCaption, toIso } from '../../src/lib/dates';
+import { formatQuantity } from '../../src/lib/formatQuantity';
 import { fonts } from '../../src/theme/tokens';
 
 type Frequency = 'once' | 1 | 2 | 7 | 14 | 'custom';
@@ -48,7 +49,6 @@ export default function DishDetail() {
   const [planSlot, setPlanSlot] = useState<MealSlot>('diner');
   const [activeSlots, setActiveSlots] = useState<MealSlot[]>([]);
   const [saving, setSaving] = useState(false);
-  const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
   const [frequency, setFrequency] = useState<Frequency>('once');
   const [freqMenuOpen, setFreqMenuOpen] = useState(false);
   const [customDays, setCustomDays] = useState('3');
@@ -56,6 +56,7 @@ export default function DishDetail() {
   const [endPickerOpen, setEndPickerOpen] = useState(false);
   const [recurError, setRecurError] = useState<string | null>(null);
   const [previewServings, setPreviewServings] = useState<number | null>(null);
+  const [authorName, setAuthorName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +73,12 @@ export default function DishDetail() {
       setSteps(st);
       setActiveSlots(profile.active_slots?.length ? profile.active_slots : allSlotKeys);
       setPreviewServings(entry?.servings ?? d.base_servings);
+      if (d.user_id !== session!.user.id) {
+        const names = await getDisplayNamesByIds([d.user_id]);
+        setAuthorName(names[d.user_id] ?? null);
+      } else {
+        setAuthorName(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -98,13 +105,14 @@ export default function DishDetail() {
     try {
       if (frequency === 'once') {
         await setMeal(session!.user.id, planDate, planSlot, dish!);
-        setConfirmMsg(`Ajouté au ${label('meal_slot', planSlot).toLowerCase()} du ${planDate}`);
       } else {
         const intervalDays = frequency === 'custom' ? Math.max(1, Number(customDays) || 1) : frequency;
         await setMealRecurring(session!.user.id, dish!, planSlot, planDate, intervalDays, endDate!);
-        setConfirmMsg(`Ajouté au planning jusqu'au ${endDate}`);
       }
       setPlanOpen(false);
+      router.navigate('/(tabs)/planning');
+    } catch (e: any) {
+      setRecurError(e?.message ?? "Erreur lors de l'ajout au planning.");
     } finally {
       setSaving(false);
     }
@@ -145,6 +153,9 @@ export default function DishDetail() {
         <View style={[styles.hero, { backgroundColor: colors.sagePale }]}>
           <Text style={{ fontSize: 46 }}>{dish.image_emoji ?? '🍽️'}</Text>
         </View>
+        {authorName ? (
+          <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkFaint, marginBottom: 4 }}>🌍 Par {authorName}</Text>
+        ) : null}
         {dish.prep_minutes != null ? (
           <Text style={{ textAlign: 'center', fontSize: 11.5, color: colors.inkSoft, marginBottom: 4 }}>
             ⏱️ {dish.prep_minutes} min
@@ -220,7 +231,6 @@ export default function DishDetail() {
           ) : (
             ingredients.map((ing) => {
               const factor = (previewServings ?? dish.base_servings) / (dish.base_servings || 1);
-              const scaledQty = Math.round(ing.quantity * factor * 100) / 100;
               return (
                 <View key={ing.id} style={[styles.ingredientRow, { borderColor: colors.line }]}>
                   <View>
@@ -228,7 +238,7 @@ export default function DishDetail() {
                     <Text style={{ fontSize: 10, color: colors.inkSoft }}>{label('grocery_category', ing.grocery_category)}</Text>
                   </View>
                   <Text style={{ color: colors.inkSoft, fontSize: 12 }}>
-                    {scaledQty} {ing.unit}
+                    {formatQuantity(ing.quantity * factor, ing.unit)} {ing.unit}
                   </Text>
                 </View>
               );
@@ -247,16 +257,15 @@ export default function DishDetail() {
           ))
         )}
 
-        {confirmMsg ? (
-          <Text style={{ color: colors.forest, fontSize: 12.5, marginTop: 14, textAlign: 'center' }}>{confirmMsg}</Text>
-        ) : null}
 
         <View style={{ marginTop: 20, gap: 10 }}>
           {!planOpen ? (
             <Pill label="+ Ajouter au planning" variant="primary" onPress={() => setPlanOpen(true)} />
           ) : (
             <View style={[styles.planPanel, { borderColor: colors.line, backgroundColor: colors.paper }]}>
-              <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Jour</Text>
+              <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {frequency === 'once' ? 'Jour' : 'À partir du jour'}
+              </Text>
               <Pressable onPress={() => setDayPickerOpen(true)} style={[styles.endBtn, { borderColor: colors.beigeDark }]}>
                 <Text style={{ fontSize: 12, color: colors.ink }}>📅 {formatDayCaption(new Date(planDate))}</Text>
               </Pressable>

@@ -21,7 +21,16 @@ export function useUnsavedChangesGuard(dirty: boolean) {
     confirmLeave: () => {
       const action = pendingAction;
       setPendingAction(null);
-      if (action) navigation.dispatch(action);
+      // Pour un simple retour (l'immense majorité des cas), navigation.goBack()
+      // est plus fiable que rejouer l'action capturée par 'beforeRemove' (qui a pu
+      // atterrir sur le mauvais écran sur certaines plateformes) ; on ne rejoue
+      // l'action capturée que pour les cas différents d'un simple retour (ex. appui
+      // sur un onglet), où c'est la seule façon de retrouver la bonne destination.
+      if (action && action.type !== 'GO_BACK' && action.type !== 'POP') {
+        navigation.dispatch(action);
+      } else {
+        navigation.goBack();
+      }
     },
     cancelLeave: () => setPendingAction(null),
   };

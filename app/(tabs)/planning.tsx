@@ -453,8 +453,15 @@ export default function Planning() {
                                     <Text style={{ color: colors.inkFaint, fontSize: 10 }}>✕</Text>
                                   </Pressable>
                                 </View>
-                                {entry.dish.calories != null ? (
-                                  <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>🔥 {entry.dish.calories} kcal</Text>
+                                {entry.dish.calories != null || entry.dish.prep_minutes != null ? (
+                                  <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>
+                                    {[
+                                      entry.dish.calories != null ? `🔥 ${entry.dish.calories} kcal` : null,
+                                      entry.dish.prep_minutes != null ? `⏱️ ${entry.dish.prep_minutes} min` : null,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' · ')}
+                                  </Text>
                                 ) : null}
                               </View>
                             ) : null}
