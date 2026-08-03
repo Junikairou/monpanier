@@ -336,6 +336,16 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Non testé visuellement** (pas d'identifiants) — compilation TypeScript vérifiée sans erreur.
 
+## Chantier en cours (2026-08-03, lot 3 — produits tout prêts, liste de courses)
+
+1. ✅ **Produits tout prêts (surgelés, plats déjà préparés achetés en l'état)** — nouvel onglet "🧊 Tout prêt" à côté de "📖 Recettes" dans "Tous les plats" (menu "+" → "🧊 Ajouter un produit tout prêt"). Formulaire simplifié : pas d'ingrédients ni d'étapes, juste Quantité/Unité/Rayon pour le produit lui-même. Dans la liste de courses, le plat génère directement 1 article (son propre nom), pas de décomposition en ingrédients. **Migration 027 à exécuter** (colonne `is_ready_made` sur `dishes`). `src/components/DishForm.tsx`, `app/(tabs)/plats/index.tsx`, `app/plat/[id].tsx`.
+2. ✅ **Liste de courses, vue "Par plat"** : les articles ajoutés manuellement (hors plat) apparaissent maintenant aussi dans cette vue (section "📝 Ajoutés manuellement" en bas), auparavant invisibles dans ce mode.
+3. ✅ **Filtre coché/décoché** : "Tous / À acheter / Cochés" au-dessus de la liste, dans les deux vues.
+4. ✅ **Rayons et plats pliables** : chaque rayon (vue par catégorie) et chaque plat (vue par plat) a maintenant un chevron ▾/▸ cliquable pour replier/déplier manuellement, indépendamment du fait que tout soit coché ou non (avant, seul un groupe 100% coché pouvait se replier). En vue "Par plat", toucher l'en-tête d'un plat replie/déplie désormais (au lieu d'ouvrir la fiche recette) ; ouvrir la fiche se fait par appui long, comme avant.
+5. ✅ **Rayons/plats complets en bas** : un rayon ou un plat entièrement coché redescend en bas de la liste (dans chaque vue), le reste garde son ordre.
+
+**Non testé visuellement** (pas d'identifiants) — compilation TypeScript vérifiée sans erreur.
+
 ## Chantier en cours (2026-08-03, suite)
 
 1. ✅ **Ajouter au planning (fiche recette)** : date de fin de répétition rendue optionnelle (3 mois par défaut si non choisie) ; date de début et date de fin affichées côte à côte, même taille ; vignettes rapides "3 mois / 6 mois / 1 an" + "Date précise…" pour la fin, à la place du seul bouton calendrier ; ordre des champs : Date → Repas → Répétition.

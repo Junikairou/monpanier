@@ -20,6 +20,7 @@ export default function NewDish() {
     returnMode?: string;
     returnWeekday?: string;
     initialCategory?: Category;
+    readyMade?: string;
   }>();
   const [dirty, setDirty] = useState(false);
   const guard = useUnsavedChangesGuard(dirty);
@@ -28,7 +29,15 @@ export default function NewDish() {
     <Screen>
       <ScreenHeader title="Nouveau plat" onBack={guard.attemptBack} />
       <DishForm
-        initial={params.initialCategory ? { ...EMPTY_DISH_FORM_INITIAL, category: params.initialCategory } : undefined}
+        initial={
+          params.initialCategory || params.readyMade
+            ? {
+                ...EMPTY_DISH_FORM_INITIAL,
+                ...(params.initialCategory ? { category: params.initialCategory } : {}),
+                ...(params.readyMade ? { isReadyMade: true } : {}),
+              }
+            : undefined
+        }
         submitLabel="Enregistrer le plat"
         onDirtyChange={setDirty}
         onSubmit={async (input) => {

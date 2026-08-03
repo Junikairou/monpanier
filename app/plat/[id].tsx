@@ -180,18 +180,24 @@ export default function DishDetail() {
 
         <View style={[styles.tabStrip, { borderColor: colors.line, justifyContent: 'space-between' }]}>
           <View style={{ flexDirection: 'row', gap: 20 }}>
-            <Pressable onPress={() => setTab('ingredients')}>
-              <Text style={[styles.tabText, { color: tab === 'ingredients' ? colors.forest : colors.inkSoft, fontWeight: tab === 'ingredients' ? '700' : '400' }]}>
-                Ingrédients
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => setTab('recette')}>
-              <Text style={[styles.tabText, { color: tab === 'recette' ? colors.forest : colors.inkSoft, fontWeight: tab === 'recette' ? '700' : '400' }]}>
-                Recette
-              </Text>
-            </Pressable>
+            {dish.is_ready_made ? (
+              <Text style={[styles.tabText, { color: colors.forest, fontWeight: '700' }]}>🧊 Produit tout prêt</Text>
+            ) : (
+              <>
+                <Pressable onPress={() => setTab('ingredients')}>
+                  <Text style={[styles.tabText, { color: tab === 'ingredients' ? colors.forest : colors.inkSoft, fontWeight: tab === 'ingredients' ? '700' : '400' }]}>
+                    Ingrédients
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => setTab('recette')}>
+                  <Text style={[styles.tabText, { color: tab === 'recette' ? colors.forest : colors.inkSoft, fontWeight: tab === 'recette' ? '700' : '400' }]}>
+                    Recette
+                  </Text>
+                </Pressable>
+              </>
+            )}
           </View>
-          {tab === 'ingredients' ? (
+          {tab === 'ingredients' || dish.is_ready_made ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>👤</Text>
               <Pressable

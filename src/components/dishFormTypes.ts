@@ -18,6 +18,7 @@ export interface DishFormInitial {
   prepMinutes: string;
   ingredients: IngredientDraft[];
   steps: string[];
+  isReadyMade: boolean;
 }
 
 export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
@@ -34,4 +35,5 @@ export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
   prepMinutes: '',
   ingredients: [{ name: '', quantity: '', unit: '', grocery_category: 'autre' }],
   steps: [''],
+  isReadyMade: false,
 };

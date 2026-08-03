@@ -156,6 +156,8 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   const [unitMenuFor, setUnitMenuFor] = useState<number | null>(null);
   const [editArticleFor, setEditArticleFor] = useState<number | null>(null);
   const [steps, setSteps] = useState<string[]>(initial.steps);
+  const [isReadyMade, setIsReadyMade] = useState(initial.isReadyMade);
+  const [readyRayonMenuOpen, setReadyRayonMenuOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -246,11 +248,11 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
     if (!onDirtyChange) return;
     const current: DishFormInitial = {
       name, emoji, category, courseType, calories, protein, carbs, fat, fiber,
-      baseServings, prepMinutes, ingredients, steps,
+      baseServings, prepMinutes, ingredients, steps, isReadyMade,
     };
     onDirtyChange(JSON.stringify(current) !== JSON.stringify(initial));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, emoji, category, courseType, calories, protein, carbs, fat, fiber, baseServings, prepMinutes, ingredients, steps]);
+  }, [name, emoji, category, courseType, calories, protein, carbs, fat, fiber, baseServings, prepMinutes, ingredients, steps, isReadyMade]);
 
   const updateIngredient = (i: number, patch: Partial<IngredientDraft>) => {
     setIngredients((prev) => prev.map((ing, idx) => (idx === i ? { ...ing, ...patch } : ing)));
@@ -311,8 +313,11 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
     savingRef.current = true;
     setSaving(true);
     try {
+      const effectiveIngredients: IngredientDraft[] = isReadyMade
+        ? [{ name: name.trim(), quantity: ingredients[0]?.quantity ?? '', unit: ingredients[0]?.unit ?? '', grocery_category: ingredients[0]?.grocery_category ?? 'autre' }]
+        : ingredients;
       const knownNames = new Set(catalogItems.map((c) => c.name.trim().toLowerCase()));
-      const newOnes = ingredients.filter((i) => i.name.trim() && !knownNames.has(i.name.trim().toLowerCase()));
+      const newOnes = effectiveIngredients.filter((i) => i.name.trim() && !knownNames.has(i.name.trim().toLowerCase()));
       await Promise.all(
         newOnes.map((i) => ensureCatalogIngredient(session!.user.id, i.name, i.grocery_category, i.unit).catch(() => {})),
       );
@@ -332,9 +337,10 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         fat_g: fat.trim() ? Number(fat.replace(',', '.')) || null : null,
         fiber_g: fiber.trim() ? Number(fiber.replace(',', '.')) || null : null,
         base_servings: Math.max(1, Number(baseServings) || 4),
-        prep_minutes: prepMinutes.trim() ? Math.max(0, Number(prepMinutes) || 0) : null,
+        prep_minutes: isReadyMade ? null : prepMinutes.trim() ? Math.max(0, Number(prepMinutes) || 0) : null,
         image_emoji: emoji.trim() || '🍽️',
-        ingredients: ingredients
+        is_ready_made: isReadyMade,
+        ingredients: effectiveIngredients
           .filter((i) => i.name.trim())
           .map((i) => ({
             name: i.name.trim(),
@@ -342,7 +348,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
             unit: i.unit.trim(),
             grocery_category: i.grocery_category,
           })),
-        steps: steps.map((s) => s.trim()).filter(Boolean),
+        steps: isReadyMade ? [] : steps.map((s) => s.trim()).filter(Boolean),
       });
     } catch (e: any) {
       onDirtyChange?.(true);
@@ -372,6 +378,22 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         </View>
       </View>
 
+      <Pressable
+        onPress={() => {
+          setIsReadyMade((v) => !v);
+          setIngredients((prev) => (prev.length === 0 ? [{ name: '', quantity: '', unit: '', grocery_category: 'autre' }] : prev));
+        }}
+        style={[
+          styles.readyToggle,
+          { borderColor: isReadyMade ? colors.forest : colors.beigeDark, backgroundColor: isReadyMade ? colors.sagePale : colors.paper },
+        ]}
+      >
+        <Text style={{ fontSize: 16 }}>{isReadyMade ? '✅' : '⬜'}</Text>
+        <Text style={{ fontSize: 12, color: colors.ink, flex: 1 }}>
+          🧊 Produit tout prêt (surgelé, déjà préparé — acheté tel quel, pas de recette)
+        </Text>
+      </Pressable>
+
       <Text style={[styles.label, { color: colors.inkSoft }]}>Catégorie</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ marginBottom: 16 }, noSelectWebStyle]} ref={categoryDrag.ref} {...categoryDrag.handlers}>
         {categories.map((c) => (
@@ -386,15 +408,17 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       </Pressable>
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <Field
-            label="Temps de préparation (min)"
-            value={prepMinutes}
-            onChangeText={setPrepMinutes}
-            keyboardType="numeric"
-            placeholder="Ex. 20"
-          />
-        </View>
+        {!isReadyMade ? (
+          <View style={{ flex: 1 }}>
+            <Field
+              label="Temps de préparation (min)"
+              value={prepMinutes}
+              onChangeText={setPrepMinutes}
+              keyboardType="numeric"
+              placeholder="Ex. 20"
+            />
+          </View>
+        ) : null}
         <View style={{ flex: 1 }}>
           <Field
             label="Pour combien de personnes ?"
@@ -436,54 +460,92 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         </>
       ) : null}
 
-      <Text style={[styles.section, { color: colors.ink }]}>Ingrédients</Text>
-      {ingDisplayOrder.map((ing, i) => (
-        <IngredientRow
-          key={i}
-          ing={ing}
-          dragging={ingDragIdx === i}
-          dragOffset={ingDragIdx === i ? ingRowOffset : 0}
-          onChangeName={(v) => handleIngNameChange(i, v)}
-          onChangeQty={(v) => updateIngredient(i, { quantity: v })}
-          onOpenUnitMenu={() => setUnitMenuFor(i)}
-          onOpenPicker={() => setPickerFor(i)}
-          onOpenEdit={() => setEditArticleFor(i)}
-          onRemove={() => removeIngredient(i)}
-          onDragStart={() => startIngDrag(i)}
-          onDragMove={onIngDragMove}
-          onDragEnd={endIngDrag}
-        />
-      ))}
-      <Pill
-        label="+ Ajouter un ingrédient"
-        variant="ghost"
-        onPress={() => setIngredients((prev) => [...prev, { name: '', quantity: '', unit: '', grocery_category: 'autre' }])}
-      />
+      {isReadyMade ? (
+        <>
+          <Text style={[styles.section, { color: colors.ink }]}>Cet article, tel qu'acheté</Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Field
+                label="Quantité"
+                value={ingredients[0]?.quantity ?? ''}
+                onChangeText={(v) => updateIngredient(0, { quantity: v })}
+                keyboardType="numeric"
+                placeholder="1"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.label, { color: colors.inkSoft }]}>Unité</Text>
+              <Pressable onPress={() => setUnitMenuFor(0)} style={[styles.dropdown, { borderColor: colors.beigeDark }]}>
+                <Text style={{ fontSize: 13, color: ingredients[0]?.unit ? colors.ink : colors.inkFaint }}>
+                  {ingredients[0]?.unit || 'Choisir'}
+                </Text>
+                <Text style={{ color: colors.inkSoft }}>▾</Text>
+              </Pressable>
+            </View>
+          </View>
+          <Text style={[styles.label, { color: colors.inkSoft }]}>Rayon</Text>
+          <Pressable onPress={() => setReadyRayonMenuOpen(true)} style={[styles.dropdown, { borderColor: colors.beigeDark, marginBottom: 16 }]}>
+            <Text style={{ fontSize: 13, color: colors.ink }}>
+              {(() => {
+                const g = groceryCategories.find((c) => c.key === (ingredients[0]?.grocery_category ?? 'autre'));
+                return `${g?.icon ?? ''} ${g?.label ?? 'Autre'}`.trim();
+              })()}
+            </Text>
+            <Text style={{ color: colors.inkSoft }}>▾</Text>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          <Text style={[styles.section, { color: colors.ink }]}>Ingrédients</Text>
+          {ingDisplayOrder.map((ing, i) => (
+            <IngredientRow
+              key={i}
+              ing={ing}
+              dragging={ingDragIdx === i}
+              dragOffset={ingDragIdx === i ? ingRowOffset : 0}
+              onChangeName={(v) => handleIngNameChange(i, v)}
+              onChangeQty={(v) => updateIngredient(i, { quantity: v })}
+              onOpenUnitMenu={() => setUnitMenuFor(i)}
+              onOpenPicker={() => setPickerFor(i)}
+              onOpenEdit={() => setEditArticleFor(i)}
+              onRemove={() => removeIngredient(i)}
+              onDragStart={() => startIngDrag(i)}
+              onDragMove={onIngDragMove}
+              onDragEnd={endIngDrag}
+            />
+          ))}
+          <Pill
+            label="+ Ajouter un ingrédient"
+            variant="ghost"
+            onPress={() => setIngredients((prev) => [...prev, { name: '', quantity: '', unit: '', grocery_category: 'autre' }])}
+          />
 
-      <Text style={[styles.section, { color: colors.ink, marginTop: 22 }]}>Étapes de la recette</Text>
-      <Text style={[styles.label, { color: colors.inkSoft, textTransform: 'none', letterSpacing: 0 }]}>
-        Étapes courantes (à ajouter puis ajuster) :
-      </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ marginBottom: 10 }, noSelectWebStyle]} ref={stepSuggestionDrag.ref} {...stepSuggestionDrag.handlers}>
-        {STEP_SUGGESTIONS.map((phrase) => (
-          <Chip key={phrase} label={phrase} onPress={() => setSteps((prev) => [...prev.filter((s) => s.trim()), phrase])} />
-        ))}
-      </ScrollView>
-      {stepDisplayOrder.map((s, i) => (
-        <StepRow
-          key={i}
-          index={i}
-          value={s}
-          dragging={stepDragIdx === i}
-          dragOffset={stepDragIdx === i ? stepRowOffset : 0}
-          onChangeText={(v) => setSteps((prev) => prev.map((st, idx) => (idx === i ? v : st)))}
-          onRemove={() => removeStep(i)}
-          onDragStart={() => startStepDrag(i)}
-          onDragMove={onStepDragMove}
-          onDragEnd={endStepDrag}
-        />
-      ))}
-      <Pill label="+ Ajouter une étape" variant="ghost" onPress={() => setSteps((prev) => [...prev, ''])} />
+          <Text style={[styles.section, { color: colors.ink, marginTop: 22 }]}>Étapes de la recette</Text>
+          <Text style={[styles.label, { color: colors.inkSoft, textTransform: 'none', letterSpacing: 0 }]}>
+            Étapes courantes (à ajouter puis ajuster) :
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ marginBottom: 10 }, noSelectWebStyle]} ref={stepSuggestionDrag.ref} {...stepSuggestionDrag.handlers}>
+            {STEP_SUGGESTIONS.map((phrase) => (
+              <Chip key={phrase} label={phrase} onPress={() => setSteps((prev) => [...prev.filter((s) => s.trim()), phrase])} />
+            ))}
+          </ScrollView>
+          {stepDisplayOrder.map((s, i) => (
+            <StepRow
+              key={i}
+              index={i}
+              value={s}
+              dragging={stepDragIdx === i}
+              dragOffset={stepDragIdx === i ? stepRowOffset : 0}
+              onChangeText={(v) => setSteps((prev) => prev.map((st, idx) => (idx === i ? v : st)))}
+              onRemove={() => removeStep(i)}
+              onDragStart={() => startStepDrag(i)}
+              onDragMove={onStepDragMove}
+              onDragEnd={endStepDrag}
+            />
+          ))}
+          <Pill label="+ Ajouter une étape" variant="ghost" onPress={() => setSteps((prev) => [...prev, ''])} />
+        </>
+      )}
 
       {error ? <Text style={{ color: colors.danger, fontSize: 12.5, marginTop: 14, textAlign: 'center' }}>{error}</Text> : null}
 
@@ -565,6 +627,13 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         title="Unité"
         actions={UNIT_OPTIONS.map((u) => ({ label: u.label, onPress: () => unitMenuFor !== null && updateIngredient(unitMenuFor, { unit: u.value }) }))}
         onClose={() => setUnitMenuFor(null)}
+      />
+
+      <ActionSheet
+        visible={readyRayonMenuOpen}
+        title="Rayon"
+        actions={groceryCategories.map((g) => ({ label: `${g.icon ?? ''} ${g.label}`.trim(), onPress: () => updateIngredient(0, { grocery_category: g.key }) }))}
+        onClose={() => setReadyRayonMenuOpen(false)}
       />
 
 
@@ -738,6 +807,7 @@ const styles = StyleSheet.create({
   section: { fontSize: 16, fontStyle: 'italic', marginBottom: 10 },
   stepNum: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   emojiBox: { width: 40, height: 40, borderWidth: 1.5, borderRadius: 10, fontSize: 18, textAlign: 'center', textAlignVertical: 'center' },
+  readyToggle: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderRadius: 10, padding: 10, marginBottom: 16 },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',

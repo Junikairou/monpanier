@@ -24,6 +24,7 @@ export default function PlatsIndex() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [filter, setFilter] = useState<Category | null>(null);
+  const [kind, setKind] = useState<'recettes' | 'tout_pret'>('recettes');
   const [query, setQuery] = useState('');
   const [manageMode, setManageMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -53,7 +54,9 @@ export default function PlatsIndex() {
   );
 
   const q = query.trim().toLowerCase();
+  const readyMadeCount = dishes.filter((d) => d.is_ready_made).length;
   const visible = dishes
+    .filter((d) => (kind === 'tout_pret' ? d.is_ready_made : !d.is_ready_made))
     .filter((d) => !filter || d.category === filter)
     .filter(
       (d) =>
@@ -149,6 +152,18 @@ export default function PlatsIndex() {
         }
       />
       {dishes.length > 0 ? (
+        <View style={[styles.kindSwitch, { backgroundColor: colors.beige }]}>
+          <Pressable style={[styles.kindOpt, kind === 'recettes' && { backgroundColor: colors.paper }]} onPress={() => { setKind('recettes'); setFilter(null); }}>
+            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: kind === 'recettes' ? colors.ink : colors.inkSoft }}>📖 Recettes</Text>
+          </Pressable>
+          <Pressable style={[styles.kindOpt, kind === 'tout_pret' && { backgroundColor: colors.paper }]} onPress={() => { setKind('tout_pret'); setFilter(null); }}>
+            <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: kind === 'tout_pret' ? colors.ink : colors.inkSoft }}>
+              🧊 Tout prêt {readyMadeCount > 0 ? `(${readyMadeCount})` : ''}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {dishes.length > 0 ? (
         <View style={{ paddingHorizontal: 18, paddingTop: 10 }}>
           <TextInput
             value={query}
@@ -186,7 +201,22 @@ export default function PlatsIndex() {
           </View>
         </View>
       ) : visible.length === 0 ? (
-        <EmptyState text="Aucun plat ne correspond à cette recherche." />
+        <View style={{ padding: 18 }}>
+          <EmptyState
+            text={
+              q || filter
+                ? 'Aucun plat ne correspond à cette recherche.'
+                : kind === 'tout_pret'
+                  ? "Aucun produit tout prêt pour l'instant."
+                  : 'Aucune recette pour l\'instant.'
+            }
+          />
+          {!q && !filter ? (
+            <View style={{ alignItems: 'center', marginTop: 8 }}>
+              <Pill label="+ Ajouter un plat" variant="primary" onPress={() => setAddMenuOpen(true)} />
+            </View>
+          ) : null}
+        </View>
       ) : (
         <>
           <PullToRefresh onRefresh={load} scrollOffsetRef={scrollOffsetRef}>
@@ -283,6 +313,7 @@ export default function PlatsIndex() {
           { label: '📖 Piocher dans le catalogue', onPress: () => router.push('/catalogue') },
           { label: '✏️ Créer une nouvelle recette', onPress: () => router.push('/(tabs)/plats/new') },
           { label: '📋 Importer un texte de recette', onPress: () => router.push('/plat/importer') },
+          { label: '🧊 Ajouter un produit tout prêt', onPress: () => router.push({ pathname: '/(tabs)/plats/new', params: { readyMade: '1' } }) },
         ]}
         onClose={() => setAddMenuOpen(false)}
       />
@@ -291,6 +322,8 @@ export default function PlatsIndex() {
 }
 
 const styles = StyleSheet.create({
+  kindSwitch: { flexDirection: 'row', marginHorizontal: 18, marginTop: 12, borderRadius: radii.sm, padding: 3, gap: 2 },
+  kindOpt: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 6 },
   topActions: {
     flexDirection: 'row',
     alignItems: 'center',

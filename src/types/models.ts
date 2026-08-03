@@ -28,6 +28,7 @@ export interface Dish {
   prep_minutes: number | null;
   image_emoji: string | null;
   image_url: string | null;
+  is_ready_made: boolean;
   created_at: string;
 }
 

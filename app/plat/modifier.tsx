@@ -36,6 +36,7 @@ export default function ModifierDish() {
             }))
           : [{ name: '', quantity: '', unit: '', grocery_category: 'autre' }],
         steps: steps.length ? steps.map((s) => s.instruction) : [''],
+        isReadyMade: dish.is_ready_made,
       });
     });
   }, [id]);
