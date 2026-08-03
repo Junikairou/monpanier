@@ -336,6 +336,18 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Non testé visuellement** (pas d'identifiants) — compilation TypeScript vérifiée sans erreur.
 
+## Chantier en cours (2026-08-04 — filtre courses, uniformisation, Alimentation, formulaire de plat)
+
+1. ✅ **Filtre coché/décoché** de la liste de courses remplacé par un interrupteur discret "Masquer cochés" aligné à droite (au lieu des 3 puces Tous/À acheter/Cochés, jugées trop visibles). 5 présentations proposées et choix validé par l'utilisateur.
+2. ✅ **En-têtes des groupes uniformisés** entre "Par catégorie" et "Par plat" : les deux utilisent maintenant le même style carte (comme les plats avant), avec les articles à l'intérieur en lignes compactes (au lieu des cartes à ombre séparées côté "Par catégorie").
+3. ✅ **"Tout prêt" renommé en "Alimentation"** partout (onglet, formulaire, menu d'ajout, fiche plat).
+4. ✅ **Catégories d'Alimentation = rayons** (Fruits & légumes, Produits laitiers, Féculents, Surgelés...) au lieu des catégories de recette (Français/Italien/Rapide...), qui n'avaient pas de sens pour un yaourt ou du pain. Champ "Catégorie"/"Type de plat" masqué dans le formulaire pour un article Alimentation (remplacé par le "Rayon" déjà présent) ; les vignettes de filtre dans l'onglet Alimentation affichent maintenant les rayons.
+5. ✅ **Formulaire de plat** : traits de séparation retirés entre les lignes d'ingrédients (et au-dessus de "+ Ajouter un ingrédient") ; les zones de texte des étapes de recette s'ajustent maintenant à la hauteur du contenu (1 ligne reste compacte, un texte plus long agrandit la zone).
+
+**Aucune migration pour ce lot** (changements d'interface uniquement).
+
+**Non testé visuellement** (pas d'identifiants) — compilation TypeScript vérifiée sans erreur.
+
 ## Chantier en cours (2026-08-03, lot 3 — produits tout prêts, liste de courses)
 
 1. ✅ **Produits tout prêts (surgelés, plats déjà préparés achetés en l'état)** — nouvel onglet "🧊 Tout prêt" à côté de "📖 Recettes" dans "Tous les plats" (menu "+" → "🧊 Ajouter un produit tout prêt"). Formulaire simplifié : pas d'ingrédients ni d'étapes, juste Quantité/Unité/Rayon pour le produit lui-même. Dans la liste de courses, le plat génère directement 1 article (son propre nom), pas de décomposition en ingrédients. **Migration 027 à exécuter** (colonne `is_ready_made` sur `dishes`). `src/components/DishForm.tsx`, `app/(tabs)/plats/index.tsx`, `app/plat/[id].tsx`.

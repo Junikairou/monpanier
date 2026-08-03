@@ -59,6 +59,18 @@ export async function listIngredientNamesByDish(dishIds: string[]): Promise<Reco
   return map;
 }
 
+/** Rayon (grocery_category) du premier ingrédient de chaque plat — pour les produits "Alimentation" (tout prêts), c'est leur seul ingrédient (le produit lui-même), donc leur rayon effectif. */
+export async function listIngredientRayonByDish(dishIds: string[]): Promise<Record<string, string>> {
+  if (dishIds.length === 0) return {};
+  const { data, error } = await supabase.from('ingredients').select('dish_id, grocery_category').in('dish_id', dishIds);
+  if (error) throw error;
+  const map: Record<string, string> = {};
+  for (const row of data as { dish_id: string; grocery_category: string }[]) {
+    if (!(row.dish_id in map)) map[row.dish_id] = row.grocery_category;
+  }
+  return map;
+}
+
 export async function listRecipeSteps(dishId: string): Promise<RecipeStep[]> {
   const { data, error } = await supabase
     .from('recipe_steps')

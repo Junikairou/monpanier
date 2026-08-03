@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -46,7 +46,7 @@ export default function Courses() {
   const [rangeTo, setRangeTo] = useState(() => toIso(addDays(new Date(), 3)));
   const [pickerTarget, setPickerTarget] = useState<'from' | 'to' | null>(null);
   const [view, setView] = useState<'rayon' | 'plat'>('rayon');
-  const [checkFilter, setCheckFilter] = useState<'tous' | 'restants' | 'coches'>('tous');
+  const [hideChecked, setHideChecked] = useState(false);
 
   const [list, setList] = useState<GroceryList>({ auto: [], manual: [] });
   const [planningEntries, setPlanningEntries] = useState<PlanningEntry[]>([]);
@@ -140,8 +140,7 @@ export default function Courses() {
   const totalCount = list.auto.length + list.manual.length;
   const checkedCount = list.auto.filter((i) => i.checked).length + list.manual.filter((i) => i.checked).length;
 
-  const passFilter = (checked: boolean) =>
-    checkFilter === 'tous' || (checkFilter === 'restants' && !checked) || (checkFilter === 'coches' && checked);
+  const passFilter = (checked: boolean) => !hideChecked || !checked;
 
   const isCollapsed = (key: string, allChecked: boolean) => collapseOverride.get(key) ?? allChecked;
   const toggleCollapse = (key: string, allChecked: boolean) => {
@@ -277,6 +276,8 @@ export default function Courses() {
     key: string;
     icon: string;
     title: string;
+    badgeText?: string;
+    onLongPress?: () => void;
     items: RenderItem[];
     allChecked: boolean;
   }
@@ -306,23 +307,8 @@ export default function Courses() {
     return sortComplete(sections);
   })();
 
-  interface DishSection {
-    kind: 'dish';
-    key: string;
-    dishId: string;
-    dish: Dish;
-    badgeText: string;
-    allChecked: boolean;
-    rows: { ingId: string; checked: boolean; name: string; qty: string; onToggle: () => void; sourceCount: number }[];
-  }
-  interface ManualSection {
-    kind: 'manual';
-    key: string;
-    items: RenderItem[];
-    allChecked: boolean;
-  }
-  const platSections: (DishSection | ManualSection)[] = (() => {
-    const dishSecs: DishSection[] = dishGroups.map(({ dishId, dish, occurrences, ingredients }) => {
+  const platSections: Section[] = (() => {
+    const dishSecs: Section[] = dishGroups.map(({ dishId, dish, occurrences, ingredients }) => {
       const paired = ingredients
         .map((ing) => ({ ing, computed: itemByKey.get(`${ing.name.trim().toLowerCase()}::${ing.unit.trim().toLowerCase()}`) }))
         .filter((p): p is { ing: Ingredient; computed: ComputedGroceryItem } => !!p.computed);
@@ -335,62 +321,90 @@ export default function Courses() {
           : occurrences.length > 1
             ? uniqueDays.map((d) => `${shortDayLabel(new Date(d))} ${new Date(d).getDate()}`).join(', ')
             : `${shortDayLabel(new Date(occurrences[0].date))} ${new Date(occurrences[0].date).getDate()}`;
-      const rows = paired
+      const items: RenderItem[] = paired
         .filter((p) => passFilter(p.computed.checked))
         .map((p) => ({
-          ingId: p.ing.id,
+          keyId: p.ing.id,
           checked: p.computed.checked,
           name: p.ing.name,
           qty: `${formatQuantity(p.ing.quantity * scaleFactor, p.ing.unit)} ${p.ing.unit}`,
           onToggle: () => onToggleAuto(p.computed),
-          sourceCount: p.computed.source_dish_ids.length,
+          dishBadge:
+            p.computed.source_dish_ids.length > 1 ? (
+              <Text style={{ fontSize: 9, color: colors.honey, marginTop: 2 }}>
+                🔗 aussi dans {p.computed.source_dish_ids.length - 1} autre(s) plat(s)
+              </Text>
+            ) : undefined,
         }));
-      return { kind: 'dish' as const, key: `dish:${dishId}`, dishId, dish, badgeText, allChecked, rows };
-    }).filter((s) => s.rows.length > 0);
+      return {
+        key: `dish:${dishId}`,
+        icon: dish.image_emoji ?? '🍽️',
+        title: dish.name,
+        badgeText,
+        onLongPress: () => goToDish(dishId),
+        allChecked,
+        items,
+      };
+    }).filter((s) => s.items.length > 0);
 
-    const manualSecs: ManualSection[] = [];
+    const manualSecs: Section[] = [];
     if (list.manual.length > 0) {
       const allChecked = list.manual.every((i) => i.checked);
       const items = list.manual.filter((i) => passFilter(i.checked)).map(toManualRenderItem);
-      if (items.length > 0) manualSecs.push({ kind: 'manual', key: 'manual', items, allChecked });
+      if (items.length > 0) manualSecs.push({ key: 'manual', icon: '📝', title: 'Ajoutés manuellement', items, allChecked });
     }
     return sortComplete([...dishSecs, ...manualSecs]);
   })();
 
-  const qtyTag = (qty: string) => (
-    <View style={[styles.qtyTag, { backgroundColor: colors.beige }]}>
-      <Text style={{ fontSize: 10.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{qty}</Text>
-    </View>
-  );
-
-  const renderRow = (
-    keyId: string,
-    checked: boolean,
-    onToggle: () => void,
-    name: string,
-    qty: string,
-    dishBadge?: React.ReactNode,
-    dayBadgeNode?: React.ReactNode,
-  ) => (
-    <View key={keyId} style={[styles.itemRow, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: checked ? 0.5 : 1 }]}>
-      <Checkbox checked={checked} onPress={onToggle} />
+  const compactRow = (item: RenderItem, isLast: boolean) => (
+    <View
+      key={item.keyId}
+      style={[styles.dishIngRow, { borderColor: colors.beige, borderBottomWidth: isLast ? 0 : 1 }]}
+    >
+      <Checkbox checked={item.checked} onPress={item.onToggle} />
       <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 5 }}>
-          <Text
-            style={{ flexShrink: 1, fontSize: 12.5, fontFamily: fonts.bodyMedium, color: colors.ink, textDecorationLine: checked ? 'line-through' : 'none' }}
-            numberOfLines={1}
-          >
-            {name}
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, justifyContent: 'flex-end' }}>{dishBadge}</View>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 3 }}>
-          {qtyTag(qty)}
-          {dayBadgeNode}
-        </View>
+        <Text
+          style={{ fontSize: 11.5, color: colors.ink, textDecorationLine: item.checked ? 'line-through' : 'none' }}
+          numberOfLines={1}
+        >
+          {item.name}
+        </Text>
+        {item.dishBadge}
+      </View>
+      <View style={{ alignItems: 'flex-end', gap: 3 }}>
+        <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>{item.qty}</Text>
+        {item.dayBadgeNode}
       </View>
     </View>
   );
+
+  const renderSection = (section: Section) => {
+    const collapsed = isCollapsed(section.key, section.allChecked);
+    return (
+      <View
+        key={section.key}
+        style={[styles.dishSection, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: section.allChecked ? 0.6 : 1 }]}
+      >
+        <Pressable
+          onPress={() => toggleCollapse(section.key, section.allChecked)}
+          onLongPress={section.onLongPress}
+          style={[styles.dishSectionHeader, { borderColor: colors.beige }]}
+        >
+          <Text style={{ fontSize: 16 }}>{section.icon}</Text>
+          <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: colors.ink, flex: 1 }}>
+            {section.title} {section.allChecked ? '✓' : ''}
+          </Text>
+          {section.badgeText ? (
+            <View style={[styles.dayTag, { backgroundColor: colors.beige }]}>
+              <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{section.badgeText}</Text>
+            </View>
+          ) : null}
+          <Text style={{ color: colors.inkFaint, fontSize: 11, marginLeft: 6 }}>{collapsed ? '▸' : '▾'}</Text>
+        </Pressable>
+        {collapsed ? null : section.items.map((item, idx) => compactRow(item, idx === section.items.length - 1))}
+      </View>
+    );
+  };
 
   return (
     <Screen>
@@ -408,16 +422,9 @@ export default function Courses() {
         </Pressable>
       </View>
 
-      <View style={[styles.switchWrap, { backgroundColor: colors.beige, marginTop: 8 }]}>
-        <Pressable style={[styles.switchOpt, checkFilter === 'tous' && { backgroundColor: colors.paper }]} onPress={() => setCheckFilter('tous')}>
-          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: checkFilter === 'tous' ? colors.ink : colors.inkSoft }}>Tous</Text>
-        </Pressable>
-        <Pressable style={[styles.switchOpt, checkFilter === 'restants' && { backgroundColor: colors.paper }]} onPress={() => setCheckFilter('restants')}>
-          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: checkFilter === 'restants' ? colors.ink : colors.inkSoft }}>À acheter</Text>
-        </Pressable>
-        <Pressable style={[styles.switchOpt, checkFilter === 'coches' && { backgroundColor: colors.paper }]} onPress={() => setCheckFilter('coches')}>
-          <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: checkFilter === 'coches' ? colors.ink : colors.inkSoft }}>Cochés</Text>
-        </Pressable>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginHorizontal: 18, marginTop: 8 }}>
+        <Text style={{ fontSize: 11, color: colors.inkFaint }}>Masquer cochés</Text>
+        <Switch value={hideChecked} onValueChange={setHideChecked} trackColor={{ true: colors.forest }} />
       </View>
 
       <View style={[styles.switchWrap, { backgroundColor: colors.beige, marginTop: 8 }]}>
@@ -532,99 +539,12 @@ export default function Courses() {
               rayonSections.length === 0 ? (
                 <EmptyState text="Aucun article ne correspond à ce filtre." />
               ) : (
-                rayonSections.map((section) => {
-                  const collapsed = isCollapsed(section.key, section.allChecked);
-                  return (
-                    <View key={section.key}>
-                      <Pressable
-                        onPress={() => toggleCollapse(section.key, section.allChecked)}
-                        style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 6 }}
-                        hitSlop={4}
-                      >
-                        <Text style={[styles.catLabel, { color: colors.inkFaint, marginTop: 0, marginBottom: 0, flex: 1 }]}>
-                          {section.icon} {section.title} {section.allChecked ? '✓' : ''}
-                        </Text>
-                        <Text style={{ color: colors.inkFaint, fontSize: 11 }}>{collapsed ? '▸' : '▾'}</Text>
-                      </Pressable>
-                      {collapsed
-                        ? null
-                        : section.items.map((item) =>
-                            renderRow(item.keyId, item.checked, item.onToggle, item.name, item.qty, item.dishBadge, item.dayBadgeNode),
-                          )}
-                    </View>
-                  );
-                })
+                rayonSections.map(renderSection)
               )
             ) : platSections.length === 0 ? (
               <EmptyState text="Aucun article ne correspond à ce filtre." />
             ) : (
-              platSections.map((section) => {
-                const collapsed = isCollapsed(section.key, section.allChecked);
-                if (section.kind === 'manual') {
-                  return (
-                    <View key={section.key}>
-                      <Pressable
-                        onPress={() => toggleCollapse(section.key, section.allChecked)}
-                        style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 6 }}
-                        hitSlop={4}
-                      >
-                        <Text style={[styles.catLabel, { color: colors.inkFaint, marginTop: 0, marginBottom: 0, flex: 1 }]}>
-                          📝 Ajoutés manuellement {section.allChecked ? '✓' : ''}
-                        </Text>
-                        <Text style={{ color: colors.inkFaint, fontSize: 11 }}>{collapsed ? '▸' : '▾'}</Text>
-                      </Pressable>
-                      {collapsed
-                        ? null
-                        : section.items.map((item) =>
-                            renderRow(item.keyId, item.checked, item.onToggle, item.name, item.qty, item.dishBadge, item.dayBadgeNode),
-                          )}
-                    </View>
-                  );
-                }
-                const { dish, dishId, badgeText, allChecked, rows } = section;
-                return (
-                  <View
-                    key={section.key}
-                    style={[styles.dishSection, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: allChecked ? 0.6 : 1 }]}
-                  >
-                    <Pressable
-                      onPress={() => toggleCollapse(section.key, allChecked)}
-                      onLongPress={() => goToDish(dishId)}
-                      style={[styles.dishSectionHeader, { borderColor: colors.beige }]}
-                    >
-                      <Text style={{ fontSize: 16 }}>{dish.image_emoji}</Text>
-                      <Text style={{ fontSize: 12.5, fontFamily: fonts.bodySemiBold, color: colors.ink, flex: 1 }}>
-                        {dish.name} {allChecked ? '✓' : ''}
-                      </Text>
-                      <View style={[styles.dayTag, { backgroundColor: colors.beige }]}>
-                        <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{badgeText}</Text>
-                      </View>
-                      <Text style={{ color: colors.inkFaint, fontSize: 11, marginLeft: 6 }}>{collapsed ? '▸' : '▾'}</Text>
-                    </Pressable>
-                    {collapsed
-                      ? null
-                      : rows.map((row, idx) => (
-                          <View
-                            key={row.ingId}
-                            style={[styles.dishIngRow, { borderColor: colors.beige, borderBottomWidth: idx === rows.length - 1 ? 0 : 1 }]}
-                          >
-                            <Checkbox checked={row.checked} onPress={row.onToggle} />
-                            <View style={{ flex: 1 }}>
-                              <Text style={{ fontSize: 11.5, color: colors.ink, textDecorationLine: row.checked ? 'line-through' : 'none' }}>
-                                {row.name}
-                              </Text>
-                              {row.sourceCount > 1 ? (
-                                <Text style={{ fontSize: 9, color: colors.honey, marginTop: 2 }}>
-                                  🔗 aussi dans {row.sourceCount - 1} autre(s) plat(s)
-                                </Text>
-                              ) : null}
-                            </View>
-                            <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>{row.qty}</Text>
-                          </View>
-                        ))}
-                  </View>
-                );
-              })
+              platSections.map(renderSection)
             )}
             </View>
 
@@ -677,9 +597,6 @@ const styles = StyleSheet.create({
   dayChip: { flex: 1, minWidth: 30, paddingVertical: 13, paddingHorizontal: 2, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 3 },
   rangeNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginHorizontal: 18, marginTop: 10, marginBottom: 14 },
   rangeBtn: { alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.sm, borderWidth: 1.5 },
-  catLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: fonts.bodySemiBold, marginTop: 16, marginBottom: 6 },
-  itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 9, borderRadius: radii.sm, marginBottom: 8 },
-  qtyTag: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.tag },
   dishSection: { borderRadius: radii.sm, marginBottom: 10, overflow: 'hidden' },
   dishSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderBottomWidth: 1 },
   dayTag: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.tag },

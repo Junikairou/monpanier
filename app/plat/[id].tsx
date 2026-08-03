@@ -181,7 +181,7 @@ export default function DishDetail() {
         <View style={[styles.tabStrip, { borderColor: colors.line, justifyContent: 'space-between' }]}>
           <View style={{ flexDirection: 'row', gap: 20 }}>
             {dish.is_ready_made ? (
-              <Text style={[styles.tabText, { color: colors.forest, fontWeight: '700' }]}>🧊 Produit tout prêt</Text>
+              <Text style={[styles.tabText, { color: colors.forest, fontWeight: '700' }]}>🛒 Alimentation</Text>
             ) : (
               <>
                 <Pressable onPress={() => setTab('ingredients')}>

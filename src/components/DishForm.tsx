@@ -329,8 +329,8 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       onDirtyChange?.(false);
       await onSubmit({
         name: name.trim(),
-        category,
-        course_type: courseType,
+        category: isReadyMade ? 'autre' : category,
+        course_type: isReadyMade ? 'autre' : courseType,
         calories: calories.trim() ? Number(calories.replace(',', '.')) || null : null,
         protein_g: protein.trim() ? Number(protein.replace(',', '.')) || null : null,
         carbs_g: carbs.trim() ? Number(carbs.replace(',', '.')) || null : null,
@@ -390,22 +390,26 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       >
         <Text style={{ fontSize: 16 }}>{isReadyMade ? '✅' : '⬜'}</Text>
         <Text style={{ fontSize: 12, color: colors.ink, flex: 1 }}>
-          🧊 Produit tout prêt (surgelé, déjà préparé — acheté tel quel, pas de recette)
+          🛒 Alimentation (produit prêt à consommer, sans recette)
         </Text>
       </Pressable>
 
-      <Text style={[styles.label, { color: colors.inkSoft }]}>Catégorie</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ marginBottom: 16 }, noSelectWebStyle]} ref={categoryDrag.ref} {...categoryDrag.handlers}>
-        {categories.map((c) => (
-          <Chip key={c.key} label={`${c.icon ?? ''} ${c.label}`.trim()} active={category === c.key} onPress={() => setCategory(c.key)} />
-        ))}
-      </ScrollView>
+      {!isReadyMade ? (
+        <>
+          <Text style={[styles.label, { color: colors.inkSoft }]}>Catégorie</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ marginBottom: 16 }, noSelectWebStyle]} ref={categoryDrag.ref} {...categoryDrag.handlers}>
+            {categories.map((c) => (
+              <Chip key={c.key} label={`${c.icon ?? ''} ${c.label}`.trim()} active={category === c.key} onPress={() => setCategory(c.key)} />
+            ))}
+          </ScrollView>
 
-      <Text style={[styles.label, { color: colors.inkSoft }]}>Type de plat</Text>
-      <Pressable onPress={() => setCourseTypeMenuOpen(true)} style={[styles.dropdown, { borderColor: colors.beigeDark, marginBottom: 16 }]}>
-        <Text style={{ fontSize: 13, color: colors.ink }}>{courseTypeLabel}</Text>
-        <Text style={{ color: colors.inkSoft }}>▾</Text>
-      </Pressable>
+          <Text style={[styles.label, { color: colors.inkSoft }]}>Type de plat</Text>
+          <Pressable onPress={() => setCourseTypeMenuOpen(true)} style={[styles.dropdown, { borderColor: colors.beigeDark, marginBottom: 16 }]}>
+            <Text style={{ fontSize: 13, color: colors.ink }}>{courseTypeLabel}</Text>
+            <Text style={{ color: colors.inkSoft }}>▾</Text>
+          </Pressable>
+        </>
+      ) : null}
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
         {!isReadyMade ? (
@@ -664,6 +668,7 @@ function StepRow({
   onDragEnd: () => void;
 }) {
   const { colors } = useTheme();
+  const [inputHeight, setInputHeight] = useState(36);
 
   const callbacksRef = useRef({ onDragStart, onDragMove, onDragEnd });
   useEffect(() => {
@@ -683,14 +688,14 @@ function StepRow({
   return (
     <View
       style={[
-        { flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 6 },
+        { flexDirection: 'row', gap: 6, alignItems: 'flex-start', marginBottom: 6 },
         dragging ? { transform: [{ translateY: dragOffset }], zIndex: 10, opacity: 0.9 } : undefined,
       ]}
     >
-      <View {...panResponder.panHandlers} hitSlop={8} style={[{ paddingHorizontal: 2 }, dragHandleWebStyle]}>
+      <View {...panResponder.panHandlers} hitSlop={8} style={[{ paddingHorizontal: 2, paddingTop: 8 }, dragHandleWebStyle]}>
         <Text style={{ fontSize: 14, color: colors.inkFaint }}>☰</Text>
       </View>
-      <View style={[styles.stepNum, { backgroundColor: colors.sagePale }]}>
+      <View style={[styles.stepNum, { backgroundColor: colors.sagePale, marginTop: 6 }]}>
         <Text style={{ fontSize: 10.5, fontFamily: fonts.bodySemiBold, color: colors.forest }}>{index + 1}</Text>
       </View>
       <TextInput
@@ -699,8 +704,18 @@ function StepRow({
         placeholder="Décris cette étape…"
         placeholderTextColor={colors.inkFaint}
         multiline
-        numberOfLines={1}
-        style={{ flex: 1, borderWidth: 1.5, borderColor: colors.beigeDark, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 10, fontSize: 12.5, color: colors.ink }}
+        onContentSizeChange={(e) => setInputHeight(Math.max(36, e.nativeEvent.contentSize.height + 14))}
+        style={{
+          flex: 1,
+          height: inputHeight,
+          borderWidth: 1.5,
+          borderColor: colors.beigeDark,
+          borderRadius: 8,
+          paddingVertical: 7,
+          paddingHorizontal: 10,
+          fontSize: 12.5,
+          color: colors.ink,
+        }}
       />
       <Pressable onPress={onRemove} hitSlop={6} style={{ paddingHorizontal: 2 }}>
         <Text style={{ fontSize: 13, color: colors.danger }}>✕</Text>
@@ -758,7 +773,7 @@ function IngredientRow({
   return (
     <View
       style={[
-        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, borderBottomWidth: 1, borderColor: colors.line },
+        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5 },
         dragging ? { transform: [{ translateY: dragOffset }], zIndex: 10, opacity: 0.9 } : undefined,
       ]}
     >

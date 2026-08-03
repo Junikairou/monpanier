@@ -7,9 +7,9 @@ import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Checkbox, Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { ActionSheet } from '../../../src/components/ActionSheet';
 import { PullToRefresh } from '../../../src/components/PullToRefresh';
-import { deleteDish, listDishes, listIngredientNamesByDish, seedDemoDishes, setDishPublic, updateDishClassification } from '../../../src/data/dishes';
+import { deleteDish, listDishes, listIngredientNamesByDish, listIngredientRayonByDish, seedDemoDishes, setDishPublic, updateDishClassification } from '../../../src/data/dishes';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
-import { Category, Dish } from '../../../src/types/models';
+import { Category, Dish, GroceryCategory } from '../../../src/types/models';
 import { cardShadow, fonts, radii } from '../../../src/theme/tokens';
 import { noSelectWebStyle, useWebHorizontalDrag } from '../../../src/lib/webDragScroll';
 
@@ -17,13 +17,15 @@ export default function PlatsIndex() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const router = useRouter();
-  const { categories, courseTypes, label } = useTaxonomies();
+  const { categories, courseTypes, groceryCategories, label, iconFor } = useTaxonomies();
 
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [ingredientNamesByDish, setIngredientNamesByDish] = useState<Record<string, string[]>>({});
+  const [rayonByDish, setRayonByDish] = useState<Record<string, GroceryCategory>>({});
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [filter, setFilter] = useState<Category | null>(null);
+  const [rayonFilter, setRayonFilter] = useState<GroceryCategory | null>(null);
   const [kind, setKind] = useState<'recettes' | 'tout_pret'>('recettes');
   const [query, setQuery] = useState('');
   const [manageMode, setManageMode] = useState(false);
@@ -43,6 +45,7 @@ export default function PlatsIndex() {
       .then(async (d) => {
         setDishes(d);
         setIngredientNamesByDish(await listIngredientNamesByDish(d.map((x) => x.id)));
+        setRayonByDish(await listIngredientRayonByDish(d.filter((x) => x.is_ready_made).map((x) => x.id)));
       })
       .finally(() => setLoading(false));
   }, [session]);
@@ -57,7 +60,7 @@ export default function PlatsIndex() {
   const readyMadeCount = dishes.filter((d) => d.is_ready_made).length;
   const visible = dishes
     .filter((d) => (kind === 'tout_pret' ? d.is_ready_made : !d.is_ready_made))
-    .filter((d) => !filter || d.category === filter)
+    .filter((d) => (kind === 'tout_pret' ? !rayonFilter || rayonByDish[d.id] === rayonFilter : !filter || d.category === filter))
     .filter(
       (d) =>
         !q ||
@@ -153,12 +156,12 @@ export default function PlatsIndex() {
       />
       {dishes.length > 0 ? (
         <View style={[styles.kindSwitch, { backgroundColor: colors.beige }]}>
-          <Pressable style={[styles.kindOpt, kind === 'recettes' && { backgroundColor: colors.paper }]} onPress={() => { setKind('recettes'); setFilter(null); }}>
+          <Pressable style={[styles.kindOpt, kind === 'recettes' && { backgroundColor: colors.paper }]} onPress={() => { setKind('recettes'); setRayonFilter(null); }}>
             <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: kind === 'recettes' ? colors.ink : colors.inkSoft }}>📖 Recettes</Text>
           </Pressable>
           <Pressable style={[styles.kindOpt, kind === 'tout_pret' && { backgroundColor: colors.paper }]} onPress={() => { setKind('tout_pret'); setFilter(null); }}>
             <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: kind === 'tout_pret' ? colors.ink : colors.inkSoft }}>
-              🧊 Tout prêt {readyMadeCount > 0 ? `(${readyMadeCount})` : ''}
+              🛒 Alimentation {readyMadeCount > 0 ? `(${readyMadeCount})` : ''}
             </Text>
           </Pressable>
         </View>
@@ -183,10 +186,21 @@ export default function PlatsIndex() {
           style={noSelectWebStyle}
           {...catDrag.handlers}
         >
-          <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
-          {categories.map((c) => (
-            <Chip key={c.key} label={c.label} active={filter === c.key} onPress={() => setFilter(c.key)} />
-          ))}
+          {kind === 'tout_pret' ? (
+            <>
+              <Chip label="Tous" active={rayonFilter === null} onPress={() => setRayonFilter(null)} />
+              {groceryCategories.map((c) => (
+                <Chip key={c.key} label={`${c.icon ?? ''} ${c.label}`.trim()} active={rayonFilter === c.key} onPress={() => setRayonFilter(c.key)} />
+              ))}
+            </>
+          ) : (
+            <>
+              <Chip label="Tous" active={filter === null} onPress={() => setFilter(null)} />
+              {categories.map((c) => (
+                <Chip key={c.key} label={c.label} active={filter === c.key} onPress={() => setFilter(c.key)} />
+              ))}
+            </>
+          )}
         </ScrollView>
       </View>
 
@@ -204,14 +218,14 @@ export default function PlatsIndex() {
         <View style={{ padding: 18 }}>
           <EmptyState
             text={
-              q || filter
+              q || filter || rayonFilter
                 ? 'Aucun plat ne correspond à cette recherche.'
                 : kind === 'tout_pret'
-                  ? "Aucun produit tout prêt pour l'instant."
+                  ? "Aucun article dans Alimentation pour l'instant."
                   : 'Aucune recette pour l\'instant.'
             }
           />
-          {!q && !filter ? (
+          {!q && !filter && !rayonFilter ? (
             <View style={{ alignItems: 'center', marginTop: 8 }}>
               <Pill label="+ Ajouter un plat" variant="primary" onPress={() => setAddMenuOpen(true)} />
             </View>
@@ -243,7 +257,7 @@ export default function PlatsIndex() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
-                    {label('category', item.category)}
+                    {item.is_ready_made ? `${iconFor(rayonByDish[item.id])} ${label('grocery_category', rayonByDish[item.id] ?? 'autre')}` : label('category', item.category)}
                   </Text>
                   <Text style={{ fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>{item.name}</Text>
                 </View>
@@ -313,7 +327,7 @@ export default function PlatsIndex() {
           { label: '📖 Piocher dans le catalogue', onPress: () => router.push('/catalogue') },
           { label: '✏️ Créer une nouvelle recette', onPress: () => router.push('/(tabs)/plats/new') },
           { label: '📋 Importer un texte de recette', onPress: () => router.push('/plat/importer') },
-          { label: '🧊 Ajouter un produit tout prêt', onPress: () => router.push({ pathname: '/(tabs)/plats/new', params: { readyMade: '1' } }) },
+          { label: '🛒 Ajouter à Alimentation', onPress: () => router.push({ pathname: '/(tabs)/plats/new', params: { readyMade: '1' } }) },
         ]}
         onClose={() => setAddMenuOpen(false)}
       />
