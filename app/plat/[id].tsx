@@ -18,7 +18,7 @@ import {
   MealSlot,
   RecipeStep,
 } from '../../src/types/models';
-import { formatDayCaption, toIso } from '../../src/lib/dates';
+import { addMonths, formatDayCaption, formatShortDayMonth, toIso } from '../../src/lib/dates';
 import { formatQuantity } from '../../src/lib/formatQuantity';
 import { fonts } from '../../src/theme/tokens';
 
@@ -94,15 +94,10 @@ export default function DishDetail() {
   }, [load]);
 
   const confirmAdd = async () => {
-    if (frequency !== 'once') {
-      if (!endDate) {
-        setRecurError('Choisis une date de fin pour la répétition.');
-        return;
-      }
-      if (endDate < planDate) {
-        setRecurError('La date de fin doit être après le jour de départ.');
-        return;
-      }
+    const effectiveEnd = endDate ?? toIso(addMonths(new Date(planDate), 3));
+    if (frequency !== 'once' && effectiveEnd < planDate) {
+      setRecurError('La date de fin doit être après le jour de départ.');
+      return;
     }
     setRecurError(null);
     setSaving(true);
@@ -111,7 +106,7 @@ export default function DishDetail() {
         await setMeal(session!.user.id, planDate, planSlot, dish!);
       } else {
         const intervalDays = frequency === 'custom' ? Math.max(1, Number(customDays) || 1) : frequency;
-        await setMealRecurring(session!.user.id, dish!, planSlot, planDate, intervalDays, endDate!);
+        await setMealRecurring(session!.user.id, dish!, planSlot, planDate, intervalDays, effectiveEnd);
       }
       setPlanOpen(false);
       router.navigate('/(tabs)/planning');
@@ -267,12 +262,24 @@ export default function DishDetail() {
             <Pill label="+ Ajouter au planning" variant="primary" onPress={() => setPlanOpen(true)} />
           ) : (
             <View style={[styles.planPanel, { borderColor: colors.line, backgroundColor: colors.paper }]}>
-              <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {frequency === 'once' ? 'Jour' : 'À partir du jour'}
-              </Text>
-              <Pressable onPress={() => setDayPickerOpen(true)} style={[styles.endBtn, { borderColor: colors.beigeDark }]}>
-                <Text style={{ fontSize: 12, color: colors.ink }}>📅 {formatDayCaption(new Date(planDate))}</Text>
-              </Pressable>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Du</Text>
+                  <Pressable onPress={() => setDayPickerOpen(true)} style={[styles.endBtn, { borderColor: colors.beigeDark, alignSelf: 'stretch' }]}>
+                    <Text style={{ fontSize: 12, color: colors.ink }} numberOfLines={1}>📅 {formatDayCaption(new Date(planDate))}</Text>
+                  </Pressable>
+                </View>
+                {frequency !== 'once' ? (
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: colors.inkSoft, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Au</Text>
+                    <Pressable onPress={() => setEndPickerOpen(true)} style={[styles.endBtn, { borderColor: colors.beigeDark, alignSelf: 'stretch' }]}>
+                      <Text style={{ fontSize: 12, color: colors.ink }} numberOfLines={1}>
+                        📅 {endDate ? formatShortDayMonth(new Date(endDate)) : 'Dans 3 mois'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
 
               <Text style={{ fontSize: 11, color: colors.inkSoft, marginTop: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Repas</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
@@ -301,14 +308,25 @@ export default function DishDetail() {
                       <Text style={{ fontSize: 12, color: colors.inkSoft }}>jours</Text>
                     </View>
                   ) : null}
-                  <Pressable
-                    onPress={() => setEndPickerOpen(true)}
-                    style={[styles.endBtn, { borderColor: colors.beigeDark }]}
-                  >
-                    <Text style={{ fontSize: 12, color: colors.ink }}>
-                      {endDate ? `Jusqu'au ${endDate}` : 'Choisir la date de fin'}
-                    </Text>
-                  </Pressable>
+                  <Text style={{ fontSize: 10.5, color: colors.inkFaint }}>Fin de la répétition (optionnel, 3 mois par défaut) :</Text>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                    <Chip
+                      label="3 mois"
+                      active={!endDate}
+                      onPress={() => setEndDate(null)}
+                    />
+                    <Chip
+                      label="6 mois"
+                      active={!!endDate && endDate === toIso(addMonths(new Date(planDate), 6))}
+                      onPress={() => setEndDate(toIso(addMonths(new Date(planDate), 6)))}
+                    />
+                    <Chip
+                      label="1 an"
+                      active={!!endDate && endDate === toIso(addMonths(new Date(planDate), 12))}
+                      onPress={() => setEndDate(toIso(addMonths(new Date(planDate), 12)))}
+                    />
+                    <Chip label="Date précise…" active={false} onPress={() => setEndPickerOpen(true)} />
+                  </View>
                 </View>
               ) : null}
               {recurError ? <Text style={{ color: colors.danger, fontSize: 11.5, marginTop: 8 }}>{recurError}</Text> : null}
@@ -357,7 +375,7 @@ export default function DishDetail() {
 
       <CalendarPicker
         visible={endPickerOpen}
-        selectedDate={endDate ?? planDate}
+        selectedDate={endDate ?? toIso(addMonths(new Date(planDate), 3))}
         onClose={() => setEndPickerOpen(false)}
         onSelect={(iso) => {
           setEndDate(iso);

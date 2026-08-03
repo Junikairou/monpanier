@@ -336,6 +336,13 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Non testé visuellement** (pas d'identifiants) — compilation TypeScript vérifiée sans erreur.
 
+## Chantier en cours (2026-08-03, suite)
+
+1. ✅ **Ajouter au planning (fiche recette)** : date de fin de répétition rendue optionnelle (3 mois par défaut si non choisie) ; date de début et date de fin affichées côte à côte, même taille ; vignettes rapides "3 mois / 6 mois / 1 an" + "Date précise…" pour la fin, à la place du seul bouton calendrier ; ordre des champs : Date → Repas → Répétition.
+2. ✅ **Historique** : cliquer sur le nom du plat ouvre sa fiche recette (lien "Voir la recette" supprimé, redondant) ; la fenêtre "Modifier dates / répétition" reprend la même présentation (dates côte à côte, vignettes 3/6/12 mois pour la fin).
+
+**Aucune migration pour ce lot** (changements d'interface uniquement).
+
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface

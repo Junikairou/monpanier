@@ -4,7 +4,7 @@ import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../../src/lib/auth';
 import { useTheme } from '../../../src/theme/ThemeProvider';
-import { Card, Checkbox, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
+import { Card, Checkbox, Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { CalendarPicker } from '../../../src/components/CalendarPicker';
 import { ActionSheet } from '../../../src/components/ActionSheet';
 import {
@@ -16,7 +16,7 @@ import {
 } from '../../../src/data/planning';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { PlanningEntry } from '../../../src/types/models';
-import { formatShortDayMonth } from '../../../src/lib/dates';
+import { addMonths, formatShortDayMonth, toIso } from '../../../src/lib/dates';
 import { fonts, radii } from '../../../src/theme/tokens';
 
 const FREQ_LABELS: Record<number, string> = {
@@ -246,9 +246,17 @@ export default function Historique() {
                       <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
                         {label('meal_slot', first.slot)}
                       </Text>
-                      <Text style={{ fontSize: 13.5, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>
-                        {first.is_restaurant ? '🍽️ Au restaurant' : first.dish?.name ?? 'Plat supprimé'}
-                      </Text>
+                      {first.dish ? (
+                        <Pressable onPress={() => router.push({ pathname: '/plat/[id]', params: { id: first.dish!.id, entryId: first.id } })}>
+                          <Text style={{ fontSize: 13.5, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>
+                            {first.dish.name}
+                          </Text>
+                        </Pressable>
+                      ) : (
+                        <Text style={{ fontSize: 13.5, fontFamily: fonts.bodySemiBold, color: colors.ink, marginTop: 2 }}>
+                          {first.is_restaurant ? '🍽️ Au restaurant' : 'Plat supprimé'}
+                        </Text>
+                      )}
                       {isSeries ? (
                         <Text style={{ fontSize: 10.5, color: colors.inkFaint, marginTop: 2 }}>
                           Du {formatShortDayMonth(new Date(first.date))} au {formatShortDayMonth(new Date(group.entries[group.entries.length - 1].date))} · {frequencyLabel(gapDays)}
@@ -260,11 +268,6 @@ export default function Historique() {
                   </View>
                   {!manageMode ? (
                     <View style={{ flexDirection: 'row', gap: 14 }}>
-                      {first.dish ? (
-                        <Pressable onPress={() => router.push({ pathname: '/plat/[id]', params: { id: first.dish!.id, entryId: first.id } })}>
-                          <Text style={{ fontSize: 12, color: colors.forest }}>Voir la recette</Text>
-                        </Pressable>
-                      ) : null}
                       <Pressable onPress={() => openEdit(group)} hitSlop={6}>
                         <Text style={{ fontSize: 12, color: colors.forest }}>
                           {isSeries ? 'Modifier dates / répétition' : 'Modifier la date'}
@@ -318,17 +321,39 @@ export default function Historique() {
                   : 'Corrige la date de ce repas.'}
               </Text>
 
-              <Text style={styles.fieldLabel}>{editGroup.groupId ? 'Date de début' : 'Date'}</Text>
-              <Pressable onPress={() => setPicker('start')} style={[styles.fieldBtn, { borderColor: colors.beigeDark }]}>
-                <Text style={{ fontSize: 12.5, color: colors.ink }}>{formatShortDayMonth(new Date(editStart))}</Text>
-              </Pressable>
+              {editGroup.groupId ? (
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Du</Text>
+                    <Pressable onPress={() => setPicker('start')} style={[styles.fieldBtn, { borderColor: colors.beigeDark, alignSelf: 'stretch' }]}>
+                      <Text style={{ fontSize: 12.5, color: colors.ink }} numberOfLines={1}>{formatShortDayMonth(new Date(editStart))}</Text>
+                    </Pressable>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Au</Text>
+                    <Pressable onPress={() => setPicker('end')} style={[styles.fieldBtn, { borderColor: colors.beigeDark, alignSelf: 'stretch' }]}>
+                      <Text style={{ fontSize: 12.5, color: colors.ink }} numberOfLines={1}>{formatShortDayMonth(new Date(editEnd))}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.fieldLabel}>Date</Text>
+                  <Pressable onPress={() => setPicker('start')} style={[styles.fieldBtn, { borderColor: colors.beigeDark }]}>
+                    <Text style={{ fontSize: 12.5, color: colors.ink }}>{formatShortDayMonth(new Date(editStart))}</Text>
+                  </Pressable>
+                </>
+              )}
 
               {editGroup.groupId ? (
                 <>
-                  <Text style={styles.fieldLabel}>Date de fin</Text>
-                  <Pressable onPress={() => setPicker('end')} style={[styles.fieldBtn, { borderColor: colors.beigeDark }]}>
-                    <Text style={{ fontSize: 12.5, color: colors.ink }}>{formatShortDayMonth(new Date(editEnd))}</Text>
-                  </Pressable>
+                  <Text style={styles.fieldLabel}>Fin de la répétition (optionnel, 3 mois par défaut)</Text>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                    <Chip label="3 mois" active={editEnd === toIso(addMonths(new Date(editStart), 3))} onPress={() => setEditEnd(toIso(addMonths(new Date(editStart), 3)))} />
+                    <Chip label="6 mois" active={editEnd === toIso(addMonths(new Date(editStart), 6))} onPress={() => setEditEnd(toIso(addMonths(new Date(editStart), 6)))} />
+                    <Chip label="1 an" active={editEnd === toIso(addMonths(new Date(editStart), 12))} onPress={() => setEditEnd(toIso(addMonths(new Date(editStart), 12)))} />
+                    <Chip label="Date précise…" active={false} onPress={() => setPicker('end')} />
+                  </View>
 
                   <Text style={styles.fieldLabel}>Répétition</Text>
                   <Pressable onPress={() => setFreqMenuOpen(true)} style={[styles.fieldBtn, { borderColor: colors.beigeDark }]}>
