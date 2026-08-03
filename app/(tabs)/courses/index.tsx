@@ -168,6 +168,54 @@ export default function Courses() {
     await toggleManualChecked(item.id, next);
   };
 
+  const dayBadge = (dates: string[]) => {
+    if (period === 'jour' || dates.length === 0) return null;
+    const label = dates.map((d) => formatShortDayMonth(new Date(d))).join(', ');
+    return (
+      <View style={[styles.dayTag, { backgroundColor: colors.beige }]}>
+        <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{label}</Text>
+      </View>
+    );
+  };
+
+  const toggleDishBadgeExpanded = (rowKey: string) => {
+    setExpandedDishBadges((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowKey)) next.delete(rowKey);
+      else next.add(rowKey);
+      return next;
+    });
+  };
+
+  const dishOriginBadges = (rowKey: string, sourceDishIds: string[]) => {
+    const known = sourceDishIds.filter((id) => dishById[id]);
+    if (known.length === 0) return null;
+    if (known.length === 1) {
+      return (
+        <Pressable onPress={() => goToDish(known[0])} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+          <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[known[0]].name}</Text>
+        </Pressable>
+      );
+    }
+    const expanded = expandedDishBadges.has(rowKey);
+    return (
+      <>
+        <Pressable onPress={() => toggleDishBadgeExpanded(rowKey)} style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
+          <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
+            🔗 dans {known.length} plats {expanded ? '▴' : '▾'}
+          </Text>
+        </Pressable>
+        {expanded
+          ? known.map((id) => (
+              <Pressable key={id} onPress={() => goToDish(id)} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
+                <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[id].name}</Text>
+              </Pressable>
+            ))
+          : null}
+      </>
+    );
+  };
+
   interface RenderItem {
     keyId: string;
     checked: boolean;
@@ -309,59 +357,11 @@ export default function Courses() {
     return sortComplete([...dishSecs, ...manualSecs]);
   })();
 
-  const dayBadge = (dates: string[]) => {
-    if (period === 'jour' || dates.length === 0) return null;
-    const label = dates.map((d) => formatShortDayMonth(new Date(d))).join(', ');
-    return (
-      <View style={[styles.dayTag, { backgroundColor: colors.beige }]}>
-        <Text style={{ fontSize: 9.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{label}</Text>
-      </View>
-    );
-  };
-
   const qtyTag = (qty: string) => (
     <View style={[styles.qtyTag, { backgroundColor: colors.beige }]}>
       <Text style={{ fontSize: 10.5, fontFamily: fonts.bodyMedium, color: colors.inkFaint }}>{qty}</Text>
     </View>
   );
-
-  const toggleDishBadgeExpanded = (rowKey: string) => {
-    setExpandedDishBadges((prev) => {
-      const next = new Set(prev);
-      if (next.has(rowKey)) next.delete(rowKey);
-      else next.add(rowKey);
-      return next;
-    });
-  };
-
-  const dishOriginBadges = (rowKey: string, sourceDishIds: string[]) => {
-    const known = sourceDishIds.filter((id) => dishById[id]);
-    if (known.length === 0) return null;
-    if (known.length === 1) {
-      return (
-        <Pressable onPress={() => goToDish(known[0])} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
-          <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[known[0]].name}</Text>
-        </Pressable>
-      );
-    }
-    const expanded = expandedDishBadges.has(rowKey);
-    return (
-      <>
-        <Pressable onPress={() => toggleDishBadgeExpanded(rowKey)} style={[styles.sharedBadge, { backgroundColor: colors.honeyPale }]}>
-          <Text style={{ fontSize: 9, fontFamily: fonts.bodySemiBold, color: colors.honey }}>
-            🔗 dans {known.length} plats {expanded ? '▴' : '▾'}
-          </Text>
-        </Pressable>
-        {expanded
-          ? known.map((id) => (
-              <Pressable key={id} onPress={() => goToDish(id)} style={[styles.dishPill, { backgroundColor: colors.sagePale }]}>
-                <Text style={{ fontSize: 9, fontFamily: fonts.bodyMedium, color: colors.forestDark }}>{dishById[id].name}</Text>
-              </Pressable>
-            ))
-          : null}
-      </>
-    );
-  };
 
   const renderRow = (
     keyId: string,
