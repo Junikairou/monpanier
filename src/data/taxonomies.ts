@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { getMyHouseholdId } from './household';
+import { isGuestModeSync } from '../lib/guest';
+import * as guest from './guestBackend';
 
 export type TaxonomyKind = 'course_type' | 'category' | 'grocery_category' | 'meal_slot';
 
@@ -31,6 +33,7 @@ function slugify(label: string): string {
 }
 
 export async function listTaxonomy(kind: TaxonomyKind): Promise<TaxonomyItem[]> {
+  if (isGuestModeSync()) return guest.listTaxonomy(kind);
   const { data, error } = await supabase.from(TABLE[kind]).select('*').order('position');
   if (error) throw error;
   return data as TaxonomyItem[];

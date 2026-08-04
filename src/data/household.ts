@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { GUEST_HOUSEHOLD_ID, isGuestUserId } from '../lib/guest';
 
 export interface HouseholdMember {
   user_id: string;
@@ -17,6 +18,7 @@ export interface HouseholdMemberProfile {
 const householdIdCache = new Map<string, string>();
 
 export async function getMyHouseholdId(userId: string): Promise<string> {
+  if (isGuestUserId(userId)) return GUEST_HOUSEHOLD_ID;
   const cached = householdIdCache.get(userId);
   if (cached) return cached;
   const { data, error } = await supabase.from('profiles').select('household_id').eq('id', userId).single();

@@ -33,7 +33,7 @@ const FREQUENCY_LABELS: Record<Exclude<Frequency, 'custom'>, string> = {
 
 export default function DishDetail() {
   const { colors } = useTheme();
-  const { session } = useAuth();
+  const { session, guestMode } = useAuth();
   const router = useRouter();
   const { id, entryId } = useLocalSearchParams<{ id: string; entryId?: string }>();
   const { label, mealSlots } = useTaxonomies();
@@ -343,7 +343,7 @@ export default function DishDetail() {
             </View>
           )}
           <Pill label="✏️ Modifier la recette" variant="ghost" onPress={() => router.push({ pathname: '/plat/modifier', params: { id } })} />
-          {dish.user_id === session!.user.id ? (
+          {!guestMode && dish.user_id === session!.user.id ? (
             <>
               <Pill
                 label={dish.is_public ? '🌍 Partagée au catalogue commun (retirer)' : '🌍 Partager au catalogue commun'}

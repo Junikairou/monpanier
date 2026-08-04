@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { getMyHouseholdId } from './household';
+import { isGuestModeSync, isGuestUserId } from '../lib/guest';
+import * as guest from './guestBackend';
 import type { GroceryCategory, GroceryItem } from '../types/models';
 import { cacheGet, cacheSet, enqueueAction, isOnline } from '../lib/offlineStore';
 
@@ -38,6 +40,7 @@ export async function getGroceryListForRange(
   startIso: string,
   endIso: string,
 ): Promise<GroceryList> {
+  if (isGuestUserId(userId)) return guest.getGroceryListForRange(startIso, endIso);
   const cacheKey = groceryCacheKey(startIso, endIso);
   if (!isOnline()) {
     const cached = await cacheGet<GroceryList>(cacheKey);
@@ -154,6 +157,7 @@ export async function toggleAutoChecked(
   item: ComputedGroceryItem,
   checked: boolean,
 ): Promise<void> {
+  if (isGuestUserId(userId)) return guest.toggleAutoChecked(item, checked);
   if (!isOnline()) {
     await enqueueAction('toggleAutoChecked', { userId, item, checked });
     return;
@@ -178,6 +182,7 @@ export async function toggleAutoChecked(
 }
 
 export async function toggleManualChecked(id: string, checked: boolean): Promise<void> {
+  if (isGuestModeSync()) return guest.toggleManualChecked(id, checked);
   if (!isOnline()) {
     await enqueueAction('toggleManualChecked', { id, checked });
     return;
@@ -221,6 +226,7 @@ export async function addManualItem(
   unit: string,
   grocery_category: GroceryCategory,
 ): Promise<void> {
+  if (isGuestUserId(userId)) return guest.addManualItem(name, quantity, unit, grocery_category);
   const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('grocery_items').insert({
     user_id: userId,

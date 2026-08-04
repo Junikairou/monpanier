@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { getMyHouseholdId } from './household';
+import { isGuestModeSync, isGuestUserId } from '../lib/guest';
 
 export interface CatalogIngredient {
   id: string;
@@ -26,6 +27,7 @@ export interface CatalogIngredientPatch {
 }
 
 export async function listCatalogIngredients(): Promise<CatalogIngredient[]> {
+  if (isGuestModeSync()) return [];
   const { data, error } = await supabase.from('ingredients_catalog').select('*').order('name');
   if (error) throw error;
   return data as CatalogIngredient[];
@@ -39,6 +41,7 @@ export async function ensureCatalogIngredient(
 ): Promise<void> {
   const trimmed = name.trim();
   if (!trimmed) return;
+  if (isGuestUserId(userId)) return;
   const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase
     .from('ingredients_catalog')
@@ -50,6 +53,24 @@ export async function ensureCatalogIngredient(
 }
 
 export async function createCatalogIngredient(userId: string, patch: CatalogIngredientPatch): Promise<CatalogIngredient> {
+  if (isGuestUserId(userId)) {
+    // Pas de catalogue d'ingrédients partagé en mode invité : renvoie un
+    // objet local, non persisté (les infos nutrition restent sur l'ingrédient
+    // du plat, saisies directement dans le formulaire).
+    return {
+      id: `guest:${Date.now()}`,
+      household_id: userId,
+      grocery_category: 'autre',
+      name: (patch.name ?? '').trim(),
+      default_unit: patch.default_unit ?? null,
+      calories: patch.calories ?? null,
+      protein_g: patch.protein_g ?? null,
+      carbs_g: patch.carbs_g ?? null,
+      fat_g: patch.fat_g ?? null,
+      fiber_g: patch.fiber_g ?? null,
+      ...patch,
+    };
+  }
   const household_id = await getMyHouseholdId(userId);
   const { data, error } = await supabase
     .from('ingredients_catalog')
@@ -61,6 +82,7 @@ export async function createCatalogIngredient(userId: string, patch: CatalogIngr
 }
 
 export async function updateCatalogIngredient(id: string, patch: CatalogIngredientPatch): Promise<void> {
+  if (id.startsWith('guest:')) return;
   const clean = { ...patch };
   if (clean.name !== undefined) clean.name = clean.name.trim();
   const { error } = await supabase.from('ingredients_catalog').update(clean).eq('id', id);
@@ -68,6 +90,7 @@ export async function updateCatalogIngredient(id: string, patch: CatalogIngredie
 }
 
 export async function deleteCatalogIngredient(id: string): Promise<void> {
+  if (id.startsWith('guest:')) return;
   const { error } = await supabase.from('ingredients_catalog').delete().eq('id', id);
   if (error) throw error;
 }

@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { isGuestUserId } from '../lib/guest';
+import * as guest from './guestBackend';
 import type { MealSlot } from '../types/models';
 
 export interface Profile {
@@ -20,6 +22,7 @@ export interface Profile {
 }
 
 export async function getProfile(userId: string): Promise<Profile> {
+  if (isGuestUserId(userId)) return guest.getProfile();
   const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
   if (error) throw error;
   return data as Profile;
@@ -37,6 +40,7 @@ export async function getDisplayNamesByIds(userIds: string[]): Promise<Record<st
 }
 
 export async function updateProfile(userId: string, patch: Partial<Profile>): Promise<void> {
+  if (isGuestUserId(userId)) return guest.updateProfile(patch);
   const { error } = await supabase
     .from('profiles')
     .update({ ...patch, updated_at: new Date().toISOString() })

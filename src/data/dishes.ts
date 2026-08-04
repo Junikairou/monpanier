@@ -1,8 +1,11 @@
 import { supabase } from '../lib/supabase';
 import { getMyHouseholdId } from './household';
+import { isGuestModeSync, isGuestUserId } from '../lib/guest';
+import * as guest from './guestBackend';
 import type { Category, CourseType, Dish, Ingredient, RecipeStep } from '../types/models';
 
 export async function listDishes(userId: string): Promise<Dish[]> {
+  if (isGuestUserId(userId)) return guest.listDishes();
   // Filtre explicite par foyer : la lecture RLS de "dishes" autorise aussi les
   // plats publics d'autres foyers (catalogue communautaire), donc un simple
   // select('*') remonterait aussi les plats des autres au lieu de rester
@@ -33,12 +36,14 @@ export async function updateDishClassification(
 }
 
 export async function getDish(id: string): Promise<Dish> {
+  if (isGuestModeSync()) return guest.getDish(id);
   const { data, error } = await supabase.from('dishes').select('*').eq('id', id).single();
   if (error) throw error;
   return data as Dish;
 }
 
 export async function listIngredients(dishId: string): Promise<Ingredient[]> {
+  if (isGuestModeSync()) return guest.listIngredients(dishId);
   const { data, error } = await supabase
     .from('ingredients')
     .select('*')
@@ -50,6 +55,7 @@ export async function listIngredients(dishId: string): Promise<Ingredient[]> {
 
 export async function listIngredientNamesByDish(dishIds: string[]): Promise<Record<string, string[]>> {
   if (dishIds.length === 0) return {};
+  if (isGuestModeSync()) return guest.listIngredientNamesByDish(dishIds);
   const { data, error } = await supabase.from('ingredients').select('dish_id, name').in('dish_id', dishIds);
   if (error) throw error;
   const map: Record<string, string[]> = {};
@@ -62,6 +68,7 @@ export async function listIngredientNamesByDish(dishIds: string[]): Promise<Reco
 /** Rayon (grocery_category) du premier ingrédient de chaque plat — pour les produits "Alimentation" (tout prêts), c'est leur seul ingrédient (le produit lui-même), donc leur rayon effectif. */
 export async function listIngredientRayonByDish(dishIds: string[]): Promise<Record<string, string>> {
   if (dishIds.length === 0) return {};
+  if (isGuestModeSync()) return guest.listIngredientRayonByDish(dishIds);
   const { data, error } = await supabase.from('ingredients').select('dish_id, grocery_category').in('dish_id', dishIds);
   if (error) throw error;
   const map: Record<string, string> = {};
@@ -72,6 +79,7 @@ export async function listIngredientRayonByDish(dishIds: string[]): Promise<Reco
 }
 
 export async function listRecipeSteps(dishId: string): Promise<RecipeStep[]> {
+  if (isGuestModeSync()) return guest.listRecipeSteps(dishId);
   const { data, error } = await supabase
     .from('recipe_steps')
     .select('*')
@@ -99,6 +107,7 @@ export interface NewDishInput {
 }
 
 export async function createDish(userId: string, input: NewDishInput): Promise<Dish> {
+  if (isGuestUserId(userId)) return guest.createDish(input);
   const household_id = await getMyHouseholdId(userId);
   const { data: dish, error } = await supabase
     .from('dishes')
@@ -144,6 +153,7 @@ export async function createDish(userId: string, input: NewDishInput): Promise<D
 }
 
 export async function updateDish(id: string, input: NewDishInput): Promise<void> {
+  if (isGuestModeSync()) return guest.updateDish(id, input);
   const { error } = await supabase
     .from('dishes')
     .update({
@@ -183,6 +193,7 @@ export async function updateDish(id: string, input: NewDishInput): Promise<void>
 }
 
 export async function deleteDish(id: string): Promise<void> {
+  if (isGuestModeSync()) return guest.deleteDish(id);
   const { error } = await supabase.from('dishes').delete().eq('id', id);
   if (error) throw error;
 }

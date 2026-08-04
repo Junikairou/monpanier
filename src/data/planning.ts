@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { addDays, toIso } from '../lib/dates';
 import { getMyHouseholdId } from './household';
+import { isGuestModeSync, isGuestUserId } from '../lib/guest';
+import * as guest from './guestBackend';
 import type { Dish, MealSlot, PlanningEntry } from '../types/models';
 
 export type CopyMode = 'replace' | 'add';
@@ -19,6 +21,7 @@ export async function listPlanningRange(
   startIso: string,
   endIso: string,
 ): Promise<PlanningEntry[]> {
+  if (isGuestUserId(userId)) return guest.listPlanningRange(startIso, endIso);
   const { data, error } = await supabase
     .from('planning_entries')
     .select('*, dish:dishes(*)')
@@ -36,6 +39,7 @@ export async function setMeal(
   dish: Dish,
   servings?: number,
 ): Promise<void> {
+  if (isGuestUserId(userId)) return guest.setMeal(date, slot, dish, servings);
   const household_id = await getMyHouseholdId(userId);
   const { error } = await supabase.from('planning_entries').insert({
     user_id: userId,
@@ -57,6 +61,7 @@ export async function setMealRecurring(
   endIso: string,
   servings?: number,
 ): Promise<void> {
+  if (isGuestUserId(userId)) return guest.setMealRecurring(dish, slot, startIso, intervalDays, endIso, servings);
   const household_id = await getMyHouseholdId(userId);
   const recurrence_group_id = uuidv4();
   const rows: { user_id: string; household_id: string; date: string; slot: MealSlot; dish_id: string; servings: number; recurrence_group_id: string }[] = [];
@@ -78,6 +83,7 @@ export async function setMealRecurring(
 // Supprime cette occurrence et toutes celles de la même série de répétition
 // à partir de cette date (garde les occurrences passées intactes).
 export async function deleteRecurrenceGroupFrom(groupId: string, fromDate: string): Promise<void> {
+  if (isGuestModeSync()) return guest.deleteRecurrenceGroupFrom(groupId, fromDate);
   const { error } = await supabase
     .from('planning_entries')
     .delete()
@@ -88,11 +94,13 @@ export async function deleteRecurrenceGroupFrom(groupId: string, fromDate: strin
 
 // Supprime toute la série (passé et futur inclus).
 export async function deleteRecurrenceGroupAll(groupId: string): Promise<void> {
+  if (isGuestModeSync()) return guest.deleteRecurrenceGroupAll(groupId);
   const { error } = await supabase.from('planning_entries').delete().eq('recurrence_group_id', groupId);
   if (error) throw error;
 }
 
 export async function listRecentPlanningEntries(limit = 50): Promise<PlanningEntry[]> {
+  if (isGuestModeSync()) return guest.listRecentPlanningEntries(limit);
   const { data, error } = await supabase
     .from('planning_entries')
     .select('*, dish:dishes(*)')
@@ -103,18 +111,21 @@ export async function listRecentPlanningEntries(limit = 50): Promise<PlanningEnt
 }
 
 export async function getPlanningEntry(entryId: string): Promise<PlanningEntry> {
+  if (isGuestModeSync()) return guest.getPlanningEntry(entryId);
   const { data, error } = await supabase.from('planning_entries').select('*, dish:dishes(*)').eq('id', entryId).single();
   if (error) throw error;
   return data as unknown as PlanningEntry;
 }
 
 export async function setEntryServings(entryId: string, servings: number): Promise<void> {
+  if (isGuestModeSync()) return guest.setEntryServings(entryId, servings);
   const { error } = await supabase.from('planning_entries').update({ servings: Math.max(1, servings) }).eq('id', entryId);
   if (error) throw error;
 }
 
 // Corrige la date d'une entrée isolée (erreur de saisie).
 export async function setEntryDate(entryId: string, date: string): Promise<void> {
+  if (isGuestModeSync()) return guest.setEntryDate(entryId, date);
   const { error } = await supabase.from('planning_entries').update({ date }).eq('id', entryId);
   if (error) throw error;
 }
@@ -122,6 +133,7 @@ export async function setEntryDate(entryId: string, date: string): Promise<void>
 // Décale toute une série (erreur sur la date de départ) : recalcule chaque
 // date à partir du même écart en jours, en gardant l'intervalle d'origine.
 export async function shiftRecurrenceGroup(groupId: string, entries: PlanningEntry[], newStartIso: string): Promise<void> {
+  if (isGuestModeSync()) return guest.shiftRecurrenceGroup(groupId, entries, newStartIso);
   const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
   const oldStart = new Date(sorted[0].date);
   const deltaDays = Math.round((new Date(newStartIso).getTime() - oldStart.getTime()) / 86400000);
@@ -147,6 +159,7 @@ export async function rescheduleRecurrenceGroup(
   endIso: string,
   intervalDays: number,
 ): Promise<void> {
+  if (isGuestModeSync()) return guest.rescheduleRecurrenceGroup(groupId, entries, startIso, endIso, intervalDays);
   const model = [...entries].sort((a, b) => a.date.localeCompare(b.date))[0];
   if (!model) return;
 
@@ -179,6 +192,7 @@ export async function replaceMeal(
   entryId: string,
   dish: Dish,
 ): Promise<void> {
+  if (isGuestUserId(userId)) return guest.replaceMeal(entryId, dish);
   const { error } = await supabase
     .from('planning_entries')
     .update({ dish_id: dish.id })
@@ -187,16 +201,19 @@ export async function replaceMeal(
 }
 
 export async function removeMeal(userId: string, entryId: string): Promise<void> {
+  if (isGuestUserId(userId)) return guest.removeMeal(entryId);
   const { error } = await supabase.from('planning_entries').delete().eq('id', entryId);
   if (error) throw error;
 }
 
 export async function setCooked(entryId: string, cooked: boolean): Promise<void> {
+  if (isGuestModeSync()) return guest.setCooked(entryId, cooked);
   const { error } = await supabase.from('planning_entries').update({ is_cooked: cooked }).eq('id', entryId);
   if (error) throw error;
 }
 
 export async function hasEntriesInRange(userId: string, startIso: string, endIso: string): Promise<boolean> {
+  if (isGuestUserId(userId)) return guest.hasEntriesInRange(startIso, endIso);
   const { count, error } = await supabase
     .from('planning_entries')
     .select('id', { count: 'exact', head: true })
@@ -213,6 +230,7 @@ export async function copyDay(
   mode: CopyMode,
 ): Promise<void> {
   if (fromIso === toDate) return;
+  if (isGuestUserId(userId)) return guest.copyDay(fromIso, toDate, mode);
   const [source, household_id] = await Promise.all([listPlanningRange(userId, fromIso, fromIso), getMyHouseholdId(userId)]);
   if (mode === 'replace') {
     const { error } = await supabase.from('planning_entries').delete().eq('household_id', household_id).eq('date', toDate);
@@ -239,6 +257,7 @@ export async function copyWeek(
   mode: CopyMode,
 ): Promise<void> {
   if (fromWeekStartIso === toWeekStartIso) return;
+  if (isGuestUserId(userId)) return guest.copyWeek(fromWeekStartIso, toWeekStartIso, mode);
   const fromStart = new Date(fromWeekStartIso);
   const toStart = new Date(toWeekStartIso);
   const fromEnd = toIso(addDays(fromStart, 6));

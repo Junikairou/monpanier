@@ -17,7 +17,7 @@ const WEEKDAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samed
 
 export default function ChoisirPlat() {
   const { colors } = useTheme();
-  const { session } = useAuth();
+  const { session, guestMode } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string; slot: MealSlot; entryId?: string; mode?: string; weekday?: string }>();
   const isTemplate = params.mode === 'template';
@@ -119,7 +119,7 @@ export default function ChoisirPlat() {
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 18, paddingBottom: 10, justifyContent: 'center' }}>
         <Pill label="+ Créer un nouveau plat" variant="primary" onPress={createNew} />
-        <Pill label="📖 Piocher dans le catalogue" onPress={() => router.push('/catalogue')} />
+        {!guestMode ? <Pill label="📖 Piocher dans le catalogue" onPress={() => router.push('/catalogue')} /> : null}
       </View>
 
       {loading ? (

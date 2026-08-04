@@ -15,7 +15,7 @@ import { noSelectWebStyle, useWebHorizontalDrag } from '../../../src/lib/webDrag
 
 export default function PlatsIndex() {
   const { colors } = useTheme();
-  const { session } = useAuth();
+  const { session, guestMode } = useAuth();
   const router = useRouter();
   const { categories, courseTypes, groceryCategories, label, iconFor } = useTaxonomies();
 
@@ -324,7 +324,7 @@ export default function PlatsIndex() {
         visible={addMenuOpen}
         title="Nouveau plat"
         actions={[
-          { label: '📖 Piocher dans le catalogue', onPress: () => router.push('/catalogue') },
+          ...(guestMode ? [] : [{ label: '📖 Piocher dans le catalogue', onPress: () => router.push('/catalogue') }]),
           { label: '✏️ Créer une nouvelle recette', onPress: () => router.push('/(tabs)/plats/new') },
           { label: '📋 Importer un texte de recette', onPress: () => router.push('/plat/importer') },
           { label: '🛒 Ajouter à Alimentation', onPress: () => router.push({ pathname: '/(tabs)/plats/new', params: { readyMade: '1' } }) },

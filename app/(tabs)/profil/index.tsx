@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../src/components/ScaledText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -65,7 +65,7 @@ function Tile({ tile }: { tile: TileDef }) {
 
 export default function Profil() {
   const { colors } = useTheme();
-  const { session } = useAuth();
+  const { session, guestMode, signOut } = useAuth();
   const router = useRouter();
   const userId = session!.user.id;
 
@@ -79,31 +79,47 @@ export default function Profil() {
 
   const initial = (profile?.display_name || session!.user.email || '?').charAt(0).toUpperCase();
 
+  const sections = guestMode
+    ? SECTIONS.filter((s) => s.title === 'Préférences' || s.title === 'Avancé')
+    : SECTIONS;
+
   return (
     <Screen>
       <ScreenHeader title="Plus" />
       <ScrollView contentContainerStyle={{ padding: 18 }}>
-        <Pressable
-          onPress={() => router.push('/(tabs)/profil/mon-profil')}
-          style={[styles.profileRow, { backgroundColor: colors.paper, borderColor: colors.line }]}
-        >
-          {profile?.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={styles.avatarImg} />
-          ) : (
+        {guestMode ? (
+          <View style={[styles.profileRow, { backgroundColor: colors.paper, borderColor: colors.line }]}>
             <View style={[styles.avatar, { backgroundColor: colors.sage }]}>
-              <Text style={{ fontSize: 16, fontFamily: fonts.display, color: colors.forestDark }}>{initial}</Text>
+              <Text style={{ fontSize: 16 }}>👤</Text>
             </View>
-          )}
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink }}>
-              {profile?.display_name || 'Mon profil'}
-            </Text>
-            <Text style={{ fontSize: 11, color: colors.inkSoft }}>{session!.user.email}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink }}>Mode invité</Text>
+              <Text style={{ fontSize: 11, color: colors.inkSoft }}>Données stockées uniquement sur cet appareil</Text>
+            </View>
           </View>
-          <Text style={{ color: colors.inkSoft, fontSize: 16 }}>›</Text>
-        </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => router.push('/(tabs)/profil/mon-profil')}
+            style={[styles.profileRow, { backgroundColor: colors.paper, borderColor: colors.line }]}
+          >
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImg} />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: colors.sage }]}>
+                <Text style={{ fontSize: 16, fontFamily: fonts.display, color: colors.forestDark }}>{initial}</Text>
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink }}>
+                {profile?.display_name || 'Mon profil'}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.inkSoft }}>{session!.user.email}</Text>
+            </View>
+            <Text style={{ color: colors.inkSoft, fontSize: 16 }}>›</Text>
+          </Pressable>
+        )}
 
-        {SECTIONS.map((section) => (
+        {sections.map((section) => (
           <View key={section.title} style={{ marginTop: 20 }}>
             <Text style={{ fontSize: 13, fontFamily: fonts.bodySemiBold, color: colors.forestDark, marginBottom: 10 }}>
               {section.title}
@@ -115,6 +131,28 @@ export default function Profil() {
             </View>
           </View>
         ))}
+
+        {guestMode ? (
+          <Pressable
+            onPress={() => {
+              const message = 'Quitter le mode invité efface définitivement tes plats, ton planning et ta liste de courses de cet appareil (rien n\'est sauvegardé ailleurs). Continuer ?';
+              const run = () => signOut();
+              if (Platform.OS === 'web') {
+                if (window.confirm(message)) run();
+                return;
+              }
+              Alert.alert('Quitter le mode invité ?', message, [
+                { text: 'Annuler', style: 'cancel' },
+                { text: 'Quitter et effacer', style: 'destructive', onPress: run },
+              ]);
+            }}
+            style={{ marginTop: 26, alignItems: 'center' }}
+          >
+            <Text style={{ fontSize: 12, color: colors.danger, textDecorationLine: 'underline' }}>
+              Quitter le mode invité
+            </Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </Screen>
   );

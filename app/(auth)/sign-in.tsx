@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../src/components/ScaledText';
 import { Link, Redirect } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
@@ -10,7 +10,7 @@ import { fonts } from '../../src/theme/tokens';
 
 export default function SignIn() {
   const { colors } = useTheme();
-  const { session, signIn, signInWithGoogle } = useAuth();
+  const { session, signIn, signInWithGoogle, enterGuestMode } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +74,15 @@ export default function SignIn() {
         <Link href="/(auth)/sign-up" style={[styles.link, { color: colors.forest }]}>
           Pas de compte ? Créer un profil
         </Link>
+
+        <Pressable onPress={enterGuestMode} style={{ marginTop: 22 }}>
+          <Text style={{ textAlign: 'center', fontSize: 12, color: colors.inkSoft, textDecorationLine: 'underline' }}>
+            Continuer sans compte
+          </Text>
+          <Text style={{ textAlign: 'center', fontSize: 10.5, color: colors.inkFaint, marginTop: 4 }}>
+            Tes données restent uniquement sur cet appareil, pas de partage foyer/amis.
+          </Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
