@@ -365,6 +365,16 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Aucune migration pour ce lot** (changements d'interface uniquement).
 
+## Chantier en cours (2026-08-04, suite — retours utilisateur)
+
+1. ✅ **Liste de courses : interrupteur "Masquer cochés" déplacé** sous la ligne "Semaine du...", aligné à droite (au lieu d'être au-dessus des onglets Jour/Semaine/Plage).
+2. ✅ **Sections repliées par défaut** dans la liste de courses (rayons en vue "Par catégorie", plats en vue "Par plat") — avant, seul un groupe 100% coché démarrait replié ; maintenant tout démarre replié, à déplier au clic.
+3. 🔴 **Bug signalé : écran blanc à l'ouverture de création/modification de plat.** Non reproduit — compte de test créé par l'agent pour investiguer, mais l'inscription elle-même semble bloquée dans l'environnement de dev de l'agent (aucun appel réseau vers Supabase déclenché au clic sur "Créer mon profil", cause non identifiée, possiblement propre à l'outil de navigateur automatisé plutôt qu'un vrai bug). **À faire par l'utilisateur** : la prochaine fois que l'écran blanc apparaît, ouvrir la console navigateur (F12 → onglet Console) et copier le message d'erreur ici — c'est le moyen le plus rapide de localiser la cause.
+4. 🔵 **Connexion Google cassée pour un autre compte (Android, site en ligne, aucune erreur visible)** — symptôme (retour silencieux à la page de connexion) typique d'une URL de redirection non autorisée côté Supabase. **À vérifier par l'utilisateur** dans le tableau de bord Supabase (projet `kjltmojlewrnwimzskgj`) → Authentication → URL Configuration → "Redirect URLs" : s'assurer que `https://junikairou.github.io/monpanier/` y figure exactement (avec le slash final). C'est un réglage du projet Supabase, l'agent n'y a pas accès.
+5. ⏳ **Mode invité (sans compte, sauvegarde locale uniquement)** — demandé, portée confirmée : planning + courses + plats en local sur l'appareil (pas de Supabase), sans les fonctions foyer/amis/catalogue en ligne. Gros chantier (nouvelle couche de stockage local pour `dishes`/`planning_entries`/`grocery_items`, point d'entrée "Continuer sans compte", masquage des écrans foyer/amis/catalogue/personnalisation en mode invité). **Pas commencé** — nécessite plusieurs étapes, sera fait par lots avec push à chaque étape.
+
+**Migrations pour ce lot : aucune** (changements d'interface uniquement, hors point 5 à venir).
+
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface

@@ -142,11 +142,11 @@ export default function Courses() {
 
   const passFilter = (checked: boolean) => !hideChecked || !checked;
 
-  const isCollapsed = (key: string, allChecked: boolean) => collapseOverride.get(key) ?? allChecked;
-  const toggleCollapse = (key: string, allChecked: boolean) => {
+  const isCollapsed = (key: string) => collapseOverride.get(key) ?? true;
+  const toggleCollapse = (key: string) => {
     setCollapseOverride((prev) => {
       const next = new Map(prev);
-      next.set(key, !isCollapsed(key, allChecked));
+      next.set(key, !isCollapsed(key));
       return next;
     });
   };
@@ -379,14 +379,14 @@ export default function Courses() {
   );
 
   const renderSection = (section: Section) => {
-    const collapsed = isCollapsed(section.key, section.allChecked);
+    const collapsed = isCollapsed(section.key);
     return (
       <View
         key={section.key}
         style={[styles.dishSection, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink, opacity: section.allChecked ? 0.6 : 1 }]}
       >
         <Pressable
-          onPress={() => toggleCollapse(section.key, section.allChecked)}
+          onPress={() => toggleCollapse(section.key)}
           onLongPress={section.onLongPress}
           style={[styles.dishSectionHeader, { borderColor: colors.beige }]}
         >
@@ -420,11 +420,6 @@ export default function Courses() {
         <Pressable style={[styles.switchOpt, view === 'plat' && { backgroundColor: colors.paper }]} onPress={() => setView('plat')}>
           <Text style={{ fontSize: 11.5, fontFamily: fonts.bodyMedium, color: view === 'plat' ? colors.ink : colors.inkSoft }}>🍽 Par plat</Text>
         </Pressable>
-      </View>
-
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginHorizontal: 18, marginTop: 8 }}>
-        <Text style={{ fontSize: 11, color: colors.inkFaint }}>Masquer cochés</Text>
-        <Switch value={hideChecked} onValueChange={setHideChecked} trackColor={{ true: colors.forest }} />
       </View>
 
       <View style={[styles.switchWrap, { backgroundColor: colors.beige, marginTop: 8 }]}>
@@ -508,6 +503,11 @@ export default function Courses() {
           </Pressable>
         </View>
       )}
+
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginHorizontal: 18, marginBottom: 10 }}>
+        <Text style={{ fontSize: 11, color: colors.inkFaint }}>Masquer cochés</Text>
+        <Switch value={hideChecked} onValueChange={setHideChecked} trackColor={{ true: colors.forest }} />
+      </View>
 
       <CalendarPicker
         visible={pickerTarget !== null}
