@@ -88,15 +88,18 @@ export default function Profil() {
       <ScreenHeader title="Plus" />
       <ScrollView contentContainerStyle={{ padding: 18 }}>
         {guestMode ? (
-          <View style={[styles.profileRow, { backgroundColor: colors.paper, borderColor: colors.line }]}>
+          <Pressable
+            onPress={() => router.push('/(tabs)/profil/lier-compte' as any)}
+            style={[styles.profileRow, { backgroundColor: colors.paper, borderColor: colors.line }]}
+          >
             <View style={[styles.avatar, { backgroundColor: colors.sage }]}>
               <Text style={{ fontSize: 16 }}>👤</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontFamily: fonts.bodySemiBold, color: colors.ink }}>Mode invité</Text>
-              <Text style={{ fontSize: 11, color: colors.inkSoft }}>Données stockées uniquement sur cet appareil</Text>
+              <Text style={{ fontSize: 11, color: colors.inkSoft }}>Créer un compte pour sauvegarder tes données ›</Text>
             </View>
-          </View>
+          </Pressable>
         ) : (
           <Pressable
             onPress={() => router.push('/(tabs)/profil/mon-profil')}
@@ -135,13 +138,13 @@ export default function Profil() {
         {guestMode ? (
           <Pressable
             onPress={() => {
-              const message = 'Quitter le mode invité efface définitivement tes plats, ton planning et ta liste de courses de cet appareil (rien n\'est sauvegardé ailleurs). Continuer ?';
+              const message = "Quitter sans créer de compte efface définitivement tes plats, ton planning et ta liste de courses de cet appareil (rien n'est sauvegardé ailleurs). Pour garder tes données, crée d'abord un compte ci-dessus. Continuer ?";
               const run = () => signOut();
               if (Platform.OS === 'web') {
                 if (window.confirm(message)) run();
                 return;
               }
-              Alert.alert('Quitter le mode invité ?', message, [
+              Alert.alert('Quitter sans sauvegarder ?', message, [
                 { text: 'Annuler', style: 'cancel' },
                 { text: 'Quitter et effacer', style: 'destructive', onPress: run },
               ]);
@@ -149,7 +152,7 @@ export default function Profil() {
             style={{ marginTop: 26, alignItems: 'center' }}
           >
             <Text style={{ fontSize: 12, color: colors.danger, textDecorationLine: 'underline' }}>
-              Quitter le mode invité
+              Quitter sans sauvegarder mes données
             </Text>
           </Pressable>
         ) : null}

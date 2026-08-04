@@ -21,6 +21,7 @@ type AuthContextValue = {
   resetPassword: (email: string) => Promise<string | null>;
   enterGuestMode: () => Promise<void>;
   exitGuestMode: () => Promise<void>;
+  adoptRealSession: (newSession: Session) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -70,6 +71,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     guestModeRef.current = false;
     setGuestMode(false);
     setSession(null);
+  };
+
+  // Utilisé après avoir basculé un compte invité vers un vrai compte
+  // (src/data/guestMigration.ts a déjà recopié les données et vidé le
+  // stockage local à ce stade) : passe simplement l'app sur la vraie
+  // session, sans repasser par exitGuestMode (qui efface les données —
+  // inutile ici puisqu'elles sont déjà migrées).
+  const adoptRealSession = async (newSession: Session) => {
+    await exitGuestModeStorage();
+    guestModeRef.current = false;
+    setGuestMode(false);
+    setSession(newSession);
   };
 
   const signIn: AuthContextValue['signIn'] = async (email, password) => {
@@ -129,7 +142,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, initializing, guestMode, signIn, signUp, signInWithGoogle, signOut, resetPassword, enterGuestMode, exitGuestMode }}
+      value={{
+        session,
+        initializing,
+        guestMode,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+        resetPassword,
+        enterGuestMode,
+        exitGuestMode,
+        adoptRealSession,
+      }}
     >
       {children}
     </AuthContext.Provider>
