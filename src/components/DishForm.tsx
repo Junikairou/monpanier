@@ -669,6 +669,7 @@ function StepRow({
 }) {
   const { colors } = useTheme();
   const [inputHeight, setInputHeight] = useState(36);
+  const lastHeightRef = useRef(36);
 
   const callbacksRef = useRef({ onDragStart, onDragMove, onDragEnd });
   useEffect(() => {
@@ -704,7 +705,16 @@ function StepRow({
         placeholder="Décris cette étape…"
         placeholderTextColor={colors.inkFaint}
         multiline
-        onContentSizeChange={(e) => setInputHeight(Math.max(36, e.nativeEvent.contentSize.height + 14))}
+        onContentSizeChange={(e) => {
+          // Sans ce garde-fou, RN Web redéclenche onContentSizeChange à chaque
+          // re-render même quand la hauteur mesurée n'a pas vraiment changé,
+          // provoquant une boucle infinie (erreur React #185, écran blanc).
+          const next = Math.max(36, Math.round(e.nativeEvent.contentSize.height + 14));
+          if (next !== lastHeightRef.current) {
+            lastHeightRef.current = next;
+            setInputHeight(next);
+          }
+        }}
         style={{
           flex: 1,
           height: inputHeight,
