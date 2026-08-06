@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 import { clearAllGuestData } from './localTable';
 import { enterGuestMode as enterGuestModeStorage, exitGuestMode as exitGuestModeStorage, GUEST_USER_ID, isGuestModeActive } from './guest';
 import { consumeOAuthPending, markOAuthPending, oauthCallback, OAUTH_NO_SESSION_MESSAGE } from './authCallback';
+import { siteOrigin } from './basePath';
 
 // Session locale fictive utilisée en mode invité : permet à tout le reste de
 // l'app (qui lit session.user.id / session.user.email) de fonctionner sans
@@ -164,10 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle: AuthContextValue['signInWithGoogle'] = async () => {
-    const redirectTo =
-      Platform.OS === 'web'
-        ? `${window.location.origin}${window.location.pathname.startsWith('/monpanier') ? '/monpanier/' : '/'}`
-        : 'monpanier://';
+    const redirectTo = Platform.OS === 'web' ? siteOrigin() : 'monpanier://';
     setAuthNotice(null);
     markOAuthPending();
     try {
@@ -212,10 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword: AuthContextValue['resetPassword'] = async (email) => {
-    const redirectTo =
-      Platform.OS === 'web'
-        ? `${window.location.origin}${window.location.pathname.startsWith('/monpanier') ? '/monpanier/' : '/'}`
-        : 'monpanier://';
+    const redirectTo = Platform.OS === 'web' ? siteOrigin() : 'monpanier://';
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
       return error ? mapAuthError(error.message) : null;

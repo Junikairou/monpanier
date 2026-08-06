@@ -18,6 +18,7 @@ import {
 } from '@expo-google-fonts/playfair-display';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
 import { AuthProvider, useAuth } from '../src/lib/auth';
+import { BASE_PATH } from '../src/lib/basePath';
 import { TaxonomyProvider } from '../src/lib/taxonomies';
 import { useMealReminders } from '../src/lib/useMealReminders';
 import { useOfflineSync } from '../src/lib/offlineSync';
@@ -83,7 +84,7 @@ function WebFrame({ children, onLayout }: { children: React.ReactNode; onLayout:
     // Expo's static web export strips some <head> tags added in +html.tsx
     // (manifest link, apple PWA meta) — inject them at runtime instead so
     // the app is still installable as a PWA.
-    const base = window.location.pathname.startsWith('/monpanier') ? '/monpanier/' : '/';
+    const base = BASE_PATH;
 
     // Cache l'app (JS/CSS/HTML) pour un chargement hors ligne — utile en
     // supermarché où la connexion est souvent mauvaise. Les appels Supabase
