@@ -5,11 +5,12 @@ import { Link, Redirect } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Field, Pill } from '../../src/components/ui';
+import { GoogleSignInButton } from '../../src/components/GoogleSignInButton';
 import { fonts } from '../../src/theme/tokens';
 
 export default function SignUp() {
   const { colors } = useTheme();
-  const { session, signUp, signInWithGoogle, authNotice, clearAuthNotice } = useAuth();
+  const { session, signUp, authNotice, clearAuthNotice } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -81,13 +82,7 @@ export default function SignUp() {
         <Pill label={loading ? 'Création…' : 'Créer mon profil'} variant="primary" onPress={onSubmit} disabled={loading} />
 
         <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 14 }}>ou</Text>
-        <Pill
-          label="Continuer avec Google"
-          onPress={() => {
-            setError(null);
-            signInWithGoogle().then((e) => e && setError(e));
-          }}
-        />
+        <GoogleSignInButton onError={setError} />
 
         <Link href="/(auth)/sign-in" style={[styles.link, { color: colors.forest }]}>
           Déjà un compte ? Se connecter

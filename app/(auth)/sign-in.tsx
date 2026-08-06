@@ -6,11 +6,12 @@ import { useAuth } from '../../src/lib/auth';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { isSupabaseConfigured } from '../../src/lib/supabase';
 import { Field, Pill } from '../../src/components/ui';
+import { GoogleSignInButton } from '../../src/components/GoogleSignInButton';
 import { fonts } from '../../src/theme/tokens';
 
 export default function SignIn() {
   const { colors } = useTheme();
-  const { session, signIn, signInWithGoogle, enterGuestMode, authNotice, clearAuthNotice } = useAuth();
+  const { session, signIn, enterGuestMode, authNotice, clearAuthNotice } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -74,13 +75,7 @@ export default function SignIn() {
         <Pill label={loading ? 'Connexion…' : 'Se connecter'} variant="primary" onPress={onSubmit} disabled={loading} />
 
         <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 14 }}>ou</Text>
-        <Pill
-          label="Continuer avec Google"
-          onPress={() => {
-            setError(null);
-            signInWithGoogle().then((e) => e && setError(e));
-          }}
-        />
+        <GoogleSignInButton onError={setError} />
 
         <Link href="/(auth)/sign-up" style={[styles.link, { color: colors.forest }]}>
           Pas de compte ? Créer un profil

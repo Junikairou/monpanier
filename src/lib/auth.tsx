@@ -21,6 +21,8 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (email: string, password: string) => Promise<string | null>;
   signInWithGoogle: () => Promise<string | null>;
+  /** Connexion Google sans redirection : jeton d'identité fourni par Google Identity Services. */
+  signInWithGoogleCredential: (idToken: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<string | null>;
   enterGuestMode: () => Promise<void>;
@@ -189,6 +191,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithGoogleCredential: AuthContextValue['signInWithGoogleCredential'] = async (idToken) => {
+    setAuthNotice(null);
+    try {
+      const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken });
+      if (error) return mapAuthError(error.message);
+      if (data.session) setSession(data.session);
+      return null;
+    } catch (e: any) {
+      return mapAuthError(e?.message);
+    }
+  };
+
   const signOut = async () => {
     if (guestMode) {
       await exitGuestMode();
@@ -221,6 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signInWithGoogle,
+        signInWithGoogleCredential,
         signOut,
         resetPassword,
         enterGuestMode,

@@ -397,6 +397,27 @@ Symptôme rapporté (Android, app en ligne) : clic sur "Continuer avec Google" �
 
 **Aucune migration pour ce lot.**
 
+### Cause confirmée le 2026-08-06 (test utilisateur) et vraie correction
+
+Test décisif : la connexion Google lancée **depuis Chrome** (adresse `/auth/v1/authorize` appelée à la main) bascule sur **l'application installée**, qui s'ouvre… sur l'écran de connexion. Réglages Supabase vérifiés par l'utilisateur et corrects (Site URL `https://junikairou.github.io/monpanier/`, Redirect URLs `https://junikairou.github.io/monpanier/**` et `http://localhost:8081/**`).
+
+**Diagnostic** : Android intercepte l'adresse de retour (elle est dans le `scope` du manifeste PWA), relance l'application installée, et le jeton de session — placé par Supabase dans le `#fragment` de l'adresse — est perdu au passage. Aucun réglage de serveur ne peut corriger ça : le flux par redirection est structurellement incompatible avec une PWA installée sur Android.
+
+**Correction** : connexion Google **sans redirection**, via Google Identity Services (`src/lib/googleIdentity.ts` + `src/components/GoogleSignInButton.tsx`). Google renvoie un jeton d'identité directement à la page, échangé contre une session par `supabase.auth.signInWithIdToken` (`signInWithGoogleCredential` dans `src/lib/auth.tsx`). Plus rien ne transite par l'adresse de la page, donc plus rien à perdre.
+
+Replis en cascade, pour ne jamais laisser l'écran de connexion sans bouton Google :
+- pas d'identifiant client configuré, ou plateforme native → ancien bouton (redirection) ;
+- script Google injoignable (hors ligne) → ancien bouton, après 8 s d'attente ;
+- script chargé mais **bouton non dessiné** (identifiant client faux ou origine absente des « Authorized JavaScript origins » — Google échoue silencieusement, il écrit juste dans la console) → détection après 1,5 s puis ancien bouton ;
+- fenêtre Google bloquée par le navigateur → lien « Problème avec Google ? Essayer via le navigateur » sous le bouton.
+
+Vérifié en navigateur automatisé : repli sans identifiant client, repli script bloqué, repli bouton non dessiné, et chemin nominal (bouton Google → clic → jeton bien transmis à `signInWithIdToken`). **Non vérifiable ici** : le comportement réel de la fenêtre Google dans la PWA installée sur Android, et le rendu du bouton officiel (le script `accounts.google.com/gsi/client` est bloqué dans l'environnement de l'agent).
+
+**À configurer par l'utilisateur pour activer le nouveau flux** (sans ça, l'app garde l'ancien comportement) :
+1. GitHub → Settings → Secrets and variables → Actions → nouveau secret `EXPO_PUBLIC_GOOGLE_CLIENT_ID` = l'identifiant client **Web** Google (celui déjà collé dans Supabase → Authentication → Google).
+2. Google Cloud Console → APIs & Services → Credentials → ce même client OAuth → **Authorized JavaScript origins** : ajouter `https://junikairou.github.io` (et `http://localhost:8081` pour le développement). C'est une liste différente des « redirect URIs » déjà remplis.
+
+
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface
