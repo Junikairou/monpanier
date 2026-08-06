@@ -9,6 +9,8 @@ import { ActionSheet } from '../../src/components/ActionSheet';
 import { DishForm, DishFormInitial } from '../../src/components/DishForm';
 import { createDish } from '../../src/data/dishes';
 import { parseRecipeText } from '../../src/lib/recipeImport';
+import { isOcrAvailable, readTextFromImage } from '../../src/lib/ocr';
+import { pickImage } from '../../src/data/dishPhoto';
 import { useUnsavedChangesGuard } from '../../src/lib/unsavedChangesGuard';
 import { fonts, radii } from '../../src/theme/tokens';
 
@@ -20,17 +22,57 @@ export default function ImporterRecette() {
   const [preview, setPreview] = useState<DishFormInitial | null>(null);
   const [initial, setInitial] = useState<DishFormInitial | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const [ocrPercent, setOcrPercent] = useState(0);
+  const [ocrError, setOcrError] = useState<string | null>(null);
   const guard = useUnsavedChangesGuard(dirty);
 
   if (!initial) {
     return (
       <Screen>
-        <ScreenHeader title="Importer une recette" subtitle="Colle le texte d'une recette (ingrédients + étapes)" onBack={() => router.back()} />
+        <ScreenHeader title="Importer une recette" subtitle="Depuis une photo, ou en collant le texte" onBack={() => router.back()} />
         <ScrollView contentContainerStyle={{ padding: 18, gap: 14 }}>
           <Text style={{ fontSize: 12.5, color: colors.inkSoft, lineHeight: 18 }}>
-            Pas d'IA ici : découpage simple à partir du texte collé. Fonctionne mieux si le texte a des titres "Ingrédients" et
+            Pas d'IA ici : découpage simple à partir du texte. Fonctionne mieux si le texte a des titres "Ingrédients" et
             "Étapes"/"Préparation". Tu pourras corriger le résultat avant d'enregistrer.
           </Text>
+
+          {isOcrAvailable() ? (
+            <View style={{ gap: 6 }}>
+              <Pill
+                label={ocrBusy ? `Lecture de la photo… ${ocrPercent}%` : '📷 Importer depuis une photo'}
+                variant="primary"
+                disabled={ocrBusy}
+                onPress={async () => {
+                  setOcrError(null);
+                  try {
+                    const asset = await pickImage();
+                    if (!asset) return;
+                    setOcrBusy(true);
+                    setOcrPercent(0);
+                    const read = await readTextFromImage(asset.uri, setOcrPercent);
+                    if (!read.trim()) {
+                      setOcrError("Aucun texte lisible trouvé sur cette photo. Essaie une photo plus nette, bien à plat et bien éclairée.");
+                      return;
+                    }
+                    setText((prev) => (prev.trim() ? `${prev}
+${read}` : read));
+                    setPreview(null);
+                  } catch (e: any) {
+                    setOcrError(e?.message ?? "Impossible de lire cette photo.");
+                  } finally {
+                    setOcrBusy(false);
+                  }
+                }}
+              />
+              <Text style={{ fontSize: 11, color: colors.inkFaint, lineHeight: 16 }}>
+                La photo est lue sur ton appareil : elle n'est envoyée nulle part. La première lecture télécharge l'outil de
+                reconnaissance (quelques Mo, connexion nécessaire une seule fois). Le texte lu apparaît ci-dessous : relis-le et
+                corrige avant d'analyser. Photo nette et bien cadrée = bien meilleur résultat.
+              </Text>
+              {ocrError ? <Text style={{ fontSize: 11.5, color: colors.danger }}>{ocrError}</Text> : null}
+            </View>
+          ) : null}
           <View
             style={{
               borderWidth: 1,

@@ -7,6 +7,7 @@ export type IngredientDraft = { name: string; quantity: string; unit: string; gr
 export interface DishFormInitial {
   name: string;
   emoji: string;
+  imageUrl: string | null;
   category: Category;
   courseType: CourseType;
   calories: string;
@@ -24,6 +25,7 @@ export interface DishFormInitial {
 export const EMPTY_DISH_FORM_INITIAL: DishFormInitial = {
   name: '',
   emoji: '🍽️',
+  imageUrl: null,
   category: 'rapide',
   courseType: 'plat',
   calories: '',

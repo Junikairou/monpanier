@@ -101,6 +101,7 @@ export interface NewDishInput {
   base_servings?: number;
   prep_minutes?: number | null;
   image_emoji: string;
+  image_url?: string | null;
   is_ready_made?: boolean;
   ingredients: { name: string; quantity: number; unit: string; grocery_category: string }[];
   steps: string[];
@@ -125,6 +126,7 @@ export async function createDish(userId: string, input: NewDishInput): Promise<D
       base_servings: input.base_servings ?? 4,
       prep_minutes: input.prep_minutes ?? null,
       image_emoji: input.image_emoji || '🍽️',
+      image_url: input.image_url ?? null,
       is_ready_made: input.is_ready_made ?? false,
     })
     .select()
@@ -168,6 +170,7 @@ export async function updateDish(id: string, input: NewDishInput): Promise<void>
       base_servings: input.base_servings ?? 4,
       prep_minutes: input.prep_minutes ?? null,
       image_emoji: input.image_emoji || '🍽️',
+      image_url: input.image_url ?? null,
       is_ready_made: input.is_ready_made ?? false,
     })
     .eq('id', id);
@@ -216,6 +219,7 @@ export async function copyDishToMyPlats(userId: string, dish: Dish): Promise<Dis
     base_servings: dish.base_servings,
     prep_minutes: dish.prep_minutes,
     image_emoji: dish.image_emoji || '🍽️',
+    image_url: dish.image_url,
     is_ready_made: dish.is_ready_made,
     ingredients: ingredients.map((i) => ({ name: i.name, quantity: i.quantity, unit: i.unit, grocery_category: i.grocery_category })),
     steps: steps.sort((a, b) => a.position - b.position).map((s) => s.instruction),

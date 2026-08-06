@@ -53,7 +53,7 @@ export default function Apparence() {
       <ScrollView contentContainerStyle={{ padding: 18 }}>
         <SectionLabel text="Thème" />
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-          {(['light', 'dark', 'auto', 'rose', 'bleu'] as const).map((t) => (
+          {(['light', 'dark', 'auto', 'rose', 'bleu', 'nb'] as const).map((t) => (
             <Pressable
               key={t}
               onPress={() => setPreference(t)}
@@ -66,11 +66,17 @@ export default function Apparence() {
                     : t === 'dark' ? '#1C2019'
                     : t === 'rose' ? '#D98A9C'
                     : t === 'bleu' ? '#6FA0C7'
+                    : t === 'nb' ? '#FFFFFF'
                     : colors.honey,
                 },
+                t === 'nb' ? { overflow: 'hidden' } : null,
               ]}
             >
               {t === 'auto' ? <Text style={{ fontSize: 10, color: colors.paper }}>A</Text> : null}
+              {/* Pastille moitié noire / moitié blanche pour le thème Noir & blanc */}
+              {t === 'nb' ? (
+                <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '50%', backgroundColor: '#111111' }} />
+              ) : null}
             </Pressable>
           ))}
         </View>

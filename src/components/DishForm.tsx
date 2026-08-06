@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, PanResponder, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, PanResponder, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from './ScaledText';
 import { useTheme } from '../theme/ThemeProvider';
 import { useTaxonomies } from '../lib/taxonomies';
@@ -11,6 +11,7 @@ import { EmojiPicker } from './EmojiPicker';
 import { IngredientPicker } from './IngredientPicker';
 import { ArticleEditModal } from './ArticleEditModal';
 import { NewDishInput } from '../data/dishes';
+import { pickAndUploadDishPhoto } from '../data/dishPhoto';
 import { TaxonomyItem } from '../data/taxonomies';
 import {
   CatalogIngredient,
@@ -141,6 +142,9 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
 
   const [name, setName] = useState(initial.name);
   const [emoji, setEmoji] = useState(initial.emoji);
+  const [imageUrl, setImageUrl] = useState<string | null>(initial.imageUrl);
+  const [visualMenuOpen, setVisualMenuOpen] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(false);
   const [category, setCategory] = useState<Category>(initial.category);
   const [courseType, setCourseType] = useState<CourseType>(initial.courseType);
   const [courseTypeMenuOpen, setCourseTypeMenuOpen] = useState(false);
@@ -247,12 +251,12 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
   useEffect(() => {
     if (!onDirtyChange) return;
     const current: DishFormInitial = {
-      name, emoji, category, courseType, calories, protein, carbs, fat, fiber,
+      name, emoji, imageUrl, category, courseType, calories, protein, carbs, fat, fiber,
       baseServings, prepMinutes, ingredients, steps, isReadyMade,
     };
     onDirtyChange(JSON.stringify(current) !== JSON.stringify(initial));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, emoji, category, courseType, calories, protein, carbs, fat, fiber, baseServings, prepMinutes, ingredients, steps, isReadyMade]);
+  }, [name, emoji, imageUrl, category, courseType, calories, protein, carbs, fat, fiber, baseServings, prepMinutes, ingredients, steps, isReadyMade]);
 
   const updateIngredient = (i: number, patch: Partial<IngredientDraft>) => {
     setIngredients((prev) => prev.map((ing, idx) => (idx === i ? { ...ing, ...patch } : ing)));
@@ -339,6 +343,7 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
         base_servings: Math.max(1, Number(baseServings) || 4),
         prep_minutes: isReadyMade ? null : prepMinutes.trim() ? Math.max(0, Number(prepMinutes) || 0) : null,
         image_emoji: emoji.trim() || '🍽️',
+        image_url: imageUrl,
         is_ready_made: isReadyMade,
         ingredients: effectiveIngredients
           .filter((i) => i.name.trim())
@@ -363,9 +368,18 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
     <ScrollView contentContainerStyle={{ padding: 18 }} scrollEnabled={stepDragIdx === null && ingDragIdx === null}>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
         <View style={{ marginBottom: 12 }}>
-          <Text style={[styles.label, { color: colors.inkSoft }]}>Emoji</Text>
-          <Pressable onPress={() => setEmojiPickerOpen(true)} style={[styles.emojiBox, { borderColor: colors.beigeDark, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ fontSize: 18 }}>{emoji || '🍽️'}</Text>
+          <Text style={[styles.label, { color: colors.inkSoft }]}>Photo</Text>
+          <Pressable
+            onPress={() => setVisualMenuOpen(true)}
+            style={[styles.emojiBox, { borderColor: colors.beigeDark, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }]}
+          >
+            {photoLoading ? (
+              <ActivityIndicator size="small" color={colors.forest} />
+            ) : imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : (
+              <Text style={{ fontSize: 18 }}>{emoji || '🍽️'}</Text>
+            )}
           </Pressable>
         </View>
         <View style={{ flex: 1 }}>
@@ -641,6 +655,32 @@ export function DishForm({ initial = EMPTY_DISH_FORM_INITIAL, submitLabel, onSub
       />
 
 
+      <ActionSheet
+        visible={visualMenuOpen}
+        title="Image du plat"
+        actions={[
+          {
+            label: imageUrl ? '📷 Changer la photo' : '📷 Ajouter une photo',
+            onPress: async () => {
+              setVisualMenuOpen(false);
+              setPhotoLoading(true);
+              try {
+                const url = await pickAndUploadDishPhoto(session!.user.id);
+                if (url) setImageUrl(url);
+              } catch (e: any) {
+                setError(e?.message ?? "Impossible d'ajouter la photo.");
+              } finally {
+                setPhotoLoading(false);
+              }
+            },
+          },
+          { label: '😀 Choisir un emoji', onPress: () => { setVisualMenuOpen(false); setEmojiPickerOpen(true); } },
+          ...(imageUrl
+            ? [{ label: "✕ Retirer la photo (revenir à l'emoji)", destructive: true, onPress: () => { setVisualMenuOpen(false); setImageUrl(null); } }]
+            : []),
+        ]}
+        onClose={() => setVisualMenuOpen(false)}
+      />
       <EmojiPicker visible={emojiPickerOpen} onSelect={setEmoji} onClose={() => setEmojiPickerOpen(false)} />
     </ScrollView>
   );

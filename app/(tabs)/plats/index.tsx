@@ -7,6 +7,7 @@ import { useTheme } from '../../../src/theme/ThemeProvider';
 import { Checkbox, Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../../../src/components/ui';
 import { ActionSheet } from '../../../src/components/ActionSheet';
 import { PullToRefresh } from '../../../src/components/PullToRefresh';
+import { DishThumb } from '../../../src/components/DishThumb';
 import { deleteDish, listDishes, listIngredientNamesByDish, listIngredientRayonByDish, seedDemoDishes, setDishPublic, updateDishClassification } from '../../../src/data/dishes';
 import { useTaxonomies } from '../../../src/lib/taxonomies';
 import { Category, Dish, GroceryCategory } from '../../../src/types/models';
@@ -252,8 +253,8 @@ export default function PlatsIndex() {
                 style={[styles.row, cardShadow, { backgroundColor: colors.paper, shadowColor: colors.ink }]}
               >
                 {manageMode ? <Checkbox checked={selected.has(item.id)} onPress={() => toggleSelect(item.id)} /> : null}
-                <View style={[styles.thumb, { backgroundColor: colors.sagePale }]}>
-                  <Text style={{ fontSize: 22 }}>{item.image_emoji ?? '🍽️'}</Text>
+                <View style={[styles.thumb, { backgroundColor: colors.sagePale, overflow: 'hidden' }]}>
+                  <DishThumb imageUrl={item.image_url} emoji={item.image_emoji} size={44} radius={0} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
@@ -326,7 +327,7 @@ export default function PlatsIndex() {
         actions={[
           ...(guestMode ? [] : [{ label: '📖 Piocher dans le catalogue', onPress: () => router.push('/catalogue') }]),
           { label: '✏️ Créer une nouvelle recette', onPress: () => router.push('/(tabs)/plats/new') },
-          { label: '📋 Importer un texte de recette', onPress: () => router.push('/plat/importer') },
+          { label: '📋 Importer une recette (photo ou texte)', onPress: () => router.push('/plat/importer') },
           { label: '🛒 Ajouter à Alimentation', onPress: () => router.push({ pathname: '/(tabs)/plats/new', params: { readyMade: '1' } }) },
         ]}
         onClose={() => setAddMenuOpen(false)}

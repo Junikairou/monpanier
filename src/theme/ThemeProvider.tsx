@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { bleuColors, darkColors, lightColors, roseColors, ThemeColors } from './tokens';
+import { bleuColors, darkColors, lightColors, nbColors, roseColors, ThemeColors } from './tokens';
 
-type ThemePreference = 'light' | 'dark' | 'auto' | 'rose' | 'bleu';
+export type ThemePreference = 'light' | 'dark' | 'auto' | 'rose' | 'bleu' | 'nb';
+const THEME_PREFERENCES: ThemePreference[] = ['light', 'dark', 'auto', 'rose', 'bleu', 'nb'];
 export type TextScale = 1 | 1.15 | 1.3;
 
 type ThemeContextValue = {
@@ -32,8 +33,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored === 'light' || stored === 'dark' || stored === 'auto' || stored === 'rose' || stored === 'bleu') {
-        setPreferenceState(stored);
+      if (stored && (THEME_PREFERENCES as string[]).includes(stored)) {
+        setPreferenceState(stored as ThemePreference);
       }
     });
     AsyncStorage.getItem(TEXT_SCALE_KEY).then((stored) => {
@@ -61,7 +62,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       ? roseColors
       : preference === 'bleu'
         ? bleuColors
-        : lightColors;
+        : preference === 'nb'
+          ? nbColors
+          : lightColors;
 
   const value = useMemo(
     () => ({ colors, scheme, preference, setPreference, textScale, setTextScale }),

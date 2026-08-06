@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../src/components/ScaledText';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../src/lib/auth';
@@ -150,7 +150,11 @@ export default function DishDetail() {
       />
       <ScrollView contentContainerStyle={{ padding: 18 }}>
         <View style={[styles.hero, { backgroundColor: colors.sagePale }]}>
-          <Text style={{ fontSize: 46 }}>{dish.image_emoji ?? '🍽️'}</Text>
+          {dish.image_url ? (
+            <Image source={{ uri: dish.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          ) : (
+            <Text style={{ fontSize: 46 }}>{dish.image_emoji ?? '🍽️'}</Text>
+          )}
         </View>
         {authorName ? (
           <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkFaint, marginBottom: 4 }}>🌍 Par {authorName}</Text>
@@ -430,7 +434,7 @@ export default function DishDetail() {
 }
 
 const styles = StyleSheet.create({
-  hero: { height: 120, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  hero: { height: 160, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   tabStrip: { flexDirection: 'row', gap: 20, borderBottomWidth: 1, marginBottom: 14, paddingBottom: 8 },
   tabText: { fontSize: 13 },
   ingredientRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9, borderBottomWidth: 1, borderStyle: 'dashed' },

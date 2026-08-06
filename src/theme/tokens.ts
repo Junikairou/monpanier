@@ -70,6 +70,27 @@ export const bleuColors = {
   danger: '#E07A6A',
 };
 
+// Thème « Noir & blanc » : uniquement des gris neutres (aucune teinte colorée),
+// contrastes renforcés. Seul `danger` garde une nuance très sombre plutôt que
+// rouge, pour rester cohérent avec le reste.
+export const nbColors = {
+  cream: '#F4F4F4',
+  paper: '#FFFFFF',
+  forest: '#1A1A1A',
+  forestDark: '#000000',
+  sage: '#DCDCDC',
+  sagePale: '#F0F0F0',
+  beige: '#E4E4E4',
+  beigeDark: '#B5B5B5',
+  honey: '#4A4A4A',
+  honeyPale: '#ECECEC',
+  ink: '#111111',
+  inkSoft: '#4F4F4F',
+  inkFaint: '#8A8A8A',
+  line: '#DDDDDD',
+  danger: '#000000',
+};
+
 export type ThemeColors = typeof lightColors;
 
 export const radii = {

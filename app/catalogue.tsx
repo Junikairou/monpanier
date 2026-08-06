@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../src/lib/auth';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { Card, Checkbox, Chip, LoadingBlock, Pill, Screen, ScreenHeader } from '../src/components/ui';
+import { DishThumb } from '../src/components/DishThumb';
 import { createDish, DEMO_DISHES, listDishes, listIngredients, listPublicDishes, listRecipeSteps, setDishPublic } from '../src/data/dishes';
 import { getMyHouseholdId } from '../src/data/household';
 import { getDisplayNamesByIds } from '../src/data/profile';
@@ -113,6 +114,7 @@ export default function Catalogue() {
         base_servings: dish.base_servings,
         prep_minutes: dish.prep_minutes,
         image_emoji: dish.image_emoji || '🍽️',
+        image_url: dish.image_url,
         ingredients: ingredients.map((i) => ({ name: i.name, quantity: i.quantity, unit: i.unit, grocery_category: i.grocery_category })),
         steps: steps.sort((a, b) => a.position - b.position).map((s) => s.instruction),
       });
@@ -211,8 +213,8 @@ export default function Catalogue() {
                 .filter((d) => d.is_public)
                 .map((item) => (
                   <Card key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
-                    <View style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.sagePale }}>
-                      <Text style={{ fontSize: 20 }}>{item.image_emoji ?? '🍽️'}</Text>
+                    <View style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.sagePale }}>
+                      <DishThumb imageUrl={item.image_url} emoji={item.image_emoji} size={44} radius={0} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>
@@ -245,8 +247,8 @@ export default function Catalogue() {
                       onPress={() => router.push({ pathname: '/plat/[id]', params: { id: item.id } })}
                       style={{ flexDirection: 'row', alignItems: 'center', gap: 11, flex: 1 }}
                     >
-                      <View style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.sagePale }}>
-                        <Text style={{ fontSize: 20 }}>{item.image_emoji ?? '🍽️'}</Text>
+                      <View style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.sagePale }}>
+                        <DishThumb imageUrl={item.image_url} emoji={item.image_emoji} size={44} radius={0} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.honey, fontFamily: fonts.bodySemiBold }}>

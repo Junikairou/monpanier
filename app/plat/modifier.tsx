@@ -18,6 +18,7 @@ export default function ModifierDish() {
       setInitial({
         name: dish.name,
         emoji: dish.image_emoji ?? '🍽️',
+        imageUrl: dish.image_url,
         category: dish.category,
         courseType: dish.course_type,
         calories: dish.calories != null ? String(dish.calories) : '',

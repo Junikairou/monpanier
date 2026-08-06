@@ -99,7 +99,7 @@ export async function createDish(input: NewDishInput): Promise<Dish> {
     base_servings: input.base_servings ?? 4,
     prep_minutes: input.prep_minutes ?? null,
     image_emoji: input.image_emoji || '🍽️',
-    image_url: null,
+    image_url: input.image_url ?? null,
     is_ready_made: input.is_ready_made ?? false,
     created_at: new Date().toISOString(),
   };
@@ -140,6 +140,7 @@ export async function updateDish(id: string, input: NewDishInput): Promise<void>
     base_servings: input.base_servings ?? 4,
     prep_minutes: input.prep_minutes ?? null,
     image_emoji: input.image_emoji || '🍽️',
+    image_url: input.image_url ?? null,
     is_ready_made: input.is_ready_made ?? false,
   };
   await writeTable(T.dishes, dishes);

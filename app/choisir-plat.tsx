@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../src/lib/auth';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { Chip, EmptyState, LoadingBlock, Pill, Screen, ScreenHeader } from '../src/components/ui';
+import { DishThumb } from '../src/components/DishThumb';
 import { listDishes } from '../src/data/dishes';
 import { replaceMeal, setMeal } from '../src/data/planning';
 import { replaceTemplateMeal, setTemplateMeal } from '../src/data/template';
@@ -138,8 +139,8 @@ export default function ChoisirPlat() {
               disabled={saving !== null}
               style={[styles.row, { backgroundColor: colors.paper, borderColor: colors.line, opacity: saving && saving !== item.id ? 0.5 : 1 }]}
             >
-              <View style={[styles.thumb, { backgroundColor: colors.sagePale }]}>
-                <Text style={{ fontSize: 22 }}>{item.image_emoji ?? '🍽️'}</Text>
+              <View style={[styles.thumb, { backgroundColor: colors.sagePale, overflow: 'hidden' }]}>
+                <DishThumb imageUrl={item.image_url} emoji={item.image_emoji} size={44} radius={0} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.6, color: colors.honey, fontFamily: fonts.bodySemiBold }}>

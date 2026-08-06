@@ -417,12 +417,29 @@ Vérifié en navigateur automatisé : repli sans identifiant client, repli scrip
 1. GitHub → Settings → Secrets and variables → Actions → nouveau secret `EXPO_PUBLIC_GOOGLE_CLIENT_ID` = l'identifiant client **Web** Google (celui déjà collé dans Supabase → Authentication → Google).
 2. Google Cloud Console → APIs & Services → Credentials → ce même client OAuth → **Authorized JavaScript origins** : ajouter `https://junikairou.github.io` (et `http://localhost:8081` pour le développement). C'est une liste différente des « redirect URIs » déjà remplis.
 
+## Chantier en cours (2026-08-06 — photos de recette, import par photo, thème noir & blanc)
+
+1. ✅ **Photo pour chaque recette (l'emoji reste en secours)** — dans le formulaire de plat, le carré à gauche du nom s'appelle maintenant "Photo" : appuyer dessus ouvre un menu « Ajouter/Changer la photo » (galerie de l'appareil) / « Choisir un emoji » / « Retirer la photo ». Une recette sans photo continue d'afficher son emoji exactement comme avant, donc **rien ne change pour les recettes existantes**. La photo s'affiche partout où l'emoji apparaissait : Tous les plats, Sélecteur de plat (planning), Catalogue de recettes, et en grand en haut de la fiche recette (bandeau passé de 120 à 160 px).
+   - Les photos sont **réduites automatiquement avant envoi** (900 px max, JPEG) : une photo de téléphone de 5 Mo devient ~150 Ko, pour ne pas saturer le stockage ni la connexion (`src/lib/imageResize.ts`).
+   - Stockage : bucket Supabase `dish-photos` (public en lecture, chacun n'écrit que dans son propre dossier). En **mode invité**, la photo reste sur l'appareil (enregistrée dans le stockage local, rien n'est envoyé). Les photos suivent la recette quand elle est copiée depuis le catalogue ou lors de la bascule invité → vrai compte.
+   - Nouveaux fichiers : `src/data/dishPhoto.ts`, `src/components/DishThumb.tsx`, `src/lib/imageResize.ts`. **Migration 028 à exécuter** (bucket + règles d'accès).
+   - **Limite connue** : retirer la photo d'une recette la décroche de la recette mais **ne supprime pas le fichier** du stockage Supabase (il reste inutilisé). À nettoyer plus tard si le volume devient gênant.
+2. ✅ **Import de recette à partir d'une photo** — "Tous les plats" → "+ Nouveau" → "📋 Importer une recette (photo ou texte)" : nouveau bouton "📷 Importer depuis une photo". La photo (page de livre, capture d'écran, fiche recette imprimée) est **lue sur l'appareil**, le texte trouvé remplit la zone de texte, puis passe dans l'analyseur de recette déjà existant (nom, nombre de personnes, temps, ingrédients, étapes) — avec l'aperçu et la correction manuelle habituels avant enregistrement.
+   - Technique : `tesseract.js` (reconnaissance de texte gratuite, dans le navigateur — **pas d'IA, pas de clé API, la photo ne quitte pas l'appareil**). L'outil de reconnaissance (quelques Mo) se télécharge à la **première** utilisation seulement, donc une connexion est nécessaire cette fois-là. `src/lib/ocr.ts`.
+   - **Web/PWA uniquement** (le moteur est du WebAssembly navigateur) : le bouton est automatiquement masqué sur une future app mobile native.
+   - **Vérifié de bout en bout** : image de recette de test → texte lu correctement → découpage correct (nom « Gratin dauphinois », 6 personnes, 25 min, 4 ingrédients avec unités et conversion cl→ml, 4 étapes).
+   - **Limite connue** : qualité dépendante de la photo. Texte net, à plat, bien éclairé = très bon ; photo floue, de travers, manuscrite ou sur fond chargé = résultat à corriger beaucoup à la main. Un message le dit dans l'écran. Si ça ne suffit pas, l'option « IA Claude » reste possible plus tard (nécessiterait une clé API payante + un petit serveur).
+3. ✅ **Thème « Noir & blanc »** — 6ᵉ pastille dans Plus → Préférences → Apparence (à côté de Clair/Sombre/Auto/Rose/Bleu), pastille moitié noire moitié blanche. Uniquement des gris neutres, contrastes renforcés. Les autres thèmes ne changent pas. `nbColors` dans `src/theme/tokens.ts`. **Vérifié dans le navigateur** (thème appliqué et mémorisé).
+
+**Migration 028 à exécuter** (SQL envoyé dans le chat).
+
+**Vérifications faites** : compilation TypeScript sans erreur, build web complet sans erreur, app lancée en mode invité (thème N&B testé et appliqué, formulaire de plat avec le carré "Photo", écran d'import avec le bouton photo). **Le choix d'une photo dans la galerie n'a pas pu être déclenché depuis l'agent** (ça ouvre la fenêtre de fichiers du système) — à vérifier toi-même.
 
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface
 - Icône PWA personnalisée (branding Mijoté)
-- Import de recette par **lien ou photo** — pas de clé API Anthropic pour l'analyse ; seul l'import par **texte collé** existe (amélioré le 2026-08-02, voir plus haut)
+- Import de recette par **lien** (URL d'un site de cuisine) — toujours pas fait. L'import par **texte collé** et par **photo** existent (voir 2026-08-06)
 - Amis : ajustement automatique des portions de l'hôte, notifications d'invitation
 - Mode hors ligne : écriture hors ligne limitée à la liste de courses pour l'instant (planning/plats en lecture seule tant que la connexion est coupée) — voir limites au 2026-08-02
 - Build natif Android pour le Play Store — prévu **plus tard**, pas commencé (nécessite un compte Google Play Developer, ~25$ une fois)
@@ -435,6 +452,7 @@ Vérifié en navigateur automatisé : repli sans identifiant client, repli scrip
 - `app.json` : `experiments.baseUrl = "/monpanier"` — nécessaire pour que les chemins fonctionnent sous `github.io/monpanier`. Ne pas retirer.
 - Redirection Google OAuth : ne jamais utiliser `window.location.origin` seul (perd le `/monpanier/`) — voir la logique dans `src/lib/auth.tsx`.
 - Le thème (clair/sombre/auto/rose/bleu) **et la taille du texte** sont stockés **localement sur l'appareil uniquement** (AsyncStorage) — la colonne `profiles.theme_preference` en base existe mais n'est pas lue/écrite par l'app (pas de synchro multi-appareil pour l'instant).
+- Photos de recette : bucket Supabase Storage `dish-photos` (public en lecture), créé par la migration 028 — un fichier par photo (`<user_id>/<horodatage>.jpg`), jamais supprimé automatiquement.
 - Photo de profil : bucket Supabase Storage `avatars` (public en lecture), créé par la migration 016 — un fichier par utilisateur (`<user_id>/avatar.<ext>`), écrasé à chaque nouvel upload.
 - **À vérifier dans le dashboard Supabase** (Authentication → URL Configuration) après le renommage : mettre à jour les Redirect URLs si `mijote://` ou `/mijote/` y étaient enregistrés en dur (sinon Google OAuth peut casser).
 - Outils installés sur la machine : `gh` (GitHub CLI, connecté), `vercel` CLI (plus utilisé mais toujours installé), Node.js, GitHub Pages CLI n/a.

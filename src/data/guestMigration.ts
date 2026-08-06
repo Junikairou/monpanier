@@ -57,6 +57,7 @@ export async function migrateGuestDataToAccount(userId: string): Promise<void> {
         base_servings: d.base_servings,
         prep_minutes: d.prep_minutes,
         image_emoji: d.image_emoji,
+        image_url: d.image_url,
         is_ready_made: d.is_ready_made,
       })),
     );
