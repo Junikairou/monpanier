@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { clearAllGuestData } from './localTable';
 import { enterGuestMode as enterGuestModeStorage, exitGuestMode as exitGuestModeStorage, GUEST_USER_ID, isGuestModeActive } from './guest';
+import { consumeOAuthPending, markOAuthPending, oauthCallback, OAUTH_NO_SESSION_MESSAGE } from './authCallback';
 
 // Session locale fictive utilisée en mode invité : permet à tout le reste de
 // l'app (qui lit session.user.id / session.user.email) de fonctionner sans
@@ -14,6 +15,9 @@ type AuthContextValue = {
   session: Session | null;
   initializing: boolean;
   guestMode: boolean;
+  /** Message à afficher sur l'écran de connexion après un retour Google raté. */
+  authNotice: string | null;
+  clearAuthNotice: () => void;
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (email: string, password: string) => Promise<string | null>;
   signInWithGoogle: () => Promise<string | null>;
@@ -30,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [guestMode, setGuestMode] = useState(false);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
   // Le listener onAuthStateChange s'enregistre une seule fois (effet à deps
   // vides) : sans ref, sa closure garderait à jamais la valeur de guestMode
   // au moment du montage (false), et l'événement "INITIAL_SESSION" que
@@ -38,24 +43,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const guestModeRef = useRef(false);
 
   useEffect(() => {
-    isGuestModeActive().then((active) => {
-      if (active) {
+    const boot = async () => {
+      if (await isGuestModeActive()) {
         guestModeRef.current = true;
         setGuestMode(true);
         setSession(GUEST_SESSION);
         setInitializing(false);
         return;
       }
-      supabase.auth.getSession().then(({ data }) => {
-        setSession(data.session);
-        setInitializing(false);
-      });
-    });
+
+      let current = (await supabase.auth.getSession()).data.session;
+
+      // Filet de sécurité : l'URL de retour portait bien des jetons mais
+      // supabase-js ne les a pas repris (fragment consommé trop tard, page
+      // servie par le service worker, retour dans un autre onglet…).
+      if (!current && oauthCallback.hasTokens) {
+        const { data } = await supabase.auth.setSession({
+          access_token: oauthCallback.accessToken!,
+          refresh_token: oauthCallback.refreshToken!,
+        });
+        current = data.session ?? null;
+      }
+
+      setSession(current);
+      setInitializing(false);
+
+      // Diagnostic du retour Google : sans ça, un échec est totalement muet et
+      // se traduit juste par "on revient sur la page de connexion".
+      const wasPending = consumeOAuthPending();
+      if (current) return;
+      if (oauthCallback.error) setAuthNotice(oauthCallback.error);
+      else if (wasPending) setAuthNotice(OAUTH_NO_SESSION_MESSAGE);
+    };
+    boot();
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (guestModeRef.current) return;
       setSession(newSession);
+      if (newSession) setAuthNotice(null);
     });
     return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // Sur web (et surtout en PWA installée), la connexion Google se termine
+  // souvent dans un onglet de navigateur distinct de l'app : la session est
+  // bien écrite dans le stockage partagé, mais l'app restée ouverte en arrière
+  // -plan garde son état "pas connecté" et réaffiche l'écran de connexion. On
+  // relit donc la session à chaque retour au premier plan.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    let disposed = false;
+    const recheck = async () => {
+      if (disposed || guestModeRef.current) return;
+      const { data } = await supabase.auth.getSession();
+      if (disposed || !data.session) return;
+      setSession((prev) => prev ?? data.session);
+      setAuthNotice(null);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') recheck();
+    };
+    window.addEventListener('focus', recheck);
+    window.addEventListener('pageshow', recheck);
+    window.addEventListener('storage', recheck);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      disposed = true;
+      window.removeEventListener('focus', recheck);
+      window.removeEventListener('pageshow', recheck);
+      window.removeEventListener('storage', recheck);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, []);
 
   const enterGuestMode = async () => {
@@ -108,13 +166,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       Platform.OS === 'web'
         ? `${window.location.origin}${window.location.pathname.startsWith('/monpanier') ? '/monpanier/' : '/'}`
         : 'monpanier://';
+    setAuthNotice(null);
+    markOAuthPending();
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo },
+        options: {
+          redirectTo,
+          // Force le choix du compte : sans ça, Google réutilise silencieusement
+          // la dernière session et on ne voit jamais l'échec éventuel.
+          queryParams: { prompt: 'select_account' },
+        },
       });
-      return error ? mapAuthError(error.message) : null;
+      if (error) {
+        consumeOAuthPending();
+        return mapAuthError(error.message);
+      }
+      return null;
     } catch (e: any) {
+      consumeOAuthPending();
       return mapAuthError(e?.message);
     }
   };
@@ -146,6 +216,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         initializing,
         guestMode,
+        authNotice,
+        clearAuthNotice: () => setAuthNotice(null),
         signIn,
         signUp,
         signInWithGoogle,

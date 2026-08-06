@@ -381,6 +381,22 @@ Objectif de l'utilisateur : permettre à d'autres personnes d'utiliser l'app en 
 
 **Migrations pour ce lot : aucune** (changements d'interface uniquement, hors point 5 à venir).
 
+## Chantier en cours (2026-08-06, connexion Google : retour muet sur l'écran de connexion)
+
+Symptôme rapporté (Android, app en ligne) : clic sur "Continuer avec Google" → choix du compte Google → retour sur l'écran de connexion, **sans aucun message**, toujours déconnecté.
+
+1. ✅ **L'échec n'est plus muet** — `src/lib/authCallback.ts` (nouveau) photographie l'URL de retour **avant** la création du client Supabase (importé en tête de `src/lib/supabase.ts`), car supabase-js efface le fragment `#...` dès son initialisation. Si Supabase renvoie `#error=...&error_description=...`, l'écran de connexion affiche maintenant un message clair et ciblé (adresse de retour non autorisée, fournisseur Google désactivé, erreur base de données à l'inscription, connexion annulée…). Auparavant l'erreur était lue par personne : l'app ne trouvait pas de session et réaffichait l'écran de connexion, d'où le retour silencieux.
+2. ✅ **Cas "aucun jeton, aucune erreur"** — un marqueur `monpanier.oauth.pending` est posé dans le localStorage juste avant la redirection vers Google. Si l'app se recharge avec ce marqueur (< 10 min), sans session ni erreur dans l'URL, elle affiche "La connexion Google ne s'est pas terminée…" avec la marche à suivre. C'est le cas typique du **fragment `#access_token=...` perdu** quand Android relance la PWA installée depuis le navigateur.
+3. ✅ **Session récupérée quand elle arrive dans un autre contexte** — `src/lib/auth.tsx` relit la session à chaque retour au premier plan (`focus`, `pageshow`, `visibilitychange`, `storage`). En PWA installée, la connexion Google se termine souvent dans un onglet Chrome distinct : la session est bien écrite dans le stockage partagé (même origine, même profil), mais l'app restée ouverte en arrière-plan gardait à jamais son état "pas connecté". Vérifié en navigateur : app sur l'écran de connexion + session écrite par un autre contexte + retour au premier plan → bascule automatique sur le planning.
+4. ✅ **Filet de sécurité sur les jetons** — si l'URL de retour contient bien `access_token`/`refresh_token` mais que supabase-js ne les a pas repris, `AuthProvider` appelle `setSession()` lui-même au démarrage.
+5. ✅ **`prompt=select_account`** ajouté à la demande Google : le choix du compte est toujours proposé (sinon Google réutilise silencieusement la dernière session et l'échec éventuel est invisible).
+6. ⚠️ **Reste à vérifier côté tableau de bord (l'agent n'y a pas accès)** — le correctif rend la cause **visible**, il ne la supprime pas si elle est côté serveur :
+   - Supabase → Authentication → URL Configuration : `https://junikairou.github.io/monpanier/` doit figurer **exactement** (slash final) dans "Redirect URLs", et "Site URL" doit pointer sur la même adresse.
+   - Google Cloud Console → identifiants OAuth : `https://kjltmojlewrnwimzskgj.supabase.co/auth/v1/callback` doit être dans les "URI de redirection autorisés".
+   - Supabase → Authentication → Logs : en cas d'"erreur base de données", c'est le déclencheur `on_auth_user_created` qui échoue à l'inscription Google.
+
+**Aucune migration pour ce lot.**
+
 ## Pas fait / en attente
 
 - Traduction anglaise complète de l'interface

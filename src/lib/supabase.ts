@@ -1,4 +1,7 @@
 import 'react-native-url-polyfill/auto';
+// Doit rester importé AVANT createClient() : ce module photographie l'URL de
+// retour de la connexion Google, que supabase-js efface dès son initialisation.
+import './authCallback';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';

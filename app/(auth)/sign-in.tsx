@@ -10,7 +10,7 @@ import { fonts } from '../../src/theme/tokens';
 
 export default function SignIn() {
   const { colors } = useTheme();
-  const { session, signIn, signInWithGoogle, enterGuestMode } = useAuth();
+  const { session, signIn, signInWithGoogle, enterGuestMode, authNotice, clearAuthNotice } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -18,8 +18,13 @@ export default function SignIn() {
 
   if (session) return <Redirect href="/(tabs)/planning" />;
 
+  // authNotice = échec du retour de connexion Google (l'app revient sur cet
+  // écran sans session) ; sans ça l'échec serait totalement silencieux.
+  const shownError = error ?? authNotice;
+
   const onSubmit = async () => {
     setError(null);
+    clearAuthNotice();
     setLoading(true);
     const err = await signIn(email.trim(), password);
     setLoading(false);
@@ -64,12 +69,18 @@ export default function SignIn() {
           placeholder="••••••••"
         />
 
-        {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
+        {shownError ? <Text style={[styles.error, { color: colors.danger }]}>{shownError}</Text> : null}
 
         <Pill label={loading ? 'Connexion…' : 'Se connecter'} variant="primary" onPress={onSubmit} disabled={loading} />
 
         <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 14 }}>ou</Text>
-        <Pill label="Continuer avec Google" onPress={() => signInWithGoogle().then((e) => e && setError(e))} />
+        <Pill
+          label="Continuer avec Google"
+          onPress={() => {
+            setError(null);
+            signInWithGoogle().then((e) => e && setError(e));
+          }}
+        />
 
         <Link href="/(auth)/sign-up" style={[styles.link, { color: colors.forest }]}>
           Pas de compte ? Créer un profil

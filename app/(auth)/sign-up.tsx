@@ -9,7 +9,7 @@ import { fonts } from '../../src/theme/tokens';
 
 export default function SignUp() {
   const { colors } = useTheme();
-  const { session, signUp, signInWithGoogle } = useAuth();
+  const { session, signUp, signInWithGoogle, authNotice, clearAuthNotice } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -19,9 +19,13 @@ export default function SignUp() {
 
   if (session) return <Redirect href="/(tabs)/planning" />;
 
+  // authNotice = échec du retour de connexion Google (voir src/lib/authCallback.ts).
+  const shownError = error ?? authNotice;
+
   const onSubmit = async () => {
     setError(null);
     setNotice(null);
+    clearAuthNotice();
     if (password.length < 6) {
       setError('Le mot de passe doit contenir au moins 6 caractères.');
       return;
@@ -71,13 +75,19 @@ export default function SignUp() {
           placeholder="Retape le même mot de passe"
         />
 
-        {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
+        {shownError ? <Text style={[styles.error, { color: colors.danger }]}>{shownError}</Text> : null}
         {notice ? <Text style={[styles.error, { color: colors.forest }]}>{notice}</Text> : null}
 
         <Pill label={loading ? 'Création…' : 'Créer mon profil'} variant="primary" onPress={onSubmit} disabled={loading} />
 
         <Text style={{ textAlign: 'center', fontSize: 11, color: colors.inkSoft, marginVertical: 14 }}>ou</Text>
-        <Pill label="Continuer avec Google" onPress={() => signInWithGoogle().then((e) => e && setError(e))} />
+        <Pill
+          label="Continuer avec Google"
+          onPress={() => {
+            setError(null);
+            signInWithGoogle().then((e) => e && setError(e));
+          }}
+        />
 
         <Link href="/(auth)/sign-in" style={[styles.link, { color: colors.forest }]}>
           Déjà un compte ? Se connecter
