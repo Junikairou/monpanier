@@ -123,7 +123,6 @@ function WebFrame({ children, onLayout }: { children: React.ReactNode; onLayout:
           flex: 1,
           width: '100%',
           maxWidth: MAX_WIDTH,
-          // @ts-expect-error web-only shadow
           boxShadow: '0 0 40px rgba(0,0,0,0.15)',
         }}
       >

@@ -1,4 +1,13 @@
--- Mijoté — schéma de base de données
+-- Mon Panier — schéma de base de données, ÉTAT INITIAL UNIQUEMENT
+--
+-- ATTENTION : ce fichier décrit la base telle qu'elle était à la création du
+-- projet. Il ne reflète PAS le schéma actuel (foyers, taxonomies
+-- personnalisées, catalogue, amis, photos de plat… sont arrivés ensuite).
+--
+-- Pour repartir d'une base vide : exécuter ce fichier, PUIS tous les fichiers
+-- de supabase/migrations/ dans l'ordre numérique (001 à 029).
+-- Sur une base déjà en service, n'exécuter que les migrations manquantes.
+--
 -- À exécuter dans Supabase : Dashboard > SQL Editor > New query > coller > Run
 
 create extension if not exists "uuid-ossp";
