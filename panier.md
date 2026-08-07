@@ -397,6 +397,23 @@ Symptôme rapporté (Android, app en ligne) : clic sur "Continuer avec Google" �
 
 **Aucune migration pour ce lot.**
 
+### Cause racine trouvée le 2026-08-06 (soir) : le déclencheur d'inscription
+
+Une fois le site enfin publié (voir plus bas), le message d'erreur que j'avais ajouté a livré le fin mot : **« Database error saving new user »**. La connexion Google ne renvoyait rien parce que **Supabase n'arrivait pas à créer le compte** : le déclencheur `on_auth_user_created` échouait, donc l'inscription était annulée et l'app se retrouvait sans session. Ni Google, ni la PWA, ni la redirection n'étaient en cause au bout du compte.
+
+`supabase/migrations/029_fix_signup_trigger.sql` (à exécuter dans le SQL Editor) reprend la fonction de la migration 020, données créées inchangées, et corrige :
+1. `search_path` fixé explicitement à `public, extensions` — le déclencheur s'exécute sous `supabase_auth_admin`, dont le `search_path` ne contient pas forcément `public`, si bien que les insertions non qualifiées (`households`, `household_members`, `dish_categories`…) ne trouvaient plus leurs tables ;
+2. toutes les tables qualifiées par leur schéma ;
+3. pseudo de repli si le fournisseur ne renvoie pas d'adresse e-mail.
+
+Également : `mapAuthError` ne peut plus afficher `{}` — un corps d'erreur vide donne désormais un message lisible, et les erreurs « database error » sont nommées explicitement.
+
+### Déploiement de secours (2026-08-06) — dépôt `panier`
+
+GitHub n'attribuait plus aucune machine au dépôt `monpanier` (jobs annulés après 15 min, `runner_id: 0`), y compris au job interne de GitHub Pages. Cause jamais élucidée, non résolue par la suppression des budgets de facturation. Le site a donc été construit localement et publié sur un second dépôt, `Junikairou/panier` (branche `main`, Pages en mode « Deploy from a branch »), à l'adresse `https://junikairou.github.io/panier/`.
+
+Conséquence dans le code : le sous-dossier du site n'est plus écrit en dur (`src/lib/basePath.ts`), il est déduit au chargement depuis l'adresse du bundle. `app.json` reste réglé sur `/monpanier` — à basculer sur `/panier` si ce dépôt devient définitif.
+
 ### Cause confirmée le 2026-08-06 (test utilisateur) et vraie correction
 
 Test décisif : la connexion Google lancée **depuis Chrome** (adresse `/auth/v1/authorize` appelée à la main) bascule sur **l'application installée**, qui s'ouvre… sur l'écran de connexion. Réglages Supabase vérifiés par l'utilisateur et corrects (Site URL `https://junikairou.github.io/monpanier/`, Redirect URLs `https://junikairou.github.io/monpanier/**` et `http://localhost:8081/**`).

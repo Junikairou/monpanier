@@ -251,6 +251,20 @@ function mapAuthError(message?: string): string {
   if (message.includes('Failed to fetch') || message.includes('Network')) {
     return "Connexion impossible : le serveur n'a pas répondu (vérifie ta connexion internet).";
   }
+  // Échec de création du compte côté base : le déclencheur on_auth_user_created
+  // n'a pas pu créer le profil et le foyer, donc Supabase annule l'inscription.
+  if (/database error|unexpected_failure/i.test(message)) {
+    return (
+      "Connexion impossible : le serveur n'a pas réussi à créer le compte " +
+      '(erreur base de données à l\'inscription — déclencheur "on_auth_user_created"). ' +
+      'À corriger côté Supabase.'
+    );
+  }
+  // Certaines erreurs serveur remontent un corps vide ("{}") : sans ce garde-fou,
+  // l'écran de connexion affichait littéralement "{}".
+  if (/^\s*(\{\s*\}|\[\s*\]|null|undefined)\s*$/.test(message)) {
+    return "Connexion impossible : le serveur a répondu par une erreur sans détail. Regarde les journaux Authentication de Supabase.";
+  }
   return message;
 }
 
