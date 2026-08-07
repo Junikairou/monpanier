@@ -3,7 +3,8 @@
 Chaque fichier de `migrations/` est un changement de base à exécuter **une seule
 fois**, dans l'ordre des numéros, via le SQL Editor de Supabase.
 
-- **Base neuve** : exécuter `schema.sql`, puis les migrations `002` à `029` dans l'ordre.
+- **Base neuve** : exécuter `schema.sql`, puis les migrations `002` à `030` dans l'ordre.
+  (La `030` ne fait que reprendre 007, 008 et 028 : sans effet si elles sont déjà passées.)
 - **Base en service** : n'exécuter que celles qui manquent (les dernières).
 - Il n'y a pas de migration `001` : c'est `schema.sql` qui tient ce rôle.
 
@@ -42,6 +43,7 @@ d'œil au lieu de « Untitled query » ou « 025 ».
 | `027_ready_made_dishes.sql` | `027 — plats tout prêts` | Surgelés et plats achetés en l'état : pas de recette, un seul article en courses. |
 | `028_dish_photos.sql` | `028 — photos de recette` | Stockage des photos de plat, en lecture publique et en écriture réservée à leur propriétaire. |
 | `029_fix_signup_trigger.sql` | `029 — répare la création de compte` | Corrige « Database error saving new user » : la fonction qui crée profil et foyer ne trouvait plus ses tables. |
+| `030_rattrapage_007_008_028.sql` | `030 — rattrapage 007, 008, 028` | Regroupe trois migrations jamais exécutées : thèmes rose/bleu, colonne `show_balance_hint` (bloquait le questionnaire d'accueil), photos de recette. |
 
 ## Le déclencheur de création de compte
 

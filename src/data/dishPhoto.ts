@@ -22,7 +22,17 @@ export async function pickAndUploadDishPhoto(userId: string): Promise<string | n
     upsert: true,
     contentType: blob.type || 'image/jpeg',
   });
-  if (error) throw error;
+  if (error) {
+    // Le dossier de stockage se crée côté serveur : impossible depuis l'app,
+    // qui n'en a pas les droits. Autant le dire clairement plutôt que de
+    // laisser remonter un « Bucket not found » incompréhensible.
+    if (/bucket not found|does not exist/i.test(error.message)) {
+      throw new Error(
+        "Les photos de recette ne sont pas encore activées sur ce serveur : l'espace de stockage « dish-photos » n'existe pas.",
+      );
+    }
+    throw error;
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
